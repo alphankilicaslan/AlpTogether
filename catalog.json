@@ -311,11 +311,11 @@
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alplingo_official.png",
       "LatestVersion": "1.0.0",
       "ReleaseDate": "16 Ekim 2026",
-      "DownloadSizeText": "64.0 MB",
-      "SizeBytes": 64000000,
+      "DownloadSizeText": "1.45 GB",
+      "SizeBytes": 1530302447,
       "PackageType": 2,
       "PreferredHybridMode": 2,
-      "DirectDownloadUrl": "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo.exe",
+      "DirectDownloadUrl": "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo-win-x64.zip",
       "InstallerDownloadUrl": "",
       "InstallerSilentArgs": "/auto",
       "FirebaseStateUrl": "",
@@ -330,7 +330,7 @@
         "AlpLingo"
       ],
       "CompanionFiles": [],
-      "RequiresDotNet9": true,
+      "RequiresDotNet9": false,
       "HasCustomInstaller": false,
       "HybridBadgeText": "DO\u011ERUDAN PAKET",
       "PatchNotes": [
