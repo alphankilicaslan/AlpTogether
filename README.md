@@ -1,4 +1,4 @@
-# 🕹️ AlpTogether — Alp Ekosistemi Birleşik Uygulama İstemcisi & Dağıtım Merkezi
+﻿# 🕹️ AlpTogether — Alp Ekosistemi Birleşik Uygulama İstemcisi & Dağıtım Merkezi
 
 <p align="center">
   <img src="Assets/alptogether_logo_pink.png" width="160" alt="AlpTogether Logo" />
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.Setup.exe">
-    <img src="https://img.shields.io/badge/İndir-AlpTogether.Setup.exe-FF2E93?style=for-the-badge&logo=windows&logoColor=white" alt="AlpTogether Setup İndir" />
+  <a href="https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe">
+    <img src="https://img.shields.io/badge/İndir-AlpTogether.exe-FF2E93?style=for-the-badge&logo=windows&logoColor=white" alt="AlpTogether Setup İndir" />
   </a>
   <a href="https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe">
     <img src="https://img.shields.io/badge/Taşınabilir-AlpTogether.exe-00F0FF?style=for-the-badge&logo=windows&logoColor=white" alt="AlpTogether Taşınabilir İndir" />
@@ -44,5 +44,6 @@
 
 ### 🚀 Hızlı Başlangıç
 
-1. [AlpTogether.Setup.exe](https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.Setup.exe) web kurucusunu indirin ve çalıştırın.
+1. [AlpTogether.exe](https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe) web kurucusunu indirin ve çalıştırın.
 2. Açılan istemciden dilediğiniz uygulamayı seçerek **"Yükle"** butonuna tıklayın.
+

@@ -1,7 +1,7 @@
-﻿{
+{
   "CatalogVersion": "2026.10.16.2",
   "ClientLatestVersion": "1.0.0",
-  "ClientDownloadUrl": "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.Setup.exe",
+  "ClientDownloadUrl": "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
   "GlobalAnnouncement": "AlpTogether Ekosistem \u0130stemcisi Aktif! AlpNet Pulse, AlpFinans, AlphaGravity, AlpRust\u002B ve AlpLingo resmi ikon ve g\u00FCncel s\u00FCr\u00FCmleriyle haz\u0131r.",
   "Apps": [
     {
