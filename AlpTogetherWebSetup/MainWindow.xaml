@@ -1,0 +1,98 @@
+<Window x:Class="AlpTogetherWebSetup.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AlpTogether Kurulum Aracı"
+        Width="520" Height="370"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Icon="pack://application:,,,/Assets/app_icon.ico">
+
+    <Border Background="#11071A"
+            BorderBrush="#FF2E93"
+            BorderThickness="1.5"
+            CornerRadius="18"
+            Padding="28,24"
+            MouseLeftButtonDown="TitleBar_MouseDown">
+        <Border.Effect>
+            <DropShadowEffect Color="#FF2E93" BlurRadius="24" ShadowDepth="0" Opacity="0.4" />
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Top Bar -->
+            <DockPanel Grid.Row="0">
+                <Border Background="#2D123E" CornerRadius="6" Padding="8,3" VerticalAlignment="Center">
+                    <TextBlock Text="GITHUB RESMİ WEB KURULUM ARACI" Foreground="#FF85C0" FontSize="10" FontWeight="ExtraBold" />
+                </Border>
+                <Button Content="✕"
+                        Width="28" Height="28"
+                        HorizontalAlignment="Right"
+                        Background="#281138"
+                        Foreground="#FFB2D8"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="CloseButton_Click" />
+            </DockPanel>
+
+            <!-- Center Brand & Info -->
+            <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,12,0,12">
+                <Border Width="84" Height="84" CornerRadius="20" BorderBrush="#FF5CAA" BorderThickness="2" HorizontalAlignment="Center" Margin="0,0,0,14">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FF2E93" BlurRadius="22" ShadowDepth="0" Opacity="0.65" />
+                    </Border.Effect>
+                    <Image Source="pack://application:,,,/Assets/alptogether_logo_pink.png" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                </Border>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="Alp" Foreground="#FFFFFF" FontSize="26" FontWeight="ExtraBold" />
+                    <TextBlock Text="Together" Foreground="#FF2E93" FontSize="26" FontWeight="ExtraBold" />
+                </StackPanel>
+
+                <TextBlock Text="Birleşik Uygulama İstemcisi, Hibrit Güncelleyici &amp; Onarım Merkezi"
+                           Foreground="#D4A6C5"
+                           FontSize="12.5"
+                           HorizontalAlignment="Center"
+                           Margin="0,4,0,0" />
+            </StackPanel>
+
+            <!-- Bottom Action / Progress -->
+            <Grid Grid.Row="2">
+                <Button x:Name="BtnLaunch"
+                        Content="🚀 AlpTogether İstemcisini Kur ve Başlat"
+                        Height="46"
+                        Background="#FF2E93"
+                        Foreground="#FFFFFF"
+                        FontSize="14.5"
+                        FontWeight="ExtraBold"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="BtnLaunch_Click" />
+
+                <StackPanel x:Name="PanelProgress" Visibility="Collapsed">
+                    <TextBlock x:Name="TxtStatus"
+                               Text="Sunucuya bağlanılıyor..."
+                               Foreground="#FF94C8"
+                               FontSize="12.5"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,8" />
+                    <ProgressBar x:Name="PbDownload"
+                                 Height="10"
+                                 Minimum="0"
+                                 Maximum="100"
+                                 Value="0"
+                                 Background="#281238"
+                                 Foreground="#FF2E93"
+                                 BorderThickness="0" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
+    <AssemblyName>AlpTogether</AssemblyName>
+    <RootNamespace>AlpTogether</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>Alphan Kılıçaslan</Authors>
+    <Product>AlpTogether Client</Product>
+    <Description>Alp Ekosistemi Birleşik Uygulama İstemcisi, Hibrit Kurulum ve Onarım Merkezi</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="AlpTogetherWebSetup\**" />
+    <Page Remove="AlpTogetherWebSetup\**" />
+    <ApplicationDefinition Remove="AlpTogetherWebSetup\**" />
+    <EmbeddedResource Remove="AlpTogetherWebSetup\**" />
+    <None Remove="AlpTogetherWebSetup\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\alptogether_logo_pink.png" />
+    <Resource Include="Assets\app_icon.ico" />
+    <Resource Include="Assets\AppIcons\*.png" />
+  </ItemGroup>
+
+</Project>

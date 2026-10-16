@@ -1,0 +1,8 @@
+bin/
+obj/
+AlpTogetherWebSetup/bin/
+AlpTogetherWebSetup/obj/
+.vs/
+*.user
+*.tmp
+*.old
