@@ -26,7 +26,7 @@ namespace AlpTogether.Services
         public ObservableCollection<double> SpeedHistoryMbps { get; } = new();
 
         public string GlobalAnnouncement { get; private set; } =
-            "AlpTogether v1.0 Yayında! AlpNet Pulse, AlpFinans, AlphaGravity, AlpRust+ ve AlpLingo tek merkezde.";
+            "AlpTogether Ekosistem İstemcisi Aktif! AlpLingo v1.1.0 (Oyun İçi F8 Kısayol & AI OCR Kararlılık Güncellemesi) yayında.";
 
         public event Action<double, string>? OnGlobalBandwidthTick;
         public event Action? OnCatalogUpdated;
@@ -1282,10 +1282,10 @@ namespace AlpTogether.Services
 
             return new RemoteCatalogPayload
             {
-                CatalogVersion = "2026.10.16.2",
+                CatalogVersion = "2026.10.18.1",
                 ClientLatestVersion = "1.0.0",
                 ClientDownloadUrl = "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
-                GlobalAnnouncement = "AlpTogether Ekosistem İstemcisi Aktif! AlpNet Pulse, AlpFinans, AlphaGravity, AlpRust+ ve AlpLingo resmi ikon ve güncel sürümleriyle hazır.",
+                GlobalAnnouncement = "AlpTogether Ekosistem İstemcisi Aktif! AlpLingo v1.1.0 (Oyun İçi F8 Kısayol & AI OCR Kararlılık Güncellemesi) yayında.",
                 Apps = new List<AlpAppItem>
                 {
                     new AlpAppItem
@@ -1507,13 +1507,12 @@ namespace AlpTogether.Services
                         Description = "Oyunlar, videolar ve masaüstü uygulamaları için ekran üzerindeki diyalog alanını (ROI) gerçek zamanlı yakalayıp Meta NLLB-200 (CUDA/CPU) motoruyla şeffaf bir katman (Overlay) üzerinde anında akıcı Türkçeye çeviren uygulama.",
                         AccentColorHex = "#00E5FF",
                         IconPackUri = "pack://application:,,,/Assets/AppIcons/alplingo_official.png",
-                        LatestVersion = "1.0.0",
-                        ReleaseDate = "16 Ekim 2026",
+                        LatestVersion = "1.1.0",
+                        ReleaseDate = "18 Ekim 2026",
                         DownloadSizeText = "1.45 GB",
                         SizeBytes = 1530302447,
                         PackageType = AppPackageType.ZipArchive,
                         PreferredHybridMode = HybridInstallMode.HybridAuto,
-                        HasCustomInstaller = true,
                         DirectDownloadUrl = "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo-win-x64.zip",
                         InstallerDownloadUrl = "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo.Setup.exe",
                         InstallerFileName = "AlpLingo.Setup.exe",
@@ -1528,6 +1527,22 @@ namespace AlpTogether.Services
                         ProcessNamesToKill = new List<string> { "AlpLingo" },
                         PatchNotes = new List<PatchNoteEntry>
                         {
+                            new PatchNoteEntry
+                            {
+                                AppName = "AlpLingo",
+                                AppId = "alplingo",
+                                Version = "1.1.0",
+                                ReleaseDate = "18 Ekim 2026",
+                                Title = "AlpLingo v1.1.0 — Oyun İçi F8 Kısayol, Yönetici İzni & AI OCR Kararlılık Güncellemesi",
+                                Tag = "ÖNEMLİ GÜNCELLEME",
+                                Changes = new List<string>
+                                {
+                                    "Oyunlarda F8 kısayolunun algılanmama sorunu çözüldü (Win32 RegisterHotKey ve otomatik Yönetici İzni yükseltmesi).",
+                                    "Akıllı kontrast kontrolü ile sarı, altın, mavi ve tüm renklerdeki oyun altyazılarının okunması sağlandı.",
+                                    "F8 ile diyalog alanı seçildiği anda çevirinin otomatik başlatılması ve ekranda anlık durum bildirimi eklendi.",
+                                    "Windows masaüstü yakalama (BitBlt/OpenInputDesktop) bağlantısı ve çift monitör desteği güçlendirildi."
+                                }
+                            },
                             new PatchNoteEntry
                             {
                                 Version = "1.0.0",

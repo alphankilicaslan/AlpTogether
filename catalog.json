@@ -1,8 +1,8 @@
 {
-  "CatalogVersion": "2026.10.16.2",
+  "CatalogVersion": "2026.10.18.1",
   "ClientLatestVersion": "1.0.0",
   "ClientDownloadUrl": "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
-  "GlobalAnnouncement": "AlpTogether Ekosistem \u0130stemcisi Aktif! AlpNet Pulse, AlpFinans, AlphaGravity, AlpRust\u002B ve AlpLingo resmi ikon ve g\u00FCncel s\u00FCr\u00FCmleriyle haz\u0131r.",
+  "GlobalAnnouncement": "AlpTogether Ekosistem İstemcisi Aktif! AlpLingo v1.1.0 (Oyun İçi F8 Kısayol & AI OCR Kararlılık Güncellemesi) yayında.",
   "Apps": [
     {
       "Id": "alpnet-pulse",
@@ -309,8 +309,8 @@
       "HighlightText": "\u00C7EVR\u0130MDI\u015EI NLLB-200 \u002B \u015EEFFAF OVERLAY \u002B SIFIR FPS KAYBI",
       "AccentColorHex": "#00E5FF",
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alplingo_official.png",
-      "LatestVersion": "1.0.0",
-      "ReleaseDate": "16 Ekim 2026",
+      "LatestVersion": "1.1.0",
+      "ReleaseDate": "18 Ekim 2026",
       "DownloadSizeText": "1.45 GB",
       "SizeBytes": 1530302447,
       "PackageType": 2,
@@ -334,6 +334,20 @@
       "HasCustomInstaller": true,
       "HybridBadgeText": "HİBRİT KURULUM (Setup + Paket)",
       "PatchNotes": [
+        {
+          "AppName": "AlpLingo",
+          "AppId": "alplingo",
+          "Version": "1.1.0",
+          "ReleaseDate": "18 Ekim 2026",
+          "Title": "AlpLingo v1.1.0 — Oyun İçi F8 Kısayol, Yönetici İzni & AI OCR Kararlılık Güncellemesi",
+          "Tag": "ÖNEMLİ GÜNCELLEME",
+          "Changes": [
+            "Oyunlarda F8 kısayolunun algılanmama sorunu çözüldü (Win32 RegisterHotKey ve otomatik Yönetici İzni yükseltmesi).",
+            "Akıllı kontrast kontrolü ile sarı, altın, mavi ve tüm renklerdeki oyun altyazılarının okunması sağlandı.",
+            "F8 ile diyalog alanı seçildiği anda çevirinin otomatik başlatılması ve ekranda anlık durum bildirimi eklendi.",
+            "Windows masaüstü yakalama (BitBlt/OpenInputDesktop) bağlantısı ve çift monitör desteği güçlendirildi."
+          ]
+        },
         {
           "AppName": "",
           "AppId": "",
@@ -362,7 +376,7 @@
       "SelectedHybridModeDescription": "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
       "PrimaryButtonText": "HEMEN YÜKLE",
       "StateBadgeText": "BULUTTA MEVCUT",
-      "VersionDisplay": "Son Sürüm: v1.0.0  •  1.45 GB"
+      "VersionDisplay": "Son Sürüm: v1.1.0  •  1.45 GB"
     }
   ]
 }
