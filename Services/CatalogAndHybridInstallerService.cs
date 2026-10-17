@@ -1284,7 +1284,7 @@ namespace AlpTogether.Services
             {
                 CatalogVersion = "2026.10.16.2",
                 ClientLatestVersion = "1.0.0",
-                ClientDownloadUrl = "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.Setup.exe",
+                ClientDownloadUrl = "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
                 GlobalAnnouncement = "AlpTogether Ekosistem İstemcisi Aktif! AlpNet Pulse, AlpFinans, AlphaGravity, AlpRust+ ve AlpLingo resmi ikon ve güncel sürümleriyle hazır.",
                 Apps = new List<AlpAppItem>
                 {
@@ -1509,11 +1509,15 @@ namespace AlpTogether.Services
                         IconPackUri = "pack://application:,,,/Assets/AppIcons/alplingo_official.png",
                         LatestVersion = "1.0.0",
                         ReleaseDate = "16 Ekim 2026",
-                        DownloadSizeText = "64.0 MB",
-                        SizeBytes = 64000000,
+                        DownloadSizeText = "1.45 GB",
+                        SizeBytes = 1530302447,
                         PackageType = AppPackageType.ZipArchive,
-                        PreferredHybridMode = HybridInstallMode.DirectFiles,
-                        DirectDownloadUrl = "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo.exe",
+                        PreferredHybridMode = HybridInstallMode.HybridAuto,
+                        HasCustomInstaller = true,
+                        DirectDownloadUrl = "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo-win-x64.zip",
+                        InstallerDownloadUrl = "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo.Setup.exe",
+                        InstallerFileName = "AlpLingo.Setup.exe",
+                        InstallerSilentArgs = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART",
                         GitHubRepoUrl = "https://github.com/alphankilicaslan/AlpLingo",
                         ExecutableName = "AlpLingo.exe",
                         DefaultInstallSubFolder = "AlpLingo",

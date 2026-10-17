@@ -1,7 +1,7 @@
-﻿{
+{
   "CatalogVersion": "2026.10.16.2",
   "ClientLatestVersion": "1.0.0",
-  "ClientDownloadUrl": "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.Setup.exe",
+  "ClientDownloadUrl": "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
   "GlobalAnnouncement": "AlpTogether Ekosistem \u0130stemcisi Aktif! AlpNet Pulse, AlpFinans, AlphaGravity, AlpRust\u002B ve AlpLingo resmi ikon ve g\u00FCncel s\u00FCr\u00FCmleriyle haz\u0131r.",
   "Apps": [
     {
@@ -311,17 +311,17 @@
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alplingo_official.png",
       "LatestVersion": "1.0.0",
       "ReleaseDate": "16 Ekim 2026",
-      "DownloadSizeText": "64.0 MB",
-      "SizeBytes": 64000000,
+      "DownloadSizeText": "1.45 GB",
+      "SizeBytes": 1530302447,
       "PackageType": 2,
-      "PreferredHybridMode": 2,
-      "DirectDownloadUrl": "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo.exe",
-      "InstallerDownloadUrl": "",
-      "InstallerSilentArgs": "/auto",
+      "PreferredHybridMode": 0,
+      "DirectDownloadUrl": "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo-win-x64.zip",
+      "InstallerDownloadUrl": "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo.Setup.exe",
+      "InstallerSilentArgs": "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART",
       "FirebaseStateUrl": "",
       "GitHubRepoUrl": "https://github.com/alphankilicaslan/AlpLingo",
       "ExecutableName": "AlpLingo.exe",
-      "InstallerFileName": "",
+      "InstallerFileName": "AlpLingo.Setup.exe",
       "DefaultInstallSubFolder": "AlpLingo",
       "CandidateExistingPaths": [
         "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpLingo"
@@ -330,21 +330,21 @@
         "AlpLingo"
       ],
       "CompanionFiles": [],
-      "RequiresDotNet9": true,
-      "HasCustomInstaller": false,
-      "HybridBadgeText": "DO\u011ERUDAN PAKET",
+      "RequiresDotNet9": false,
+      "HasCustomInstaller": true,
+      "HybridBadgeText": "HİBRİT KURULUM (Setup + Paket)",
       "PatchNotes": [
         {
           "AppName": "",
           "AppId": "",
           "Version": "1.0.0",
           "ReleaseDate": "16 Ekim 2026",
-          "Title": "AlpLingo v1.0 \u2014 Ger\u00E7ek Zamanl\u0131 AI OCR \u0026 \u015Eeffaf T\u00FCrk\u00E7e Altyaz\u0131",
-          "Tag": "YEN\u0130 UYGULAMA",
+          "Title": "AlpLingo v1.0 — Gerçek Zamanlı AI OCR & Şeffaf Türkçe Altyazı",
+          "Tag": "YENİ UYGULAMA",
           "Changes": [
-            "Meta NLLB-200 \u00E7evrimd\u0131\u015F\u0131 \u00E7eviri motoru ile NVIDIA RTX CUDA ve CPU hibrit h\u0131zland\u0131rma.",
-            "F8 ile anl\u0131k ekran diyalog b\u00F6lgesi (ROI) se\u00E7imi ve F9 ile \u015Feffaf altyaz\u0131 katman\u0131 kontrol\u00FC.",
-            "Ak\u0131ll\u0131 parlakl\u0131k de\u011Fi\u015Fim filtresi ile diyalog sabitken %0 CPU/GPU kullan\u0131m\u0131 ve s\u0131f\u0131r FPS kayb\u0131."
+            "Meta NLLB-200 çevrimdışı çeviri motoru ile NVIDIA RTX CUDA ve CPU hibrit hızlandırma.",
+            "F8 ile anlık ekran diyalog bölgesi (ROI) seçimi ve F9 ile şeffaf altyazı katmanı kontrolü.",
+            "Akıllı parlaklık değişim filtresi ile diyalog sabitken %0 CPU/GPU kullanımı ve sıfır FPS kaybı."
           ]
         }
       ],
@@ -355,14 +355,14 @@
       "IsRunning": false,
       "IsBusy": false,
       "ProgressPercent": 0,
-      "StatusText": "Haz\u0131r",
+      "StatusText": "Hazır",
       "SpeedText": "",
-      "HealthStatus": "Do\u011Frulanmad\u0131",
+      "HealthStatus": "Doğrulanmadı",
       "SelectedHybridMode": 0,
-      "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "SelectedHybridModeDescription": "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+      "PrimaryButtonText": "HEMEN YÜKLE",
       "StateBadgeText": "BULUTTA MEVCUT",
-      "VersionDisplay": "Son S\u00FCr\u00FCm: v1.0.0  \u2022  64.0 MB"
+      "VersionDisplay": "Son Sürüm: v1.0.0  •  1.45 GB"
     }
   ]
 }
