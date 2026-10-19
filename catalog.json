@@ -1,4 +1,4 @@
-{
+﻿{
   "CatalogVersion": "2026.10.18.1",
   "ClientLatestVersion": "1.0.0",
   "ClientDownloadUrl": "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
@@ -145,6 +145,19 @@
           "AppName": "",
           "AppId": "",
           "AppIconUri": "",
+          "Version": "1.1.0",
+          "ReleaseDate": "19 Ekim 2026",
+          "Title": "AlpTogether Bulut Whitelist \u0026 Merkezi Yetkilendirme Entegrasyonu",
+          "Tag": "G\u00DCNCELLEME",
+          "Changes": [
+            "AlpTogether merkezi bulut whitelist do\u011Frulamas\u0131 entegre edildi.",
+            "Geli\u015Ftirici ana makinesi (MONSTERALPHAN) i\u00E7in an\u0131nda eri\u015Fim tan\u0131mland\u0131."
+          ]
+        },
+        {
+          "AppName": "",
+          "AppId": "",
+          "AppIconUri": "",
           "Version": "1.0.0",
           "ReleaseDate": "16 Ekim 2026",
           "Title": "Finansal Sim\u00FClat\u00F6r, Gelir/Gider Y\u00F6netimi ve Vergi Analizi",
@@ -169,7 +182,7 @@
       "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
       "PrimaryButtonText": "\u26D4 Y\u00DCKLE (YETK\u0130 GEREKL\u0130)",
       "StateBadgeText": "\u26D4 YETK\u0130S\u0130Z (WHITELIST GEREKL\u0130)",
-      "VersionDisplay": "Son S\u00FCr\u00FCm: v1.0.0  \u2022  34.2 MB"
+      "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  34.2 MB"
     },
     {
       "Id": "alphagravity",
@@ -221,6 +234,20 @@
           "AppName": "",
           "AppId": "",
           "AppIconUri": "",
+          "Version": "1.1.0",
+          "ReleaseDate": "19 Ekim 2026",
+          "Title": "Bulut Whitelist, API Key Kal\u0131c\u0131l\u0131\u011F\u0131 \u0026 Kararl\u0131 Tek Dosya \u00C7al\u0131\u015Fma",
+          "Tag": "G\u00DCNCELLEME",
+          "Changes": [
+            "AlpTogether merkezi bulut whitelist do\u011Frulamas\u0131 entegre edildi.",
+            "Kullan\u0131c\u0131 API anahtarlar\u0131 kal\u0131c\u0131 kullan\u0131c\u0131 profiline (AppData) kaydedilerek oturumlar aras\u0131 korundu.",
+            "Tam ba\u011F\u0131ms\u0131z (self-contained) tek dosya \u00E7al\u0131\u015Ft\u0131r\u0131labilir mimariyle ba\u015Flatma kararl\u0131l\u0131\u011F\u0131 sa\u011Fland\u0131."
+          ]
+        },
+        {
+          "AppName": "",
+          "AppId": "",
+          "AppIconUri": "",
           "Version": "1.0.0",
           "ReleaseDate": "16 Ekim 2026",
           "Title": "3B Bilgi Grafi\u011Fi, RAG Dok\u00FCman Y\u00F6netimi ve VoiceBridge",
@@ -245,7 +272,7 @@
       "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
       "PrimaryButtonText": "\u26D4 Y\u00DCKLE (YETK\u0130 GEREKL\u0130)",
       "StateBadgeText": "\u26D4 YETK\u0130S\u0130Z (WHITELIST GEREKL\u0130)",
-      "VersionDisplay": "Son S\u00FCr\u00FCm: v1.0.0  \u2022  68.5 MB"
+      "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  208 MB"
     },
     {
       "Id": "alprust-plus",

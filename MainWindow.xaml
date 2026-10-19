@@ -2126,7 +2126,7 @@
                                                     </Border>
 
                                                     <!-- Card 4: AlphaGravity Whitelist -->
-                                                    <Border Background="#1A0D28" BorderBrush="#BA68C8" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,16">
+                                                    <Border Background="#1A0D28" BorderBrush="#BA68C8" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,10">
                                                         <Grid>
                                                             <Grid.RowDefinitions>
                                                                 <RowDefinition Height="Auto" />
@@ -2164,6 +2164,62 @@
                                                                         Click="BtnGrantAlphaGravity_Click" />
 
                                                                 <ComboBox x:Name="CmbDurationAlphaGravity"
+                                                                          Width="140"
+                                                                          Height="32"
+                                                                          Background="#12071C"
+                                                                          Foreground="#FFFFFF"
+                                                                          BorderBrush="#7A2866"
+                                                                          SelectedIndex="2">
+                                                                    <ComboBoxItem Content="1 Gün" Tag="1" />
+                                                                    <ComboBoxItem Content="7 Gün (1 Hafta)" Tag="7" />
+                                                                    <ComboBoxItem Content="30 Gün (1 Ay)" Tag="30" />
+                                                                    <ComboBoxItem Content="90 Gün (3 Ay)" Tag="90" />
+                                                                    <ComboBoxItem Content="365 Gün (1 Yıl)" Tag="365" />
+                                                                    <ComboBoxItem Content="Süresiz (Sınırsız)" Tag="99999" />
+                                                                </ComboBox>
+                                                            </DockPanel>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- Card 5: AlpRust+ Whitelist -->
+                                                    <Border Background="#1A0D28" BorderBrush="#FF5722" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,16">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+
+                                                            <DockPanel Grid.Row="0">
+                                                                <TextBlock Text="🦀 AlpRust+ (Rust+ Cihaz, Kamera &amp; Raid Alarmı)" Foreground="#FFFFFF" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+                                                                <Border x:Name="BrdAlpRustStatus" Background="#26FF5722" BorderBrush="#FF5722" BorderThickness="1" CornerRadius="6" Padding="8,3" HorizontalAlignment="Right">
+                                                                    <TextBlock x:Name="TxtAlpRustStatusBadge" Text="Yetkisiz" Foreground="#FF5722" FontSize="10.5" FontWeight="Bold" />
+                                                                </Border>
+                                                            </DockPanel>
+
+                                                            <TextBlock x:Name="TxtAlpRustStatusDesc" Grid.Row="1" Text="Yetki durumu taranıyor..." Foreground="#BCA4B7" FontSize="11" Margin="0,6,0,10" />
+
+                                                            <DockPanel Grid.Row="2">
+                                                                <Button x:Name="BtnRevokeAlpRust"
+                                                                        Content="⛔ Yetkiyi Kaldır"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnRevokeAlpRust_Click"
+                                                                        ToolTip="Kullanıcıyı veritabanından silmez! Sadece AlpRust+ yetkisini kapatır." />
+
+                                                                <Button x:Name="BtnGrantAlpRust"
+                                                                        Content="⚡ Yetki Ver / Uzat"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnGrantAlpRust_Click" />
+
+                                                                <ComboBox x:Name="CmbDurationAlpRust"
                                                                           Width="140"
                                                                           Height="32"
                                                                           Background="#12071C"

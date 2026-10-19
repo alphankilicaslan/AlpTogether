@@ -526,7 +526,9 @@ namespace AlpTogether.Services
             }
 
             // 3. Buluttan çekilen önbellek yetkisini denetle
-            if (_cachedPermissions.TryGetValue(appId, out var perm))
+            if (_cachedPermissions.TryGetValue(appId, out var perm) ||
+                (appId == "alprust-plus" && _cachedPermissions.TryGetValue("alprust", out perm)) ||
+                (appId == "alprust" && _cachedPermissions.TryGetValue("alprust-plus", out perm)))
             {
                 if (!perm.HasAccess)
                 {

@@ -1398,6 +1398,22 @@ namespace AlpTogether
                 TxtAlphaGravityStatusDesc.Text = "AlphaGravity için henüz yetki verilmemiş veya süresi dolmuş.";
             }
 
+            // AlpRust+ Status
+            if ((user.AppPermissions.TryGetValue("alprust-plus", out var rustPerm) || user.AppPermissions.TryGetValue("alprust", out rustPerm)) && rustPerm.HasAccess && !rustPerm.IsExpired)
+            {
+                TxtAlpRustStatusBadge.Text = rustPerm.StatusBadge;
+                TxtAlpRustStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(rustPerm.StatusColorHex));
+                BrdAlpRustStatus.BorderBrush = TxtAlpRustStatusBadge.Foreground;
+                TxtAlpRustStatusDesc.Text = rustPerm.StatusDescription;
+            }
+            else
+            {
+                TxtAlpRustStatusBadge.Text = "⛔ Yetkisiz";
+                TxtAlpRustStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
+                BrdAlpRustStatus.BorderBrush = TxtAlpRustStatusBadge.Foreground;
+                TxtAlpRustStatusDesc.Text = "AlpRust+ için henüz yetki verilmemiş veya süresi dolmuş.";
+            }
+
             // Update Admin Role button state
             if (BtnDevToggleAdminRole != null)
             {
@@ -1704,6 +1720,56 @@ namespace AlpTogether
             }
             BtnRevokeAlphaGravity.IsEnabled = true;
             BtnRevokeAlphaGravity.Content = "⛔ Yetkiyi Kaldır";
+        }
+
+        private async void BtnGrantAlpRust_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+            int days = GetDurationDaysFromCombo(CmbDurationAlpRust);
+            BtnGrantAlpRust.IsEnabled = false;
+            BtnGrantAlpRust.Content = "Yetki Veriliyor...";
+
+            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alprust-plus", days);
+            await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alprust", days);
+
+            if (ok)
+            {
+                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpRust+ yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            BtnGrantAlpRust.IsEnabled = true;
+            BtnGrantAlpRust.Content = "⚡ Yetki Ver / Uzat";
+        }
+
+        private async void BtnRevokeAlpRust_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+            var res = MessageBox.Show(
+                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlpRust+ yetkisini kaldırmak istiyor musunuz?",
+                "Yetkiyi Kaldır", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (res != MessageBoxResult.Yes) return;
+
+            BtnRevokeAlpRust.IsEnabled = false;
+            BtnRevokeAlpRust.Content = "Kaldırılıyor...";
+            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alprust-plus");
+            await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alprust");
+
+            if (ok)
+            {
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpRust+ yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            BtnRevokeAlpRust.IsEnabled = true;
+            BtnRevokeAlpRust.Content = "⛔ Yetkiyi Kaldır";
         }
         #endregion
 
