@@ -9,6 +9,7 @@
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
+        PreviewKeyDown="Window_PreviewKeyDown"
         Icon="pack://application:,,,/Assets/app_icon.ico">
 
     <shell:WindowChrome.WindowChrome>
@@ -106,12 +107,20 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
-                                <Border Width="48" Height="48" CornerRadius="12" BorderBrush="#FF5CAA" BorderThickness="1.5">
+                                <Border x:Name="BrBrandLogo"
+                                        Width="48" Height="48"
+                                        CornerRadius="12"
+                                        BorderBrush="#FF5CAA"
+                                        BorderThickness="1.5"
+                                        Cursor="Hand"
+                                        ToolTip="Geliştirici Girişi: 5 kez tıklayın (veya Ctrl+Shift+D)"
+                                        MouseLeftButtonDown="BrandLogo_MouseLeftButtonDown">
                                     <Border.Effect>
                                         <DropShadowEffect Color="#FF2E93" BlurRadius="18" ShadowDepth="0" Opacity="0.65" />
                                     </Border.Effect>
                                     <Image Source="pack://application:,,,/Assets/alptogether_logo_pink.png"
-                                           Stretch="UniformToFill"
+                                           Stretch="Uniform"
+                                           Margin="3"
                                            RenderOptions.BitmapScalingMode="HighQuality" />
                                 </Border>
 
@@ -142,7 +151,7 @@
                             <Button x:Name="BtnNavDownloads" Style="{StaticResource NavTabButtonStyle}" Click="BtnNavDownloads_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="⬇" Foreground="#FF5CAA" FontSize="15" Width="24" VerticalAlignment="Center" />
-                                    <TextBlock Text="Hibrit Kurulum &amp; İndirme" VerticalAlignment="Center" />
+                                    <TextBlock Text="İndirme" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
 
@@ -174,11 +183,19 @@
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="BtnNavPublisher" Style="{StaticResource NavTabButtonStyle}" Click="BtnNavPublisher_Click">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="🚀" Foreground="#FF80AB" FontSize="14" Width="24" VerticalAlignment="Center" />
-                                    <TextBlock Text="Uygulama Yayınla &amp; Ayarlar" VerticalAlignment="Center" />
-                                </StackPanel>
+                            <Button x:Name="BtnNavDevStudio"
+                                    Visibility="Collapsed"
+                                    Style="{StaticResource NavTabButtonStyle}"
+                                    Click="BtnNavDevStudio_Click">
+                                <DockPanel LastChildFill="True">
+                                    <Border DockPanel.Dock="Right" Background="#FF2E93" CornerRadius="4" Padding="5,2" Margin="6,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="ADMIN" Foreground="#FFFFFF" FontSize="8.5" FontWeight="ExtraBold" />
+                                    </Border>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="⚡" Foreground="#FF2E93" FontSize="14" Width="24" VerticalAlignment="Center" />
+                                        <TextBlock Text="Geliştirici Stüdyosu" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DockPanel>
                             </Button>
                         </StackPanel>
 
@@ -240,7 +257,7 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Border Width="30" Height="30" CornerRadius="7" ClipToBounds="True" BorderBrush="#55FF5CAA" BorderThickness="1">
-                                                <Image Source="{Binding IconPackUri}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                <Image Source="{Binding IconPackUri}" Stretch="Uniform" Margin="2" RenderOptions.BitmapScalingMode="HighQuality" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="9,0,4,0" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Name}" Foreground="#FFF2F9" FontSize="12.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
@@ -330,7 +347,6 @@
                             <!-- Quick Filter Pills -->
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                                 <Button x:Name="BtnFilterAll" Content="Tümü" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,6" Margin="0,0,6,0" Click="BtnFilterAll_Click" />
-                                <Button x:Name="BtnFilterInstalled" Content="Kurulu Olanlar" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,6" Margin="0,0,6,0" Click="BtnFilterInstalled_Click" />
                                 <Button x:Name="BtnFilterUpdates" Content="Güncelleme Bekleyenler" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,6" Margin="0,0,6,0" Click="BtnFilterUpdates_Click" />
                                 <Button Content="🔄 Kataloğu Senkronize Et" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,6" Click="BtnSyncCatalog_Click" />
                             </StackPanel>
@@ -393,6 +409,96 @@
                         <ScrollViewer x:Name="ViewStoreLibrary" VerticalScrollBarVisibility="Auto" Padding="22,18,22,22">
                             <StackPanel>
 
+                                <!-- ANIME MASCOT INTERACTIVE SHOWCASE BANNER -->
+                                <Border x:Name="AnimeMascotBanner"
+                                        Background="#150820"
+                                        BorderBrush="#FF2E93"
+                                        BorderThickness="1.5"
+                                        CornerRadius="16"
+                                        Padding="16,14"
+                                        Margin="0,0,0,16">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#FF2E93" BlurRadius="20" ShadowDepth="0" Opacity="0.35" />
+                                    </Border.Effect>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Mascot Portrait with floating animation -->
+                                        <Border Grid.Column="0"
+                                                Width="96" Height="96"
+                                                CornerRadius="16"
+                                                BorderBrush="#FF5CAA"
+                                                BorderThickness="1.5"
+                                                ClipToBounds="True"
+                                                Background="#1F0B2E"
+                                                Margin="0,0,16,0"
+                                                VerticalAlignment="Center">
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="#FF5CAA" BlurRadius="14" ShadowDepth="0" Opacity="0.5" />
+                                            </Border.Effect>
+                                            <Image Source="pack://application:,,,/Assets/Anime/anime_waifu_showcase.jpg"
+                                                   Stretch="UniformToFill"
+                                                   RenderOptions.BitmapScalingMode="HighQuality">
+                                                <Image.RenderTransform>
+                                                    <TranslateTransform x:Name="AnimeWaifuFloatingTransform" Y="0" />
+                                                </Image.RenderTransform>
+                                                <Image.Triggers>
+                                                    <EventTrigger RoutedEvent="Image.Loaded">
+                                                        <BeginStoryboard>
+                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                                                                                 From="-4" To="4" Duration="0:0:1.8" />
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </EventTrigger>
+                                                </Image.Triggers>
+                                            </Image>
+                                        </Border>
+
+                                        <!-- Holographic Speech & Nav Controls -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <DockPanel Margin="0,0,0,6">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="✨ AlpChan // Ekosistem Rehberi" Foreground="#FF85C0" FontSize="13.5" FontWeight="ExtraBold" />
+                                                    <Border Background="#2C113D" BorderBrush="#FF2E93" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0">
+                                                        <TextBlock Text="CANLI ASİSTAN" Foreground="#00E676" FontSize="9.5" FontWeight="Bold" />
+                                                    </Border>
+                                                </StackPanel>
+                                                <Button x:Name="BtnCloseMascotBanner"
+                                                        Content="✕"
+                                                        Foreground="#A97E9C"
+                                                        FontSize="12"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Cursor="Hand"
+                                                        HorizontalAlignment="Right"
+                                                        Click="BtnCloseMascotBanner_Click" />
+                                            </DockPanel>
+
+                                            <!-- Holographic Speech Bubble -->
+                                            <Border Background="#1C0E2B" BorderBrush="#501C46" BorderThickness="1" CornerRadius="10" Padding="12,8" Margin="0,0,0,10">
+                                                <TextBlock x:Name="TxtAnimeSpeechBubble"
+                                                           Text="AlpTogether'a hoş geldin! Sol taraftaki listeden veya aşağıdaki sekmelerden bir uygulama seçerek tüm detayları inceleyebilir, tek tıkla kurup başlatabilirsin."
+                                                           Foreground="#FEE6F4"
+                                                           FontSize="12"
+                                                           TextWrapping="Wrap" />
+                                            </Border>
+
+                                            <!-- Interactive Mascot Navigation Pills -->
+                                            <WrapPanel>
+                                                <Button x:Name="BtnMascotAlpNet" Content="🌐 AlpNet Pulse" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,4" FontSize="11" Margin="0,0,6,4" Click="BtnMascotApp_Click" Tag="alpnet-pulse" />
+                                                <Button x:Name="BtnMascotAlphaGravity" Content="🤖 AlphaGravity" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,4" FontSize="11" Margin="0,0,6,4" Click="BtnMascotApp_Click" Tag="alphagravity" />
+                                                <Button x:Name="BtnMascotAlpFinans" Content="📈 AlpFinans" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,4" FontSize="11" Margin="0,0,6,4" Click="BtnMascotApp_Click" Tag="alpfinans" />
+                                                <Button x:Name="BtnMascotAlpLingo" Content="🎮 AlpLingo" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,4" FontSize="11" Margin="0,0,6,4" Click="BtnMascotApp_Click" Tag="alplingo" />
+                                                <Button x:Name="BtnMascotAlpRust" Content="🛡 AlpRust+" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,4" FontSize="11" Margin="0,0,6,4" Click="BtnMascotApp_Click" Tag="alprust-plus" />
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
                                 <!-- SELECTED APP HERO SHOWCASE CARD -->
                                 <Border Background="{StaticResource PinkHeroBackdropBrush}"
                                         BorderBrush="#7A2866"
@@ -417,13 +523,15 @@
                                                 BorderBrush="#FF5CAA"
                                                 BorderThickness="2"
                                                 VerticalAlignment="Top"
-                                                Background="#14081E">
+                                                Background="#14081E"
+                                                ClipToBounds="True">
                                             <Border.Effect>
                                                 <DropShadowEffect Color="#FF2E93" BlurRadius="22" ShadowDepth="0" Opacity="0.6" />
                                             </Border.Effect>
                                             <Image x:Name="ImgHeroAppIcon"
                                                    Source="pack://application:,,,/Assets/alptogether_logo_pink.png"
-                                                   Stretch="UniformToFill"
+                                                   Stretch="Uniform"
+                                                   Margin="4"
                                                    RenderOptions.BitmapScalingMode="HighQuality" />
                                         </Border>
 
@@ -514,7 +622,7 @@
                                                 </StackPanel>
                                             </Border>
 
-                                            <!-- Secondary Management Toolbar (Repair, Move Path, Open Folder, Shortcut, Report Issue) -->
+                                            <!-- Secondary Management Toolbar (Repair, Move Path, Open Folder, Shortcut, Report Issue, AutoStart) -->
                                             <WrapPanel>
                                                 <Button Content="🔧 Onar &amp; Bütünlük Doğrula"
                                                         Style="{StaticResource PinkSecondaryButtonStyle}"
@@ -534,8 +642,16 @@
                                                         Click="BtnHeroCreateShortcut_Click" />
                                                 <Button Content="🚨 Bu Uygulamada Hata Bildir"
                                                         Style="{StaticResource PinkSecondaryButtonStyle}"
-                                                        Margin="0,0,0,6"
+                                                        Margin="0,0,8,6"
                                                         Click="BtnHeroReportBug_Click" />
+                                                <CheckBox x:Name="ChkAppAutoStart"
+                                                          Content="🚀 Windows Başlangıcında Çalıştır"
+                                                          Foreground="#FFE5F3"
+                                                          FontSize="11.5"
+                                                          FontWeight="SemiBold"
+                                                          VerticalAlignment="Center"
+                                                          Margin="4,0,0,6"
+                                                          Click="ChkAppAutoStart_Click" />
                                             </WrapPanel>
                                         </StackPanel>
 
@@ -666,7 +782,7 @@
                                                         </Grid.ColumnDefinitions>
 
                                                         <Border Width="48" Height="48" CornerRadius="12" BorderBrush="#FF5CAA" BorderThickness="1.2" ClipToBounds="True">
-                                                            <Image Source="{Binding IconPackUri}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                            <Image Source="{Binding IconPackUri}" Stretch="Uniform" Margin="3" RenderOptions.BitmapScalingMode="HighQuality" />
                                                         </Border>
 
                                                         <StackPanel Grid.Column="1" Margin="10,0,6,0" VerticalAlignment="Center">
@@ -853,7 +969,7 @@
                         <!-- ==================== VIEW 2: HYBRID DOWNLOADS & INSTALLER CENTER ==================== -->
                         <ScrollViewer x:Name="ViewDownloads" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Padding="22,18,22,22">
                             <StackPanel>
-                                <TextBlock Text="⬇ Hibrit İndirme, Güncelleme ve Kurulum Motoru"
+                                <TextBlock Text="⬇ İndirme Merkezi"
                                            Foreground="#FFFFFF"
                                            FontSize="22"
                                            FontWeight="ExtraBold"
@@ -936,7 +1052,7 @@
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <Border Width="40" Height="40" CornerRadius="9" ClipToBounds="True">
-                                                        <Image Source="{Binding IconPackUri}" Stretch="UniformToFill" />
+                                                        <Image Source="{Binding IconPackUri}" Stretch="Uniform" Margin="2" RenderOptions.BitmapScalingMode="HighQuality" />
                                                     </Border>
                                                     <StackPanel Grid.Column="1" Margin="10,0,10,0" VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding Name}" Foreground="#FFFFFF" FontSize="14" FontWeight="Bold" />
@@ -983,33 +1099,87 @@
                                                     CornerRadius="14"
                                                     Padding="20,16"
                                                     Margin="0,0,0,12">
-                                                <StackPanel>
-                                                    <DockPanel Margin="0,0,0,8">
-                                                        <Border Background="#FF2E93" CornerRadius="6" Padding="9,3" Margin="0,0,10,0">
-                                                            <TextBlock Text="{Binding AppName}" Foreground="#FFFFFF" FontSize="11.5" FontWeight="ExtraBold" />
-                                                        </Border>
-                                                        <Border Background="#2D133E" BorderBrush="#FF5CAA" BorderThickness="1" CornerRadius="6" Padding="8,3" Margin="0,0,10,0">
-                                                            <TextBlock Text="{Binding Version, StringFormat=Sürüm v{0}}" Foreground="#FF94C8" FontSize="11.5" FontWeight="Bold" />
-                                                        </Border>
-                                                        <Border Background="#211030" CornerRadius="6" Padding="8,3" Margin="0,0,10,0">
-                                                            <TextBlock Text="{Binding Tag}" Foreground="#00E676" FontSize="10.5" FontWeight="Bold" />
-                                                        </Border>
-                                                        <TextBlock Text="{Binding ReleaseDate}" Foreground="#B88AA9" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                                                    </DockPanel>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
 
-                                                    <TextBlock Text="{Binding Title}" Foreground="#FFFFFF" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+                                                    <!-- Left: Details & Changes -->
+                                                    <StackPanel Grid.Column="0">
+                                                        <DockPanel Margin="0,0,0,8">
+                                                            <Border Width="24" Height="24" CornerRadius="6" Background="#16081F" BorderBrush="#551D4B" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center" ClipToBounds="True">
+                                                                <Image Source="{Binding AppIconUri}" Stretch="Uniform" Margin="2" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                            </Border>
+                                                            <Border Background="#FF2E93" CornerRadius="6" Padding="9,3" Margin="0,0,10,0">
+                                                                <TextBlock Text="{Binding AppName}" Foreground="#FFFFFF" FontSize="11.5" FontWeight="ExtraBold" />
+                                                            </Border>
+                                                            <Border Background="#2D133E" BorderBrush="#FF5CAA" BorderThickness="1" CornerRadius="6" Padding="8,3" Margin="0,0,10,0">
+                                                                <TextBlock Text="{Binding Version, StringFormat=Sürüm v{0}}" Foreground="#FF94C8" FontSize="11.5" FontWeight="Bold" />
+                                                            </Border>
+                                                            <Border Background="#211030" CornerRadius="6" Padding="8,3" Margin="0,0,10,0">
+                                                                <TextBlock Text="{Binding Tag}" Foreground="#00E676" FontSize="10.5" FontWeight="Bold" />
+                                                            </Border>
+                                                            <TextBlock Text="{Binding ReleaseDate}" Foreground="#B88AA9" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                        </DockPanel>
 
-                                                    <ItemsControl ItemsSource="{Binding Changes}">
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate>
-                                                                <StackPanel Orientation="Horizontal" Margin="0,3">
-                                                                    <TextBlock Text="✦ " Foreground="#FF5CAA" FontWeight="Bold" />
-                                                                    <TextBlock Text="{Binding}" Foreground="#E6C9DC" FontSize="13" TextWrapping="Wrap" />
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-                                                </StackPanel>
+                                                        <TextBlock Text="{Binding Title}" Foreground="#FFFFFF" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+
+                                                        <ItemsControl ItemsSource="{Binding Changes}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <StackPanel Orientation="Horizontal" Margin="0,3">
+                                                                        <TextBlock Text="✦ " Foreground="#FF5CAA" FontWeight="Bold" />
+                                                                        <TextBlock Text="{Binding}" Foreground="#E6C9DC" FontSize="13" TextWrapping="Wrap" />
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+
+                                                    <!-- Right: Animated Dancing Chibi Mascot -->
+                                                    <Border Grid.Column="1"
+                                                            Margin="16,0,0,0"
+                                                            VerticalAlignment="Center"
+                                                            HorizontalAlignment="Right"
+                                                            Width="84" Height="92"
+                                                            CornerRadius="14"
+                                                            Background="#180722"
+                                                            BorderBrush="#5E1E50"
+                                                            BorderThickness="1.5"
+                                                            ClipToBounds="True">
+                                                        <Border.Effect>
+                                                            <DropShadowEffect Color="#FF2E93" BlurRadius="12" ShadowDepth="0" Opacity="0.4" />
+                                                        </Border.Effect>
+                                                        <Image Source="pack://application:,,,/Assets/Anime/anime_chibi_dancer.jpg"
+                                                               Stretch="UniformToFill"
+                                                               RenderOptions.BitmapScalingMode="HighQuality">
+                                                            <Image.RenderTransform>
+                                                                <TransformGroup>
+                                                                    <ScaleTransform CenterX="42" CenterY="46" ScaleX="1.0" ScaleY="1.0" />
+                                                                    <RotateTransform CenterX="42" CenterY="46" Angle="0" />
+                                                                    <TranslateTransform Y="0" />
+                                                                </TransformGroup>
+                                                            </Image.RenderTransform>
+                                                            <Image.Triggers>
+                                                                <EventTrigger RoutedEvent="Image.Loaded">
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[0].ScaleX"
+                                                                                             From="0.94" To="1.06" Duration="0:0:0.6" />
+                                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[0].ScaleY"
+                                                                                             From="1.05" To="0.95" Duration="0:0:0.6" />
+                                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[1].Angle"
+                                                                                             From="-4" To="4" Duration="0:0:0.8" />
+                                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[2].Y"
+                                                                                             From="-3" To="3" Duration="0:0:0.5" />
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </EventTrigger>
+                                                            </Image.Triggers>
+                                                        </Image>
+                                                    </Border>
+                                                </Grid>
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -1064,7 +1234,7 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <Border Width="42" Height="42" CornerRadius="10" ClipToBounds="True">
-                                                        <Image Source="{Binding IconPackUri}" Stretch="UniformToFill" />
+                                                        <Image Source="{Binding IconPackUri}" Stretch="Uniform" Margin="2" RenderOptions.BitmapScalingMode="HighQuality" />
                                                     </Border>
 
                                                     <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
@@ -1473,23 +1643,833 @@
                             </Grid>
                         </ScrollViewer>
 
-                        <!-- ==================== VIEW 7: DEVELOPER APP PUBLISHER & CLIENT SETTINGS ==================== -->
-                        <ScrollViewer x:Name="ViewPublisherAndSettings" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Padding="22,18,22,22">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1.2*" />
-                                    <ColumnDefinition Width="1*" />
-                                </Grid.ColumnDefinitions>
+                        <!-- ==================== VIEW 7: DEVELOPER STUDIO & ADMIN DASHBOARD ==================== -->
+                        <Grid x:Name="ViewPublisherAndSettings" Visibility="Collapsed" Margin="22,18,22,22">
+                            <Grid.RowDefinitions>
+                                <!-- Top Dev Studio Header & Sub-Navigation Tabs -->
+                                <RowDefinition Height="Auto" />
+                                <!-- Dynamic Sub-View Content -->
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
 
-                                <!-- Left: Developer App Publisher ("Yeni Uygulama Geliştiririm Yayınlarım AlpTogether'a Gelir") -->
-                                <Border Grid.Column="0"
-                                        Background="{StaticResource PinkHeroBackdropBrush}"
+                            <!-- DEV HEADER & SUB-NAV BAR -->
+                            <Border Grid.Row="0"
+                                    Background="#1A0D28"
+                                    BorderBrush="#FF2E93"
+                                    BorderThickness="1.2"
+                                    CornerRadius="14"
+                                    Padding="16,12"
+                                    Margin="0,0,0,16">
+                                <WrapPanel VerticalAlignment="Center">
+                                    <Button x:Name="BtnDevSubTabUsers"
+                                            Content="👥 Kullanıcı &amp; Whitelist Masası"
+                                            Style="{StaticResource PinkPrimaryButtonStyle}"
+                                            Padding="14,8"
+                                            FontSize="12"
+                                            Margin="0,0,8,6"
+                                            Click="BtnDevSubTabUsers_Click" />
+
+                                    <Button x:Name="BtnDevSubTabTelemetry"
+                                            Content="📡 Canlı Telemetri &amp; Loglar"
+                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                            Padding="14,8"
+                                            FontSize="12"
+                                            Margin="0,0,8,6"
+                                            Click="BtnDevSubTabTelemetry_Click" />
+
+                                    <Button x:Name="BtnDevSubTabPublisher"
+                                            Content="🚀 Uygulama Yayınla"
+                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                            Padding="14,8"
+                                            FontSize="12"
+                                            Margin="0,0,8,6"
+                                            Click="BtnDevSubTabPublisher_Click" />
+
+                                    <Button x:Name="BtnDevSubTabSettings"
+                                            Content="⚙ Bulut &amp; İstemci Ayarları"
+                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                            Padding="14,8"
+                                            FontSize="12"
+                                            Margin="0,0,14,6"
+                                            Click="BtnDevSubTabSettings_Click" />
+
+                                    <Border Background="#331442" BorderBrush="#FF2E93" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,8,6" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="8" Height="8" Fill="#00E676" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="GELİŞTİRİCİ MODU: AKTİF" Foreground="#00E676" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Button x:Name="BtnDevLockMode"
+                                            Content="🔒 Kullanıcı Moduna Geç"
+                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                            Padding="12,6"
+                                            FontSize="11.5"
+                                            Margin="0,0,0,6"
+                                            Click="BtnDevLockMode_Click"
+                                            ToolTip="Geliştirici modunu geçici olarak kapatıp normal kullanıcı görünümünü test etmenizi sağlar." />
+                                </WrapPanel>
+                            </Border>
+
+                            <!-- ==================== SUB-VIEW 0: USERS & WHITELIST MANAGEMENT ==================== -->
+                            <Grid x:Name="DevSubViewUsers" Grid.Row="1" Visibility="Visible">
+                                <Grid.RowDefinitions>
+                                    <!-- Top Toolbar -->
+                                    <RowDefinition Height="Auto" />
+                                    <!-- Two-column Body -->
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Top Toolbar -->
+                                <Border Grid.Row="0"
+                                        Background="#160B22"
+                                        BorderBrush="#3E1E4E"
+                                        BorderThickness="1"
+                                        CornerRadius="12"
+                                        Padding="14,10"
+                                        Margin="0,0,0,12">
+                                    <DockPanel LastChildFill="True">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button x:Name="BtnDevRefreshUsers"
+                                                    Content="🔄 Listeyi Yenile"
+                                                    Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                    Padding="12,6"
+                                                    FontSize="11.5"
+                                                    Margin="0,0,8,0"
+                                                    Click="BtnDevRefreshUsers_Click" />
+
+                                            <Button x:Name="BtnDevImportLegacyAlpNet"
+                                                    Content="📥 Eski AlpNet Kullanıcılarını Aktar"
+                                                    Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                    Padding="12,6"
+                                                    FontSize="11.5"
+                                                    Click="BtnDevImportLegacyAlpNet_Click"
+                                                    ToolTip="Firebase /users/ altındaki eski AlpNet cihazlarını kullanıcı tablosuna otomatik geçirir." />
+                                        </StackPanel>
+
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <!-- Search Box -->
+                                            <Border Background="#0E0517" BorderBrush="#FF2E93" BorderThickness="1" CornerRadius="8" Padding="8,4" Width="260" Margin="0,0,14,0">
+                                                <DockPanel>
+                                                    <TextBlock Text="🔍" Foreground="#FF85C0" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                    <TextBox x:Name="TxtSearchUsers"
+                                                             Background="Transparent"
+                                                             BorderThickness="0"
+                                                             Foreground="#FFFFFF"
+                                                             FontSize="12"
+                                                             VerticalAlignment="Center"
+                                                             TextChanged="TxtSearchUsers_TextChanged" />
+                                                </DockPanel>
+                                            </Border>
+
+                                            <!-- Users Count Badge -->
+                                            <Border Background="#331442" BorderBrush="#7A2866" BorderThickness="1" CornerRadius="8" Padding="10,5">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="KAYITLI KULLANICI: " Foreground="#A97E9C" FontSize="10.5" FontWeight="Bold" VerticalAlignment="Center" />
+                                                    <TextBlock x:Name="TxtDevTotalUsersCount" Text="0" Foreground="#00E5FF" FontSize="11.5" FontWeight="ExtraBold" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+
+                                <!-- Two Columns: Left List, Right Detail & Permissions -->
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <!-- Left: Users List -->
+                                        <ColumnDefinition Width="380" />
+                                        <!-- Divider -->
+                                        <ColumnDefinition Width="14" />
+                                        <!-- Right: User Permissions & Alias Card -->
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- LEFT: USERS LIST -->
+                                    <Border Grid.Column="0"
+                                            Background="#160B22"
+                                            BorderBrush="#3E1E4E"
+                                            BorderThickness="1"
+                                            CornerRadius="14"
+                                            Padding="12,12">
+                                        <DockPanel LastChildFill="True">
+                                            <DockPanel DockPanel.Dock="Top" Margin="4,0,4,8">
+                                                <TextBlock Text="KULLANICI LİSTESİ (En Son Girenler En Üstte)" Foreground="#A97E9C" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                            </DockPanel>
+
+                                            <ListBox x:Name="LstAdminUsers"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     SelectionChanged="LstAdminUsers_SelectionChanged"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                <ListBox.ItemContainerStyle>
+                                                    <Style TargetType="ListBoxItem">
+                                                        <Setter Property="Padding" Value="0" />
+                                                        <Setter Property="Margin" Value="0,3" />
+                                                        <Setter Property="Cursor" Value="Hand" />
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="ListBoxItem">
+                                                                    <Border x:Name="UserBorder"
+                                                                            Background="#1C0E2B"
+                                                                            BorderBrush="#331442"
+                                                                            BorderThickness="1"
+                                                                            CornerRadius="10"
+                                                                            Padding="10,8">
+                                                                        <ContentPresenter />
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="UserBorder" Property="Background" Value="#29133D" />
+                                                                            <Setter TargetName="UserBorder" Property="BorderBrush" Value="#7A2866" />
+                                                                        </Trigger>
+                                                                        <Trigger Property="IsSelected" Value="True">
+                                                                            <Setter TargetName="UserBorder" Property="Background" Value="#381549" />
+                                                                            <Setter TargetName="UserBorder" Property="BorderBrush" Value="#FF2E93" />
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                </ListBox.ItemContainerStyle>
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <DockPanel LastChildFill="True">
+                                                            <!-- Avatar Circle -->
+                                                            <Border DockPanel.Dock="Left"
+                                                                    Width="38" Height="38"
+                                                                    CornerRadius="19"
+                                                                    Background="#FF2E93"
+                                                                    Margin="0,0,10,0"
+                                                                    VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding InitialLetter}"
+                                                                           Foreground="#FFFFFF"
+                                                                           FontSize="15"
+                                                                           FontWeight="ExtraBold"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center" />
+                                                            </Border>
+
+                                                            <!-- Right Badges: AlpLingo, AlpNet, AlpFinans, AlphaGravity -->
+                                                            <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center" MaxWidth="160" HorizontalAlignment="Right" Margin="6,0,0,0">
+                                                                <Border Background="#251235" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
+                                                                    <TextBlock Text="{Binding AlpLingoSummary}" Foreground="#FF85C0" FontSize="8.5" FontWeight="Bold" />
+                                                                </Border>
+                                                                <Border Background="#122530" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
+                                                                    <TextBlock Text="{Binding AlpNetSummary}" Foreground="#00E5FF" FontSize="8.5" FontWeight="Bold" />
+                                                                </Border>
+                                                                <Border Background="#2A1B10" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
+                                                                    <TextBlock Text="{Binding AlpFinansSummary}" Foreground="#FFB74D" FontSize="8.5" FontWeight="Bold" />
+                                                                </Border>
+                                                                <Border Background="#24102C" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
+                                                                    <TextBlock Text="{Binding AlphaGravitySummary}" Foreground="#BA68C8" FontSize="8.5" FontWeight="Bold" />
+                                                                </Border>
+                                                            </WrapPanel>
+
+                                                            <!-- Center User Info -->
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock Text="{Binding DisplayName}" Foreground="#FFFFFF" FontSize="13" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxWidth="150" />
+                                                                    <Border Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVis}}" Background="#FFD700" CornerRadius="4" Padding="4,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                                        <TextBlock Text="👑 ADMİN" Foreground="#12071C" FontSize="8.5" FontWeight="ExtraBold" />
+                                                                    </Border>
+                                                                </StackPanel>
+                                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                                    <TextBlock Text="🕒 " Foreground="#A97E9C" FontSize="10" />
+                                                                    <TextBlock Text="{Binding LastSeenDisplay}" Foreground="#00E676" FontSize="10" FontWeight="SemiBold" />
+                                                                </StackPanel>
+                                                                <TextBlock Text="{Binding Hwid}" Foreground="#7E5676" FontSize="9.5" FontFamily="Consolas" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
+                                                            </StackPanel>
+                                                        </DockPanel>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </DockPanel>
+                                    </Border>
+
+                                    <!-- RIGHT: USER DETAILS & PERMISSION DESK -->
+                                    <Border Grid.Column="2"
+                                            Background="#160B22"
+                                            BorderBrush="#3E1E4E"
+                                            BorderThickness="1"
+                                            CornerRadius="14"
+                                            Padding="16,16">
+                                        <Grid>
+                                            <!-- Placeholder when no user selected -->
+                                            <StackPanel x:Name="PnlNoUserSelected" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Visible">
+                                                <TextBlock Text="👈" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,10" />
+                                                <TextBlock Text="Kullanıcı Seçilmedi" Foreground="#FFFFFF" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" />
+                                                <TextBlock Text="Yetkilendirmek veya düzenlemek için soldaki listeden bir kullanıcı seçin." Foreground="#A97E9C" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                            </StackPanel>
+
+                                            <!-- Selected User Details Card -->
+                                            <ScrollViewer x:Name="PnlSelectedUserDetails" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                                                <StackPanel>
+                                                    <!-- User Header Card -->
+                                                    <Border Background="#1E0E30" BorderBrush="#FF2E93" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,14">
+                                                        <DockPanel LastChildFill="True">
+                                                            <Border DockPanel.Dock="Left" Width="48" Height="48" CornerRadius="24" Background="#FF2E93" Margin="0,0,14,0" VerticalAlignment="Center">
+                                                                <TextBlock x:Name="TxtDevUserAvatar" Text="A" Foreground="#FFFFFF" FontSize="20" FontWeight="ExtraBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                            </Border>
+                                                            <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                                <Button x:Name="BtnDevToggleAdminRole"
+                                                                        Content="👑 Yönetici (Admin) Ata"
+                                                                        Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                                        Padding="14,8"
+                                                                        FontSize="12"
+                                                                        Click="BtnDevToggleAdminRole_Click"
+                                                                        ToolTip="Seçili kullanıcıya tam yönetici (admin) rolü verir veya geri alır." />
+                                                            </StackPanel>
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <TextBlock x:Name="TxtDevUserTitle" Text="Ahmet" Foreground="#FFFFFF" FontSize="17" FontWeight="ExtraBold" />
+                                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                                    <TextBlock Text="Kayıt: " Foreground="#A97E9C" FontSize="11" />
+                                                                    <TextBlock x:Name="TxtDevUserRegDate" Text="18.10.2026 18:27" Foreground="#D9B6CD" FontSize="11" Margin="0,0,12,0" />
+                                                                    <TextBlock Text="Son Görülme: " Foreground="#A97E9C" FontSize="11" />
+                                                                    <TextBlock x:Name="TxtDevUserLastSeen" Text="Şimdi aktif" Foreground="#00E676" FontSize="11" FontWeight="Bold" />
+                                                                </StackPanel>
+                                                                <TextBlock x:Name="TxtDevUserHwid" Text="AT-B495-E9F5-8F0F-1234" Foreground="#7E5676" FontSize="10.5" FontFamily="Consolas" Margin="0,2,0,0" />
+                                                            </StackPanel>
+                                                        </DockPanel>
+                                                    </Border>
+
+                                                    <!-- Admin Takma İsim / Not (Alias) Section -->
+                                                    <Border Background="#12071C" BorderBrush="#3D1D4D" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,14">
+                                                        <StackPanel>
+                                                            <TextBlock Text="📝 Admin Takma İsim / Not (Sadece Size Görünür):" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,6" />
+                                                            <DockPanel>
+                                                                <Button x:Name="BtnSaveUserAlias"
+                                                                        Content="💾 Kaydet"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                                        Padding="14,6"
+                                                                        FontSize="12"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnSaveUserAlias_Click" />
+                                                                <TextBox x:Name="TxtDevUserAliasInput"
+                                                                         Style="{StaticResource PinkTextBoxStyle}"
+                                                                         Height="36"
+                                                                         FontSize="12.5" />
+                                                            </DockPanel>
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <!-- APPLICATION WHITELIST DESK -->
+                                                    <TextBlock Text="⚡ UYGULAMA YETKİLENDİRME (WHITELIST) MASASI" Foreground="#FF2E93" FontSize="12.5" FontWeight="ExtraBold" Margin="0,4,0,10" />
+
+                                                    <!-- Card 1: AlpLingo Whitelist -->
+                                                    <Border Background="#1A0D28" BorderBrush="#FF2E93" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,10">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+
+                                                            <DockPanel Grid.Row="0">
+                                                                <TextBlock Text="✦ AlpLingo (AI Oyun İçi Çeviri)" Foreground="#FFFFFF" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+                                                                <Border x:Name="BrdAlpLingoStatus" Background="#2600E676" BorderBrush="#00E676" BorderThickness="1" CornerRadius="6" Padding="8,3" HorizontalAlignment="Right">
+                                                                    <TextBlock x:Name="TxtAlpLingoStatusBadge" Text="Aktif" Foreground="#00E676" FontSize="10.5" FontWeight="Bold" />
+                                                                </Border>
+                                                            </DockPanel>
+
+                                                            <TextBlock x:Name="TxtAlpLingoStatusDesc" Grid.Row="1" Text="Yetki durumu taranıyor..." Foreground="#BCA4B7" FontSize="11" Margin="0,6,0,10" />
+
+                                                            <DockPanel Grid.Row="2">
+                                                                <Button x:Name="BtnRevokeAlpLingo"
+                                                                        Content="⛔ Yetkiyi Kaldır"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnRevokeAlpLingo_Click"
+                                                                        ToolTip="Kullanıcıyı veritabanından silmez! Sadece AlpLingo yetkisini kapatır." />
+
+                                                                <Button x:Name="BtnGrantAlpLingo"
+                                                                        Content="⚡ Yetki Ver / Uzat"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnGrantAlpLingo_Click" />
+
+                                                                <ComboBox x:Name="CmbDurationAlpLingo"
+                                                                          Width="140"
+                                                                          Height="32"
+                                                                          Background="#12071C"
+                                                                          Foreground="#FFFFFF"
+                                                                          BorderBrush="#7A2866"
+                                                                          SelectedIndex="2">
+                                                                    <ComboBoxItem Content="1 Gün" Tag="1" />
+                                                                    <ComboBoxItem Content="7 Gün (1 Hafta)" Tag="7" />
+                                                                    <ComboBoxItem Content="30 Gün (1 Ay)" Tag="30" />
+                                                                    <ComboBoxItem Content="90 Gün (3 Ay)" Tag="90" />
+                                                                    <ComboBoxItem Content="365 Gün (1 Yıl)" Tag="365" />
+                                                                    <ComboBoxItem Content="Süresiz (Sınırsız)" Tag="99999" />
+                                                                </ComboBox>
+                                                            </DockPanel>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- Card 2: AlpNet Pulse Whitelist -->
+                                                    <Border Background="#1A0D28" BorderBrush="#00E5FF" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,16">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+
+                                                            <DockPanel Grid.Row="0">
+                                                                <TextBlock Text="🔌 AlpNet Pulse (Ağ &amp; WARP &amp; Sesli Çeviri)" Foreground="#FFFFFF" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+                                                                <Border x:Name="BrdAlpNetStatus" Background="#2600E5FF" BorderBrush="#00E5FF" BorderThickness="1" CornerRadius="6" Padding="8,3" HorizontalAlignment="Right">
+                                                                    <TextBlock x:Name="TxtAlpNetStatusBadge" Text="Aktif" Foreground="#00E5FF" FontSize="10.5" FontWeight="Bold" />
+                                                                </Border>
+                                                            </DockPanel>
+
+                                                            <TextBlock x:Name="TxtAlpNetStatusDesc" Grid.Row="1" Text="Yetki durumu taranıyor..." Foreground="#BCA4B7" FontSize="11" Margin="0,6,0,10" />
+
+                                                            <DockPanel Grid.Row="2">
+                                                                <Button x:Name="BtnRevokeAlpNet"
+                                                                        Content="⛔ Yetkiyi Kaldır"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnRevokeAlpNet_Click"
+                                                                        ToolTip="Kullanıcıyı veritabanından silmez! Sadece AlpNet Pulse yetkisini kapatır." />
+
+                                                                <Button x:Name="BtnGrantAlpNet"
+                                                                        Content="⚡ Yetki Ver / Uzat"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnGrantAlpNet_Click" />
+
+                                                                <ComboBox x:Name="CmbDurationAlpNet"
+                                                                          Width="140"
+                                                                          Height="32"
+                                                                          Background="#12071C"
+                                                                          Foreground="#FFFFFF"
+                                                                          BorderBrush="#7A2866"
+                                                                          SelectedIndex="5">
+                                                                    <ComboBoxItem Content="1 Gün" Tag="1" />
+                                                                    <ComboBoxItem Content="7 Gün (1 Hafta)" Tag="7" />
+                                                                    <ComboBoxItem Content="30 Gün (1 Ay)" Tag="30" />
+                                                                    <ComboBoxItem Content="90 Gün (3 Ay)" Tag="90" />
+                                                                    <ComboBoxItem Content="365 Gün (1 Yıl)" Tag="365" />
+                                                                    <ComboBoxItem Content="Süresiz (Sınırsız)" Tag="99999" />
+                                                                </ComboBox>
+                                                            </DockPanel>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- Card 3: AlpFinans Whitelist -->
+                                                    <Border Background="#1A0D28" BorderBrush="#FFB74D" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,10">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+
+                                                            <DockPanel Grid.Row="0">
+                                                                <TextBlock Text="📈 AlpFinans (Borsa, Kripto &amp; Portföy)" Foreground="#FFFFFF" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+                                                                <Border x:Name="BrdAlpFinansStatus" Background="#26FFB74D" BorderBrush="#FFB74D" BorderThickness="1" CornerRadius="6" Padding="8,3" HorizontalAlignment="Right">
+                                                                    <TextBlock x:Name="TxtAlpFinansStatusBadge" Text="Yetkisiz" Foreground="#FFB74D" FontSize="10.5" FontWeight="Bold" />
+                                                                </Border>
+                                                            </DockPanel>
+
+                                                            <TextBlock x:Name="TxtAlpFinansStatusDesc" Grid.Row="1" Text="Yetki durumu taranıyor..." Foreground="#BCA4B7" FontSize="11" Margin="0,6,0,10" />
+
+                                                            <DockPanel Grid.Row="2">
+                                                                <Button x:Name="BtnRevokeAlpFinans"
+                                                                        Content="⛔ Yetkiyi Kaldır"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnRevokeAlpFinans_Click"
+                                                                        ToolTip="Kullanıcıyı veritabanından silmez! Sadece AlpFinans yetkisini kapatır." />
+
+                                                                <Button x:Name="BtnGrantAlpFinans"
+                                                                        Content="⚡ Yetki Ver / Uzat"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnGrantAlpFinans_Click" />
+
+                                                                <ComboBox x:Name="CmbDurationAlpFinans"
+                                                                          Width="140"
+                                                                          Height="32"
+                                                                          Background="#12071C"
+                                                                          Foreground="#FFFFFF"
+                                                                          BorderBrush="#7A2866"
+                                                                          SelectedIndex="2">
+                                                                    <ComboBoxItem Content="1 Gün" Tag="1" />
+                                                                    <ComboBoxItem Content="7 Gün (1 Hafta)" Tag="7" />
+                                                                    <ComboBoxItem Content="30 Gün (1 Ay)" Tag="30" />
+                                                                    <ComboBoxItem Content="90 Gün (3 Ay)" Tag="90" />
+                                                                    <ComboBoxItem Content="365 Gün (1 Yıl)" Tag="365" />
+                                                                    <ComboBoxItem Content="Süresiz (Sınırsız)" Tag="99999" />
+                                                                </ComboBox>
+                                                            </DockPanel>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- Card 4: AlphaGravity Whitelist -->
+                                                    <Border Background="#1A0D28" BorderBrush="#BA68C8" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,16">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+
+                                                            <DockPanel Grid.Row="0">
+                                                                <TextBlock Text="🤖 AlphaGravity (Çoklu Model AI Asistanı)" Foreground="#FFFFFF" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+                                                                <Border x:Name="BrdAlphaGravityStatus" Background="#26BA68C8" BorderBrush="#BA68C8" BorderThickness="1" CornerRadius="6" Padding="8,3" HorizontalAlignment="Right">
+                                                                    <TextBlock x:Name="TxtAlphaGravityStatusBadge" Text="Yetkisiz" Foreground="#BA68C8" FontSize="10.5" FontWeight="Bold" />
+                                                                </Border>
+                                                            </DockPanel>
+
+                                                            <TextBlock x:Name="TxtAlphaGravityStatusDesc" Grid.Row="1" Text="Yetki durumu taranıyor..." Foreground="#BCA4B7" FontSize="11" Margin="0,6,0,10" />
+
+                                                            <DockPanel Grid.Row="2">
+                                                                <Button x:Name="BtnRevokeAlphaGravity"
+                                                                        Content="⛔ Yetkiyi Kaldır"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnRevokeAlphaGravity_Click"
+                                                                        ToolTip="Kullanıcıyı veritabanından silmez! Sadece AlphaGravity yetkisini kapatır." />
+
+                                                                <Button x:Name="BtnGrantAlphaGravity"
+                                                                        Content="⚡ Yetki Ver / Uzat"
+                                                                        DockPanel.Dock="Right"
+                                                                        Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                                        Padding="12,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="8,0,0,0"
+                                                                        Click="BtnGrantAlphaGravity_Click" />
+
+                                                                <ComboBox x:Name="CmbDurationAlphaGravity"
+                                                                          Width="140"
+                                                                          Height="32"
+                                                                          Background="#12071C"
+                                                                          Foreground="#FFFFFF"
+                                                                          BorderBrush="#7A2866"
+                                                                          SelectedIndex="2">
+                                                                    <ComboBoxItem Content="1 Gün" Tag="1" />
+                                                                    <ComboBoxItem Content="7 Gün (1 Hafta)" Tag="7" />
+                                                                    <ComboBoxItem Content="30 Gün (1 Ay)" Tag="30" />
+                                                                    <ComboBoxItem Content="90 Gün (3 Ay)" Tag="90" />
+                                                                    <ComboBoxItem Content="365 Gün (1 Yıl)" Tag="365" />
+                                                                    <ComboBoxItem Content="Süresiz (Sınırsız)" Tag="99999" />
+                                                                </ComboBox>
+                                                            </DockPanel>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- DANGER ZONE: DELETE USER COMPLETELY -->
+                                                    <Border Background="#26FF1744" BorderBrush="#80FF1744" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                                                        <DockPanel LastChildFill="True">
+                                                            <Button x:Name="BtnDeleteUserRecord"
+                                                                    Content="🗑 Kullanıcıyı Tamamen Sil"
+                                                                    DockPanel.Dock="Right"
+                                                                    Background="#FF1744"
+                                                                    Foreground="#FFFFFF"
+                                                                    FontWeight="Bold"
+                                                                    Padding="14,8"
+                                                                    BorderThickness="0"
+                                                                    Cursor="Hand"
+                                                                    Click="BtnDeleteUserRecord_Click" />
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <TextBlock Text="Kullanıcıyı Veritabanından Sil:" Foreground="#FF8A80" FontSize="11.5" FontWeight="Bold" />
+                                                                <TextBlock Text="Kullanıcının kaydını ve tüm uygulama yetkilerini Firebase'den tamamen siler." Foreground="#D19EA9" FontSize="10" />
+                                                            </StackPanel>
+                                                        </DockPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </ScrollViewer>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+
+                            <!-- ==================== SUB-VIEW 1: LIVE TELEMETRY & USER LOGS ==================== -->
+                            <Grid x:Name="DevSubViewTelemetry" Grid.Row="1" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <!-- 1. Metric Stat Cards -->
+                                <Grid Grid.Row="0" Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Total Events -->
+                                    <Border Grid.Column="0" Background="#160B22" BorderBrush="#3E1E4E" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,10,0">
+                                        <StackPanel>
+                                            <TextBlock Text="TOPLAM KULLANICI OLAYI" Foreground="#A97E9C" FontSize="10.5" FontWeight="Bold" />
+                                            <TextBlock x:Name="TxtDevStatTotalEvents" Text="0 Olay" Foreground="#FFFFFF" FontSize="20" FontWeight="ExtraBold" Margin="0,3,0,0" />
+                                            <TextBlock Text="Canlı Firebase Akışı" Foreground="#FF5CAA" FontSize="10" FontWeight="SemiBold" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Downloads -->
+                                    <Border Grid.Column="1" Background="#160B22" BorderBrush="#3E1E4E" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,10,0">
+                                        <StackPanel>
+                                            <TextBlock Text="İNDİRMELER &amp; KURULUMLAR" Foreground="#A97E9C" FontSize="10.5" FontWeight="Bold" />
+                                            <TextBlock x:Name="TxtDevStatDownloads" Text="0 İndirme" Foreground="#00E5FF" FontSize="20" FontWeight="ExtraBold" Margin="0,3,0,0" />
+                                            <TextBlock Text="Kullanıcı Uygulama İndirmeleri" Foreground="#00E5FF" FontSize="10" FontWeight="SemiBold" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Errors & Crashes -->
+                                    <Border Grid.Column="2" Background="#160B22" BorderBrush="#3E1E4E" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,10,0">
+                                        <StackPanel>
+                                            <TextBlock Text="HATALAR &amp; ÇÖKMELER" Foreground="#A97E9C" FontSize="10.5" FontWeight="Bold" />
+                                            <TextBlock x:Name="TxtDevStatErrors" Text="0 Hata" Foreground="#FF1744" FontSize="20" FontWeight="ExtraBold" Margin="0,3,0,0" />
+                                            <TextBlock Text="Anında Otomatik Bildirilen" Foreground="#FF1744" FontSize="10" FontWeight="SemiBold" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Unique Devices -->
+                                    <Border Grid.Column="3" Background="#160B22" BorderBrush="#3E1E4E" BorderThickness="1" CornerRadius="12" Padding="14,12">
+                                        <StackPanel>
+                                            <TextBlock Text="AKTİF KULLANICI CİHAZLARI" Foreground="#A97E9C" FontSize="10.5" FontWeight="Bold" />
+                                            <TextBlock x:Name="TxtDevStatDevices" Text="0 Cihaz" Foreground="#00E676" FontSize="20" FontWeight="ExtraBold" Margin="0,3,0,0" />
+                                            <TextBlock Text="Benzersiz Alp HWID" Foreground="#00E676" FontSize="10" FontWeight="SemiBold" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <!-- 2. Filter Bar & Search -->
+                                <Border Grid.Row="1" Background="#140920" BorderBrush="#3B1C4B" BorderThickness="1" CornerRadius="12" Padding="12,10" Margin="0,0,0,12">
+                                    <DockPanel LastChildFill="True">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button x:Name="BtnDevClearOldLogs"
+                                                    Content="🧹 Eskileri Temizle"
+                                                    Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                    Padding="12,7"
+                                                    FontSize="12"
+                                                    Margin="0,0,8,0"
+                                                    Click="BtnDevClearOldLogs_Click"
+                                                    ToolTip="Buluttaki eski telemetri olaylarını ve hata kayıtlarını temizler." />
+                                            <Button x:Name="BtnRefreshDevEvents"
+                                                    Content="🔄 Canlı Verileri Yenile"
+                                                    Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                    Padding="14,7"
+                                                    FontSize="12"
+                                                    Click="BtnRefreshDevEvents_Click" />
+                                        </StackPanel>
+
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="Filtrele:" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                            <Button x:Name="BtnDevFilterAll" Content="Tümü" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,5" FontSize="11" Margin="0,0,6,0" Click="BtnDevFilterAll_Click" />
+                                            <Button x:Name="BtnDevFilterDownloads" Content="⬇ İndirmeler" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,5" FontSize="11" Margin="0,0,6,0" Click="BtnDevFilterDownloads_Click" />
+                                            <Button x:Name="BtnDevFilterInstalls" Content="✔ Kurulumlar" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,5" FontSize="11" Margin="0,0,6,0" Click="BtnDevFilterInstalls_Click" />
+                                            <Button x:Name="BtnDevFilterLaunches" Content="▶ Başlatmalar" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,5" FontSize="11" Margin="0,0,6,0" Click="BtnDevFilterLaunches_Click" />
+                                            <Button x:Name="BtnDevFilterErrors" Content="🚨 Hatalar &amp; Çökmeler" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,5" FontSize="11" Margin="0,0,12,0" Click="BtnDevFilterErrors_Click" />
+
+                                            <TextBlock Text="👤 Kişi:" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <ComboBox x:Name="CmbDevFilterUser"
+                                                      Width="160"
+                                                      Height="30"
+                                                      Background="#12071C"
+                                                      Foreground="#FFFFFF"
+                                                      BorderBrush="#7A2866"
+                                                      Margin="0,0,10,0"
+                                                      SelectionChanged="CmbDevFilterUser_SelectionChanged" />
+
+                                            <TextBox x:Name="TxtDevSearch"
+                                                     Style="{StaticResource PinkTextBoxStyle}"
+                                                     Width="180"
+                                                     Padding="10,6"
+                                                     FontSize="11.5"
+                                                     TextChanged="TxtDevSearch_TextChanged"
+                                                     ToolTip="Cihaz ID, uygulama adı veya hata detayı arayın" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+
+                                <!-- 3. Event List & Detail Inspector Split -->
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.25*" />
+                                        <ColumnDefinition Width="1*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left: Telemetry Event Stream -->
+                                    <Border Grid.Column="0" Background="#12081B" BorderBrush="#351744" BorderThickness="1" CornerRadius="14" Margin="0,0,12,0" Padding="10">
+                                        <ListBox x:Name="LstDevTelemetryEvents"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 SelectionChanged="LstDevTelemetryEvents_SelectionChanged">
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="ListBoxItem">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                    <Setter Property="BorderThickness" Value="0" />
+                                                    <Setter Property="Padding" Value="0" />
+                                                    <Setter Property="Margin" Value="0,0,0,6" />
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="ListBoxItem">
+                                                                <Border x:Name="ItemBorder" Background="#180C25" BorderBrush="#3E1E4F" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                                                                    <ContentPresenter />
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#251338" />
+                                                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#FF5CAA" />
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsSelected" Value="True">
+                                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#2E1644" />
+                                                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#FF2E93" />
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
+
+                                                        <DockPanel Grid.Row="0">
+                                                            <Border Background="{Binding EventColorHex}" CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                                                <TextBlock Text="{Binding EventBadgeText}" Foreground="#000000" FontSize="9.5" FontWeight="ExtraBold" />
+                                                            </Border>
+                                                            <TextBlock Text="{Binding AppName}" Foreground="#FFFFFF" FontSize="12.5" FontWeight="Bold" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding AppVersion, StringFormat='v{0}'}" Foreground="#FF85C0" FontSize="11" FontWeight="SemiBold" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding Timestamp}" Foreground="#8E6384" FontSize="10.5" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                        </DockPanel>
+
+                                                        <TextBlock Grid.Row="1" Text="{Binding Details}" Foreground="#FFEAF5" FontSize="11.5" TextWrapping="Wrap" Margin="0,5,0,3" />
+
+                                                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
+                                                            <TextBlock Text="Cihaz: " Foreground="#8E6384" FontSize="10.5" />
+                                                            <TextBlock Text="{Binding DeviceId}" Foreground="#00E5FF" FontSize="10.5" FontWeight="SemiBold" Margin="0,0,10,0" />
+                                                            <TextBlock Text="PC: " Foreground="#8E6384" FontSize="10.5" />
+                                                            <TextBlock Text="{Binding MachineName}" Foreground="#FF94C8" FontSize="10.5" Margin="0,0,10,0" />
+                                                            <TextBlock Text="{Binding UserName}" Foreground="#C4A8BC" FontSize="10.5" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Border>
+
+                                    <!-- Right: Selected Event Deep Inspector -->
+                                    <Border Grid.Column="1" Background="#140920" BorderBrush="#3B1C4B" BorderThickness="1" CornerRadius="14" Padding="16,14">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <StackPanel>
+                                                <DockPanel Margin="0,0,0,10">
+                                                    <TextBlock Text="🔍 Olay / Hata Detay İnceleyici" Foreground="#FFFFFF" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+                                                    <Button x:Name="BtnDevCopySelectedEvent"
+                                                            Content="📋 Kopyala"
+                                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                            Padding="8,4"
+                                                            FontSize="11"
+                                                            HorizontalAlignment="Right"
+                                                            Click="BtnDevCopySelectedEvent_Click" />
+                                                </DockPanel>
+
+                                                <TextBlock Text="Olay Kimliği (ID):" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" />
+                                                <TextBox x:Name="TxtDevDetailEventId" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,8" FontSize="11.5" />
+
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                                        <TextBlock Text="Zaman Damgası:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" />
+                                                        <TextBox x:Name="TxtDevDetailTime" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,0" FontSize="11.5" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                                        <TextBlock Text="Olay Türü:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" />
+                                                        <TextBox x:Name="TxtDevDetailType" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,0" FontSize="11.5" />
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                                        <TextBlock Text="Uygulama:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" />
+                                                        <TextBox x:Name="TxtDevDetailApp" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,0" FontSize="11.5" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                                        <TextBlock Text="Sürüm:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" />
+                                                        <TextBox x:Name="TxtDevDetailVersion" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,0" FontSize="11.5" />
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <TextBlock Text="Kullanıcı Cihaz ID (HWID):" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" />
+                                                <TextBox x:Name="TxtDevDetailDeviceId" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,8" FontSize="11.5" />
+
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                                        <TextBlock Text="Bilgisayar Adı:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" />
+                                                        <TextBox x:Name="TxtDevDetailMachine" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,0" FontSize="11.5" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                                        <TextBlock Text="Kullanıcı Adı:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" />
+                                                        <TextBox x:Name="TxtDevDetailUser" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,0" FontSize="11.5" />
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <TextBlock Text="Açıklama &amp; Mesaj:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" />
+                                                <TextBox x:Name="TxtDevDetailMessage" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,8" FontSize="11.5" Height="60" TextWrapping="Wrap" AcceptsReturn="True" />
+
+                                                <TextBlock Text="Hata İzi / Yığın / Log Kayıtları (Stack Trace):" Foreground="#FF1744" FontSize="10.5" FontWeight="Bold" />
+                                                <TextBox x:Name="TxtDevDetailStackTrace" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" Margin="0,2,0,0" FontSize="10.5" FontFamily="Consolas" Height="140" TextWrapping="Wrap" AcceptsReturn="True" />
+                                            </StackPanel>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+
+                            <!-- ==================== SUB-VIEW 2: APP PUBLISHER ==================== -->
+                            <ScrollViewer x:Name="DevSubViewPublisher" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                                <Border Background="{StaticResource PinkHeroBackdropBrush}"
                                         BorderBrush="#FF2E93"
                                         BorderThickness="1.5"
                                         CornerRadius="16"
-                                        Padding="22,20"
-                                        Margin="0,0,16,0">
-                                    <StackPanel>
+                                        Padding="24,20"
+                                        Margin="0,0,0,10">
+                                    <StackPanel MaxWidth="920" HorizontalAlignment="Left">
                                         <Border Background="#FF2E93" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left" Margin="0,0,0,6">
                                             <TextBlock Text="GELİŞTİRİCİ YAYINLAMA STÜDYOSU" Foreground="#FFFFFF" FontSize="10.5" FontWeight="ExtraBold" />
                                         </Border>
@@ -1576,14 +2556,153 @@
                                                    TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
+                            </ScrollViewer>
 
-                                <!-- Right: Cloud, Webhook & Client Settings -->
-                                <Border Grid.Column="1"
-                                        Background="#140A20"
+                            <!-- ==================== SUB-VIEW 3: ADMIN KEYGEN & CİHAZ YÖNETİMİ ==================== -->
+                            <ScrollViewer x:Name="DevSubViewKeygen" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="1*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left: Key Generator Form -->
+                                    <Border Grid.Column="0" Background="#160B23" BorderBrush="#FF2E93" BorderThickness="1.2" CornerRadius="16" Padding="22,20" Margin="0,0,14,0">
+                                        <StackPanel>
+                                            <Border Background="#FF2E93" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left" Margin="0,0,0,8">
+                                                <TextBlock Text="ALPTOGETHER ADMIN KEYGEN" Foreground="#FFFFFF" FontSize="10" FontWeight="ExtraBold" />
+                                            </Border>
+
+                                            <TextBlock Text="🔑 Geliştirici &amp; Admin Lisans Üretici" Foreground="#FFFFFF" FontSize="19" FontWeight="ExtraBold" Margin="0,0,0,4" />
+                                            <TextBlock Text="AlpTogether Admin Modu için cihaza özel HMAC-SHA256 imzalı lisans üretir. Bu anahtar AlpNet HWID ve Keygen algoritması ile kesinlikle çakışmaz."
+                                                       Foreground="#D9B6CD" FontSize="11.5" TextWrapping="Wrap" Margin="0,0,0,16" />
+
+                                            <!-- This Device HWID -->
+                                            <Border Background="#1F0D30" BorderBrush="#4A205F" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,14">
+                                                <StackPanel>
+                                                    <TextBlock Text="BU BİLGİSAYARIN HWID KİMLİĞİ:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" Margin="0,0,0,4" />
+                                                    <DockPanel>
+                                                        <Button x:Name="BtnDevCopyThisHwid"
+                                                                Content="📋 Kopyala"
+                                                                DockPanel.Dock="Right"
+                                                                Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                                Padding="10,6"
+                                                                Margin="6,0,0,0"
+                                                                Click="BtnDevCopyThisHwid_Click" />
+                                                        <TextBox x:Name="TxtDevThisHwid" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" FontWeight="Bold" Foreground="#00E5FF" />
+                                                    </DockPanel>
+                                                    <Button x:Name="BtnDevSelfActivate"
+                                                            Content="⚡ Bu Cihaza Süresiz Kalıcı Admin Yetkisi Tanımla"
+                                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                            Margin="0,8,0,0"
+                                                            Padding="12,7"
+                                                            Click="BtnDevSelfActivate_Click" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Target HWID -->
+                                            <TextBlock Text="Hedef Cihaz HWID (Örn: AT-XXXX-XXXX-XXXX veya Boş = Tüm Cihazlar):" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                            <TextBox x:Name="TxtDevTargetHwid" Style="{StaticResource PinkTextBoxStyle}" Margin="0,0,0,12" />
+
+                                            <!-- Duration -->
+                                            <TextBlock Text="Lisans Süresi:" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                            <ComboBox x:Name="CmbDevKeyExpiry"
+                                                      Background="#140A20"
+                                                      Foreground="#FFEAF5"
+                                                      BorderBrush="#452157"
+                                                      Padding="8,6"
+                                                      SelectedIndex="3"
+                                                      Margin="0,0,0,14">
+                                                <ComboBoxItem Content="30 Gün (1 Ay)" />
+                                                <ComboBoxItem Content="90 Gün (3 Ay)" />
+                                                <ComboBoxItem Content="365 Gün (1 Yıl)" />
+                                                <ComboBoxItem Content="Sınırsız / Kalıcı (2099 Yılına Kadar)" />
+                                            </ComboBox>
+
+                                            <!-- Generate Button -->
+                                            <Button x:Name="BtnDevGenerateAdminKey"
+                                                    Content="🔑 Admin Lisans Anahtarı Üret (Generate Key)"
+                                                    Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                    Padding="16,11"
+                                                    Margin="0,0,0,14"
+                                                    Click="BtnDevGenerateAdminKey_Click" />
+
+                                            <!-- Result Box -->
+                                            <TextBlock Text="Üretilen Lisans Anahtarı:" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                            <TextBox x:Name="TxtDevGeneratedKeyResult"
+                                                     Style="{StaticResource PinkTextBoxStyle}"
+                                                     Height="64"
+                                                     TextWrapping="Wrap"
+                                                     IsReadOnly="True"
+                                                     FontFamily="Consolas"
+                                                     FontSize="11"
+                                                     Margin="0,0,0,10" />
+
+                                            <WrapPanel>
+                                                <Button x:Name="BtnDevCopyGeneratedKey"
+                                                        Content="📋 Anahtarı Kopyala"
+                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                        Padding="12,8"
+                                                        Margin="0,0,8,0"
+                                                        Click="BtnDevCopyGeneratedKey_Click" />
+
+                                                <Button x:Name="BtnDevPushKeyToFirebase"
+                                                        Content="☁ Buluta Gönder (Cihazı Doğrudan Yetkilendir)"
+                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                        Padding="12,8"
+                                                        Click="BtnDevPushKeyToFirebase_Click" />
+                                            </WrapPanel>
+
+                                            <TextBlock x:Name="TxtDevKeygenStatus" Text="" Foreground="#00E676" FontSize="11.5" FontWeight="Bold" Margin="0,8,0,0" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Right: Architecture & Security Info -->
+                                    <Border Grid.Column="1" Background="#140920" BorderBrush="#3B1C4B" BorderThickness="1" CornerRadius="16" Padding="20,18">
+                                        <StackPanel>
+                                            <TextBlock Text="🛡 AlpTogether &amp; AlpNet İzolasyon Rehberi" Foreground="#FFFFFF" FontSize="16" FontWeight="ExtraBold" Margin="0,0,0,10" />
+
+                                            <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                                <TextBlock Foreground="#FFEAF5" FontSize="11.5" TextWrapping="Wrap" LineHeight="18">
+                                                    <Run FontWeight="Bold" Foreground="#00E5FF">1. HWID Ayrımı: </Run>
+                                                    AlpNet klasik MD5 kullanırken, AlpTogether <Run FontWeight="Bold" Foreground="#FF5CAA">"AT-"</Run> önekli SHA-256 tuzlu blok mimarisi kullanır. İki sistemin HWID değerleri asla eşleşemez.
+                                                </TextBlock>
+                                            </Border>
+
+                                            <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                                <TextBlock Foreground="#FFEAF5" FontSize="11.5" TextWrapping="Wrap" LineHeight="18">
+                                                    <Run FontWeight="Bold" Foreground="#00E5FF">2. Anahtar İmzası (Secret): </Run>
+                                                    AlpNet <Run FontStyle="Italic">AlpNetSecret2026!PulseCore</Run> anahtarı ve 3 parçalı yapı kullanır. AlpTogether ise <Run FontWeight="Bold" Foreground="#FF5CAA">ATDEV</Run> 4 parçalı HMAC-SHA256 imzası ile çalışır. Birinin anahtarı diğerinde kesinlikle geçersizdir.
+                                                </TextBlock>
+                                            </Border>
+
+                                            <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                                <TextBlock Foreground="#FFEAF5" FontSize="11.5" TextWrapping="Wrap" LineHeight="18">
+                                                    <Run FontWeight="Bold" Foreground="#00E5FF">3. Bulut Düğümleri (Firebase): </Run>
+                                                    AlpNet <Run FontStyle="Italic">/users/</Run> ve <Run FontStyle="Italic">/trials/</Run> köklerini kullanır. AlpTogether'ın tüm telemetri, katalog ve lisans kayıtları <Run FontWeight="Bold" Foreground="#FF5CAA">/alptogether/</Run> alt klasöründe tamamen izoledir.
+                                                </TextBlock>
+                                            </Border>
+
+                                            <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="8" Padding="12">
+                                                <TextBlock Foreground="#FFEAF5" FontSize="11.5" TextWrapping="Wrap" LineHeight="18">
+                                                    <Run FontWeight="Bold" Foreground="#00E5FF">4. Geliştirici Kısayolu: </Run>
+                                                    Uygulama açıkken <Run FontWeight="Bold" Foreground="#FF5CAA">Ctrl + Shift + D</Run> tuşlarına basarak veya sol üstteki AlpTogether logosuna 5 kez tıklayarak admin giriş penceresini açabilirsiniz.
+                                                </TextBlock>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </ScrollViewer>
+
+                            <!-- ==================== SUB-VIEW 4: SETTINGS ==================== -->
+                            <ScrollViewer x:Name="DevSubViewSettings" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                                <Border Background="#140A20"
                                         BorderBrush="#461F56"
                                         BorderThickness="1.2"
                                         CornerRadius="16"
-                                        Padding="20,18">
+                                        Padding="24,20"
+                                        MaxWidth="860"
+                                        HorizontalAlignment="Left">
                                     <StackPanel>
                                         <TextBlock Text="⚙ Bulut, GitHub &amp; Telemetri Ayarları"
                                                    Foreground="#FFFFFF"
@@ -1594,10 +2713,10 @@
                                         <TextBlock Text="GitHub Raw Katalog Adresi (catalog.json):" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,4" />
                                         <TextBox x:Name="TxtSettingGitHubCatalog" Style="{StaticResource PinkTextBoxStyle}" Margin="0,0,0,12" />
 
-                                        <TextBlock Text="Firebase Realtime Database Adresi (Canlı Katalog &amp; Hata Bildirimi):" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,4" />
+                                        <TextBlock Text="Firebase Realtime Database Adresi (Canlı Katalog, Telemetri &amp; Hata Takibi):" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,4" />
                                         <TextBox x:Name="TxtSettingFirebaseUrl" Style="{StaticResource PinkTextBoxStyle}" Margin="0,0,0,12" />
 
-                                        <TextBlock Text="Özel Discord / Telegram Webhook URL (Anlık Hata &amp; Ticket Bildirimi İçin):" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,4" />
+                                        <TextBlock Text="Özel Discord / Telegram Webhook URL (Anlık İndirme &amp; Hata Bildirimi İçin):" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,4" />
                                         <TextBox x:Name="TxtSettingWebhookUrl" Style="{StaticResource PinkTextBoxStyle}" Margin="0,0,0,14" />
 
                                         <CheckBox x:Name="ChkSettingAutoTelemetry"
@@ -1620,12 +2739,12 @@
 
                                         <Button Content="💾 Tüm İstemci Ayarlarını Kaydet"
                                                 Style="{StaticResource PinkPrimaryButtonStyle}"
-                                                Padding="16,11"
+                                                Padding="18,11"
                                                 Click="BtnSaveSettings_Click" />
                                     </StackPanel>
                                 </Border>
-                            </Grid>
-                        </ScrollViewer>
+                            </ScrollViewer>
+                        </Grid>
 
                     </Grid>
 
@@ -1658,6 +2777,161 @@
                         </DockPanel>
                     </Border>
                 </Grid>
+            </Grid>
+            <!-- ==================== DEVELOPER ADMIN UNLOCK MODAL OVERLAY ==================== -->
+            <Grid x:Name="AdminUnlockOverlay"
+                  Visibility="Collapsed"
+                  Background="#E608040F"
+                  Panel.ZIndex="2000">
+                <Border Width="520"
+                        Background="#190C28"
+                        BorderBrush="#FF2E93"
+                        BorderThickness="1.5"
+                        CornerRadius="16"
+                        Padding="26,24"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FF2E93" BlurRadius="32" ShadowDepth="0" Opacity="0.5" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <!-- Modal Title -->
+                        <DockPanel Margin="0,0,0,12">
+                            <Border Background="#FF2E93" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left">
+                                <TextBlock Text="ALPTOGETHER SECURITY" Foreground="#FFFFFF" FontSize="10" FontWeight="ExtraBold" />
+                            </Border>
+                            <Button Content="✕"
+                                    Foreground="#C8A8C0"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    HorizontalAlignment="Right"
+                                    Cursor="Hand"
+                                    Click="BtnModalClose_Click" />
+                        </DockPanel>
+
+                        <TextBlock Text="🔐 Geliştirici &amp; Admin Girişi" Foreground="#FFFFFF" FontSize="20" FontWeight="ExtraBold" Margin="0,0,0,4" />
+                        <TextBlock Text="Geliştirici Stüdyosu, Canlı Kullanıcı Telemetrisi ve Uygulama Yayınlama araçlarını açmak için admin anahtarınızı veya master parolanızı girin."
+                                   Foreground="#D9B6CD" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16" LineHeight="17" />
+
+                        <!-- Device HWID -->
+                        <Border Background="#12071C" BorderBrush="#3D1D4D" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Bu Cihazın AlpTogether HWID Kimliği:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" Margin="0,0,0,4" />
+                                <DockPanel>
+                                    <Button x:Name="BtnModalCopyHwid"
+                                            Content="📋 Kopyala"
+                                            DockPanel.Dock="Right"
+                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                            Padding="10,5"
+                                            Margin="8,0,0,0"
+                                            Click="BtnModalCopyHwid_Click" />
+                                    <TextBox x:Name="TxtModalDeviceHwid" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" FontWeight="Bold" Foreground="#00E5FF" />
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Input Key or Passcode -->
+                        <TextBlock Text="Admin Lisans Anahtarı veya Geliştirici Parolası:" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                        <TextBox x:Name="TxtModalAdminInput"
+                                 Style="{StaticResource PinkTextBoxStyle}"
+                                 Height="52"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="False"
+                                 Margin="0,0,0,8"
+                                 FontSize="12" />
+
+                        <TextBlock x:Name="TxtModalStatus" Text="" Foreground="#FF1744" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,14" TextWrapping="Wrap" />
+
+                        <!-- Action Buttons -->
+                        <DockPanel LastChildFill="False">
+                            <Button Content="Vazgeç / Kapat"
+                                    Style="{StaticResource PinkSecondaryButtonStyle}"
+                                    Padding="16,9"
+                                    Click="BtnModalClose_Click" />
+
+                            <Button Content="🚀 Geliştirici Modunu Aç"
+                                    DockPanel.Dock="Right"
+                                    Style="{StaticResource PinkPrimaryButtonStyle}"
+                                    Padding="20,10"
+                                    Click="BtnModalUnlock_Click" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- USERNAME REGISTRATION PROMPT MODAL (1 HWID = 1 UNIQUE NAME) -->
+            <Grid x:Name="ModalUsernamePrompt"
+                  Visibility="Collapsed"
+                  Panel.ZIndex="1000"
+                  Background="#E6070310">
+                <Border Width="500"
+                        Background="#190C28"
+                        BorderBrush="#FF2E93"
+                        BorderThickness="1.5"
+                        CornerRadius="16"
+                        Padding="28,26"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FF2E93" BlurRadius="36" ShadowDepth="0" Opacity="0.55" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <!-- Modal Title -->
+                        <Border Background="#FF2E93" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left" Margin="0,0,0,12">
+                            <TextBlock Text="ALPTOGETHER KULLANICI KAYDI" Foreground="#FFFFFF" FontSize="10" FontWeight="ExtraBold" />
+                        </Border>
+
+                        <TextBlock Text="👋 Hoş Geldiniz!" Foreground="#FFFFFF" FontSize="22" FontWeight="ExtraBold" Margin="0,0,0,4" />
+                        <TextBlock Text="Lütfen kendinize bir Kullanıcı Adı / Takma Ad belirleyin:"
+                                   Foreground="#D9B6CD" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,12" LineHeight="18" />
+
+                        <!-- Explanation alert box -->
+                        <Border Background="#12071C" BorderBrush="#3D1D4D" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="💡 Bu Şifreli Bir Giriş Hesabı Değildir!" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,3" />
+                                <TextBlock Text="Bu isim sadece yönetici (Alphan) size yetki verirken sizi listede tanıyabilmesi içindir. Belirlediğiniz isim bu cihazın HWID kimliğine kalıcı olarak bağlanır ve başka bir kullanıcı aynı ismi alamaz (1 HWID = 1 Benzersiz İsim)."
+                                           Foreground="#BCA4B7" FontSize="11" TextWrapping="Wrap" LineHeight="16" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Device HWID Display -->
+                        <StackPanel Margin="0,0,0,12">
+                            <TextBlock Text="Cihazınızın HWID Kimliği:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" Margin="0,0,0,3" />
+                            <TextBox x:Name="TxtPromptDeviceHwid" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" FontWeight="Bold" Foreground="#A97E9C" FontSize="11" />
+                        </StackPanel>
+
+                        <!-- Username Input -->
+                        <TextBlock Text="Kullanıcı Adınız / Takma Adınız (Örn: ahmet, mehmet26):" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,4" />
+                        <TextBox x:Name="TxtPromptUsernameInput"
+                                 Style="{StaticResource PinkTextBoxStyle}"
+                                 Height="44"
+                                 MaxLength="24"
+                                 FontSize="14"
+                                 FontWeight="Bold"
+                                 Foreground="#FFFFFF"
+                                 Margin="0,0,0,6"
+                                 KeyDown="TxtPromptUsernameInput_KeyDown" />
+
+                        <TextBlock x:Name="TxtPromptUsernameStatus"
+                                   Text=""
+                                   Foreground="#FF1744"
+                                   FontSize="11.5"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,14"
+                                   TextWrapping="Wrap" />
+
+                        <!-- Save & Start Button -->
+                        <Button x:Name="BtnSaveUsernamePrompt"
+                                Content="✓ Kaydet ve AlpTogether'a Başla"
+                                Style="{StaticResource PinkPrimaryButtonStyle}"
+                                Height="44"
+                                FontSize="13.5"
+                                FontWeight="Bold"
+                                Click="BtnSaveUsernamePrompt_Click" />
+                    </StackPanel>
+                </Border>
             </Grid>
         </Grid>
     </Border>

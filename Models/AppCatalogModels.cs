@@ -33,6 +33,7 @@ namespace AlpTogether.Models
     {
         public string AppName { get; set; } = string.Empty;
         public string AppId { get; set; } = string.Empty;
+        public string AppIconUri { get; set; } = string.Empty;
         public string Version { get; set; } = "1.0.0";
         public string ReleaseDate { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
@@ -229,6 +230,13 @@ namespace AlpTogether.Models
             {
                 if (IsBusy) return $"İŞLENİYOR... %{ProgressPercent:0}";
                 if (IsRunning) return "ÇALIŞIYOR (DURDUR)";
+
+                bool hasAccess = AlpTogether.Services.UserAuthAndPermissionService.Instance.HasAppAccess(Id, out _, out _);
+                if (!hasAccess)
+                {
+                    return IsInstalled ? "⛔ BAŞLAT (YETKİ GEREKLİ)" : "⛔ YÜKLE (YETKİ GEREKLİ)";
+                }
+
                 if (!IsInstalled) return "HEMEN YÜKLE";
                 if (UpdateAvailable) return $"GÜNCELLE (v{LatestVersion})";
                 return "BAŞLAT";
@@ -241,6 +249,10 @@ namespace AlpTogether.Models
             {
                 if (IsBusy) return "İNDİRİLİYOR / ONARILIYOR";
                 if (IsRunning) return "AKTİF ÇALIŞIYOR";
+
+                bool hasAccess = AlpTogether.Services.UserAuthAndPermissionService.Instance.HasAppAccess(Id, out _, out _);
+                if (!hasAccess) return "⛔ YETKİSİZ (WHITELIST GEREKLİ)";
+
                 if (UpdateAvailable) return "GÜNCELLEME MEVCUT";
                 if (IsInstalled) return "KURULU & HAZIR";
                 return "BULUTTA MEVCUT";
@@ -349,11 +361,57 @@ namespace AlpTogether.Models
         public bool CreateDesktopShortcutOnInstall { get; set; } = true;
         public bool EnableAmbientPinkAnimations { get; set; } = true;
 
+        // Developer / Admin Mode settings
+        public bool IsAdminModeUnlocked { get; set; } = false;
+        public string AdminLicenseKey { get; set; } = string.Empty;
+
+        // User identity & Whitelist settings (1 HWID = 1 Unique Nickname)
+        public string RegisteredUsername { get; set; } = string.Empty;
+        public string UserRegistrationDate { get; set; } = string.Empty;
+
         // "Sonradan değiştirilebilir boşluk / log gibi bir yer" özelleştirme verileri
         public string CustomSlotHeader { get; set; } = "Özel Geliştirici & Sistem Boşluğu (Dinamik Alan)";
         public string CustomSlotScratchpad { get; set; } =
             "• Bu alan sonradan eklenecek modüller, hızlı komutlar, canlı duyurular veya özel sistem logları için ayrılmış esnek boşluktur.\n" +
             "• Buraya özel notlar, test parametreleri veya hızlı başlatma komutları ekleyebilirsiniz.";
         public List<CustomWorkspaceSlotItem> CustomSlotItems { get; set; } = new();
+    }
+
+    public class TelemetryEventRecord
+    {
+        public string EventId { get; set; } = "EVT-" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        public string Timestamp { get; set; } = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        public string DeviceId { get; set; } = string.Empty;
+        public string MachineName { get; set; } = Environment.MachineName;
+        public string UserName { get; set; } = Environment.UserName;
+        public string EventType { get; set; } = "DOWNLOAD_STARTED"; // DOWNLOAD_STARTED, INSTALL_SUCCESS, APP_LAUNCHED, APP_STOPPED, CLIENT_STARTED, ERROR, PATH_CHANGED
+        public string AppId { get; set; } = string.Empty;
+        public string AppName { get; set; } = string.Empty;
+        public string AppVersion { get; set; } = string.Empty;
+        public string Details { get; set; } = string.Empty;
+        public string ExtraInfo { get; set; } = string.Empty;
+
+        public string EventBadgeText => EventType switch
+        {
+            "DOWNLOAD_STARTED" => "⬇ İNDİRME",
+            "INSTALL_SUCCESS" => "✔ KURULUM",
+            "APP_LAUNCHED" => "▶ BAŞLATMA",
+            "APP_STOPPED" => "⏹ DURDURMA",
+            "CLIENT_STARTED" => "⚡ İSTEMCİ",
+            "ERROR" => "🚨 HATA",
+            "PATH_CHANGED" => "📁 YOL DEĞİŞİMİ",
+            _ => EventType
+        };
+
+        public string EventColorHex => EventType switch
+        {
+            "DOWNLOAD_STARTED" => "#00E5FF", // Cyan
+            "INSTALL_SUCCESS" => "#00E676",  // Green
+            "APP_LAUNCHED" => "#FF5CAA",     // Pink
+            "APP_STOPPED" => "#FFAB00",      // Amber
+            "CLIENT_STARTED" => "#E040FB",   // Purple
+            "ERROR" => "#FF1744",            // Red
+            _ => "#FF85C0"
+        };
     }
 }

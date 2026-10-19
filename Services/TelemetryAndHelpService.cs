@@ -17,6 +17,7 @@ namespace AlpTogether.Services
         private readonly HttpClient _httpClient;
         private readonly string _crashDir;
         private readonly string _ticketDir;
+        private readonly string _eventsDir;
 
         private TelemetryAndHelpService()
         {
@@ -28,11 +29,13 @@ namespace AlpTogether.Services
 
             _crashDir = Path.Combine(baseDir, "crashes");
             _ticketDir = Path.Combine(baseDir, "tickets");
+            _eventsDir = Path.Combine(baseDir, "events");
 
             try
             {
                 if (!Directory.Exists(_crashDir)) Directory.CreateDirectory(_crashDir);
                 if (!Directory.Exists(_ticketDir)) Directory.CreateDirectory(_ticketDir);
+                if (!Directory.Exists(_eventsDir)) Directory.CreateDirectory(_eventsDir);
             }
             catch { }
         }
@@ -336,6 +339,143 @@ namespace AlpTogether.Services
             catch { }
 
             return result.OrderByDescending(x => x.Timestamp).ToList();
+        }
+
+        /// <summary>
+        /// Kullanıcı hareketlerini (İndirme başladı, kurulum bitti, uygulama çalıştırıldı vb.) buluta ve yerele kaydeder.
+        /// </summary>
+        public async Task<bool> ReportEventAsync(
+            string eventType,
+            string appId,
+            string appName,
+            string appVersion,
+            string details,
+            string extraInfo = "")
+        {
+            var record = new TelemetryEventRecord
+            {
+                EventId = "EVT-" + DateTime.Now.ToString("MMddHHmmss") + "-" + Guid.NewGuid().ToString("N")[..4].ToUpperInvariant(),
+                Timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                DeviceId = SettingsService.Instance.DeviceId,
+                MachineName = Environment.MachineName,
+                UserName = Environment.UserName,
+                EventType = eventType,
+                AppId = appId,
+                AppName = appName,
+                AppVersion = appVersion,
+                Details = details,
+                ExtraInfo = extraInfo
+            };
+
+            // 1. Save locally
+            try
+            {
+                string localFile = Path.Combine(_eventsDir, $"{record.EventId}.json");
+                string jsonLocal = JsonSerializer.Serialize(record, new JsonSerializerOptions { WriteIndented = true });
+                await File.WriteAllTextAsync(localFile, jsonLocal, Encoding.UTF8);
+            }
+            catch { }
+
+            // 2. Push to Firebase RTDB (/alptogether/telemetry/events/{EventId}.json)
+            bool cloudSuccess = false;
+            try
+            {
+                string fbUrl = BuildFirebaseUrl($"alptogether/telemetry/events/{record.EventId}.json");
+                if (!string.IsNullOrWhiteSpace(fbUrl))
+                {
+                    string json = JsonSerializer.Serialize(record);
+                    using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var resp = await _httpClient.PutAsync(fbUrl, content);
+                    cloudSuccess = resp.IsSuccessStatusCode;
+                }
+            }
+            catch { }
+
+            // 3. Webhook notification for downloads or important actions
+            if (eventType == "DOWNLOAD_STARTED" || eventType == "INSTALL_SUCCESS")
+            {
+                _ = TrySendWebhookNotificationAsync(
+                    title: $"📦 Kullanıcı Hareketi: {appName} ({record.EventBadgeText})",
+                    description: $"**Cihaz:** `{record.DeviceId}` ({record.MachineName})\n" +
+                                 $"**Detay:** {details}\n" +
+                                 $"**Sürüm:** v{appVersion}",
+                    colorDecimal: eventType == "INSTALL_SUCCESS" ? 65398 : 58879);
+            }
+
+            return cloudSuccess;
+        }
+
+        public async Task<List<TelemetryEventRecord>> FetchRecentEventsAsync(int limit = 100)
+        {
+            var result = new List<TelemetryEventRecord>();
+
+            // 1. Try Firebase RTDB
+            try
+            {
+                string fbUrl = BuildFirebaseUrl("alptogether/telemetry/events.json");
+                if (!string.IsNullOrWhiteSpace(fbUrl))
+                {
+                    var resp = await _httpClient.GetAsync(fbUrl);
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        string json = await resp.Content.ReadAsStringAsync();
+                        if (!string.IsNullOrWhiteSpace(json) && json != "null")
+                        {
+                            var dict = JsonSerializer.Deserialize<Dictionary<string, TelemetryEventRecord>>(json,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                            if (dict != null)
+                                result.AddRange(dict.Values);
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // 2. Merge local events
+            try
+            {
+                if (Directory.Exists(_eventsDir))
+                {
+                    foreach (var file in Directory.GetFiles(_eventsDir, "*.json"))
+                    {
+                        try
+                        {
+                            var local = JsonSerializer.Deserialize<TelemetryEventRecord>(File.ReadAllText(file));
+                            if (local != null && !result.Any(x => x.EventId == local.EventId))
+                                result.Add(local);
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+
+            return result.OrderByDescending(x => x.Timestamp).Take(limit).ToList();
+        }
+
+        /// <summary>
+        /// Yerel diskte önbelleğe alınmış tüm telemetri ve hata json dosyalarını tamamen siler.
+        /// </summary>
+        public void ClearLocalTelemetryCache()
+        {
+            try
+            {
+                if (Directory.Exists(_eventsDir))
+                {
+                    foreach (var file in Directory.GetFiles(_eventsDir, "*.json"))
+                    {
+                        try { File.Delete(file); } catch { }
+                    }
+                }
+                if (Directory.Exists(_crashDir))
+                {
+                    foreach (var file in Directory.GetFiles(_crashDir, "*.json"))
+                    {
+                        try { File.Delete(file); } catch { }
+                    }
+                }
+            }
+            catch { }
         }
     }
 }

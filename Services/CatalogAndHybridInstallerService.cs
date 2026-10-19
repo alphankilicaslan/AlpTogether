@@ -173,6 +173,7 @@ namespace AlpTogether.Services
                         {
                             note.AppId = app.Id;
                             note.AppName = app.Name;
+                            note.AppIconUri = app.IconPackUri;
                             AllPatchNotes.Add(note);
                         }
                     }
@@ -416,6 +417,23 @@ namespace AlpTogether.Services
         {
             if (app.IsBusy) return false;
 
+            // Whitelist Erişim İzni Kontrolü
+            if (!UserAuthAndPermissionService.Instance.HasAppAccess(app.Id, out string accessReason, out int daysLeft))
+            {
+                string username = UserAuthAndPermissionService.Instance.CurrentUsername;
+                string userHint = string.IsNullOrWhiteSpace(username) ? "Henüz kullanıcı adı belirlenmemiş" : $"Kullanıcı Adınız: '{username}'";
+
+                System.Windows.MessageBox.Show(
+                    $"⛔ {app.Name} için kullanım yetkiniz bulunmuyor!\n\n" +
+                    $"{accessReason}\n\n" +
+                    $"Yetkilendirme tanımlanması için yönetici (Alphan) ile iletişime geçiniz.\n" +
+                    $"{userHint}\nCihaz HWID: {DeveloperAuthService.Instance.DeviceHwid}",
+                    "Kullanım İzni Gerekli", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+
+                AppLoggerService.Instance.Warn("YETKİ", $"{app.Name} indirme/kurulum engellendi: {accessReason}", app.Name);
+                return false;
+            }
+
             app.IsBusy = true;
             app.ProgressPercent = 0;
             app.StatusText = "Kurulum hazırlanıyor...";
@@ -428,6 +446,7 @@ namespace AlpTogether.Services
             };
 
             AppLoggerService.Instance.Info("HİBRİT-KURULUM", $"{app.Name} (v{app.LatestVersion}) için {modeName} başlatıldı.", app.Name, $"Hedef: {app.InstallPath}");
+            _ = TelemetryAndHelpService.Instance.ReportEventAsync("DOWNLOAD_STARTED", app.Id, app.Name, app.LatestVersion, $"İndirme ve kurulum başlatıldı ({modeName})");
 
             try
             {
@@ -609,6 +628,7 @@ namespace AlpTogether.Services
             SettingsService.Instance.Save();
 
             AppLoggerService.Instance.Success("HİBRİT-KURULUM", $"{app.Name} v{app.LatestVersion} kurulumu ve doğrulaması tamamlandı!", app.Name, app.InstallPath);
+            _ = TelemetryAndHelpService.Instance.ReportEventAsync("INSTALL_SUCCESS", app.Id, app.Name, app.LatestVersion, $"Kurulum başarıyla tamamlandı. Konum: {app.InstallPath}");
         }
 
         private async Task<bool> RunStandaloneInstallerFlowAsync(AlpAppItem app)
@@ -943,7 +963,25 @@ namespace AlpTogether.Services
                 await Task.Delay(300);
                 RefreshSingleAppState(app);
                 AppLoggerService.Instance.Info("BAŞLATICI", $"{app.Name} durduruldu ({stopped} süreç kapatıldı).", app.Name);
+                _ = TelemetryAndHelpService.Instance.ReportEventAsync("APP_STOPPED", app.Id, app.Name, app.InstalledVersion, "Uygulama durduruldu");
                 return true;
+            }
+
+            // Whitelist Erişim İzni Kontrolü
+            if (!UserAuthAndPermissionService.Instance.HasAppAccess(app.Id, out string accessReason, out int daysLeft))
+            {
+                string username = UserAuthAndPermissionService.Instance.CurrentUsername;
+                string userHint = string.IsNullOrWhiteSpace(username) ? "Henüz kullanıcı adı belirlenmemiş" : $"Kullanıcı Adınız: '{username}'";
+
+                System.Windows.MessageBox.Show(
+                    $"⛔ {app.Name} uygulamasını başlatma yetkiniz bulunmuyor!\n\n" +
+                    $"{accessReason}\n\n" +
+                    $"Yetkilendirme tanımlanması için yönetici (Alphan) ile iletişime geçiniz.\n" +
+                    $"{userHint}\nCihaz HWID: {DeveloperAuthService.Instance.DeviceHwid}",
+                    "Kullanım İzni Gerekli", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+
+                AppLoggerService.Instance.Warn("YETKİ", $"{app.Name} başlatma engellendi: {accessReason}", app.Name);
+                return false;
             }
 
             string exePath = Path.Combine(app.InstallPath, app.ExecutableName);
@@ -966,6 +1004,7 @@ namespace AlpTogether.Services
                 app.IsRunning = true;
                 app.StatusText = "Uygulama çalışıyor";
                 AppLoggerService.Instance.Success("BAŞLATICI", $"{app.Name} (v{app.InstalledVersion}) başlatıldı.", app.Name, exePath);
+                _ = TelemetryAndHelpService.Instance.ReportEventAsync("APP_LAUNCHED", app.Id, app.Name, app.InstalledVersion, $"Uygulama başlatıldı (PID: {proc?.Id})");
 
                 if (proc != null && SettingsService.Instance.Current.MonitorLaunchedAppsForCrashes)
                 {
@@ -1299,8 +1338,8 @@ namespace AlpTogether.Services
                         Description = "AlpNet Pulse; düşük gecikmeli Cloudflare WARP tünel yönetimi, DNSCrypt/DoH şifreleme, paket analizi ve gerçek zamanlı yapay zeka sesli çeviri motorunu (translator.exe) tek çatı altında sunan amiral gemisi ağ ve iletişim aracıdır.",
                         AccentColorHex = "#1E88E5",
                         IconPackUri = "pack://application:,,,/Assets/AppIcons/alpnet_official.png",
-                        LatestVersion = "2.2.4",
-                        ReleaseDate = "16 Ekim 2026",
+                        LatestVersion = "2.2.5",
+                        ReleaseDate = "18 Ekim 2026",
                         DownloadSizeText = "81.4 MB",
                         SizeBytes = 81400000,
                         PackageType = AppPackageType.HybridSetupAndFiles,
@@ -1332,6 +1371,20 @@ namespace AlpTogether.Services
                         {
                             new PatchNoteEntry
                             {
+                                Version = "2.2.5",
+                                ReleaseDate = "18 Ekim 2026",
+                                Title = "AlpTogether Bulut Whitelist & Merkezi Yetkilendirme Entegrasyonu",
+                                Tag = "YENİLİK & EKOSİSTEM",
+                                Changes = new List<string>
+                                {
+                                    "AlpTogether Merkezi Bulut Whitelist doğrulaması eklendi; lisans anahtarı girmeden doğrudan bulut yetkisiyle açılış desteği sağlandı.",
+                                    "Geriye dönük %100 çevrimdışı lisans uyumluluğu korundu; mevcut anahtara sahip kullanıcılar kesintisiz çalışmaya devam eder.",
+                                    "Aktivasyon ekranına '✦ AlpTogether Yetkisini Doğrula 🔄' tek-tık hızlı sorgulama butonu entegre edildi.",
+                                    "Bulut kullanıcı kalp atışı (heartbeat) ve ekosistem senkronizasyonu güncellendi."
+                                }
+                            },
+                            new PatchNoteEntry
+                            {
                                 Version = "2.2.4",
                                 ReleaseDate = "16 Ekim 2026",
                                 Title = "Hibrit Kurulum, QUIC/HTTP3 Politikası ve Ses Çeviri İyileştirmesi",
@@ -1356,8 +1409,8 @@ namespace AlpTogether.Services
                         Description = "Gelir-gider takibi, vergi dilimi analizi, fatura arşivleme ve geleceğe yönelik finansal senaryo simülasyonlarını yüksek hızlı yerel SQLite motoruyla sunan masaüstü finans yönetim merkezi.",
                         AccentColorHex = "#00C853",
                         IconPackUri = "pack://application:,,,/Assets/AppIcons/alpfinans_official.png",
-                        LatestVersion = "1.0.0",
-                        ReleaseDate = "16 Ekim 2026",
+                        LatestVersion = "1.1.0",
+                        ReleaseDate = "19 Ekim 2026",
                         DownloadSizeText = "34.2 MB",
                         SizeBytes = 34200000,
                         PackageType = AppPackageType.SingleExecutable,
@@ -1385,6 +1438,18 @@ namespace AlpTogether.Services
                         {
                             new PatchNoteEntry
                             {
+                                Version = "1.1.0",
+                                ReleaseDate = "19 Ekim 2026",
+                                Title = "AlpTogether Bulut Whitelist & Merkezi Yetkilendirme Entegrasyonu",
+                                Tag = "GÜNCELLEME",
+                                Changes = new List<string>
+                                {
+                                    "AlpTogether merkezi bulut whitelist doğrulaması entegre edildi.",
+                                    "Geliştirici ana makinesi (MONSTERALPHAN) için anında erişim tanımlandı."
+                                }
+                            },
+                            new PatchNoteEntry
+                            {
                                 Version = "1.0.0",
                                 ReleaseDate = "16 Ekim 2026",
                                 Title = "Finansal Simülatör, Gelir/Gider Yönetimi ve Vergi Analizi",
@@ -1408,10 +1473,10 @@ namespace AlpTogether.Services
                         Description = "Şirket dokümanlarını ve teknik mimarileri analiz eden, 3 boyutlu bilgi grafiği (3D Knowledge Graph) oluşturan, yerel ve bulut LLM modelleriyle sesli/yazılı etkileşim kuran gelişmiş yapay zeka istemcisi.",
                         AccentColorHex = "#FF6D00",
                         IconPackUri = "pack://application:,,,/Assets/AppIcons/alphagravity_official.png",
-                        LatestVersion = "1.0.0",
-                        ReleaseDate = "16 Ekim 2026",
-                        DownloadSizeText = "68.5 MB",
-                        SizeBytes = 68500000,
+                        LatestVersion = "1.1.0",
+                        ReleaseDate = "19 Ekim 2026",
+                        DownloadSizeText = "208 MB",
+                        SizeBytes = 208500000,
                         PackageType = AppPackageType.SingleExecutable,
                         PreferredHybridMode = HybridInstallMode.DirectFiles,
                         DirectDownloadUrl = "https://github.com/alphankilicaslan/AlphaGravity/releases/latest/download/AlphaGravity.exe",
@@ -1436,6 +1501,19 @@ namespace AlpTogether.Services
                         },
                         PatchNotes = new List<PatchNoteEntry>
                         {
+                            new PatchNoteEntry
+                            {
+                                Version = "1.1.0",
+                                ReleaseDate = "19 Ekim 2026",
+                                Title = "Bulut Whitelist, API Key Kalıcılığı & Kararlı Tek Dosya Çalışma",
+                                Tag = "GÜNCELLEME",
+                                Changes = new List<string>
+                                {
+                                    "AlpTogether merkezi bulut whitelist doğrulaması entegre edildi.",
+                                    "Kullanıcı API anahtarları kalıcı kullanıcı profiline (AppData) kaydedilerek oturumlar arası korundu.",
+                                    "Tam bağımsız (self-contained) tek dosya çalıştırılabilir mimariyle başlatma kararlılığı sağlandı."
+                                }
+                            },
                             new PatchNoteEntry
                             {
                                 Version = "1.0.0",
@@ -1561,5 +1639,58 @@ namespace AlpTogether.Services
                 }
             };
         }
+        #region Windows AutoStart Management
+        public bool IsAppAutoStartEnabled(string appId)
+        {
+            if (string.Equals(appId, "alpnet-pulse", StringComparison.OrdinalIgnoreCase))
+                return true; // AlpNet is always on boot (User rule: alpnet hep aciliyor, kodlari karistirma)
+
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false);
+                if (key != null)
+                {
+                    string regName = $"AlpTogether_{appId}";
+                    var val = key.GetValue(regName);
+                    if (val != null) return true;
+                }
+            }
+            catch { }
+
+            return false;
+        }
+
+        public bool SetAppAutoStart(string appId, string exePath, bool enable)
+        {
+            if (string.Equals(appId, "alpnet-pulse", StringComparison.OrdinalIgnoreCase))
+                return true; // DO NOT touch AlpNet startup!
+
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                if (key != null)
+                {
+                    string regName = $"AlpTogether_{appId}";
+                    if (enable && File.Exists(exePath))
+                    {
+                        key.SetValue(regName, $"\"{exePath}\"");
+                        AppLoggerService.Instance.Success("BAŞLANGIÇ", $"{appId} bilgisayar açılışına eklendi.", appId);
+                    }
+                    else
+                    {
+                        key.DeleteValue(regName, false);
+                        AppLoggerService.Instance.Info("BAŞLANGIÇ", $"{appId} bilgisayar açılışından kaldırıldı.", appId);
+                    }
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLoggerService.Instance.Error("BAŞLANGIÇ-HATA", $"Açılış ayarı değiştirilemedi: {ex.Message}", appId);
+            }
+
+            return false;
+        }
+        #endregion
     }
 }

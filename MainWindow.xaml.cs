@@ -4,10 +4,12 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
@@ -24,6 +26,12 @@ namespace AlpTogether
         private string _activeFilter = "ALL"; // ALL, INSTALLED, UPDATES
         private bool _suppressRadioEvent;
         private readonly DispatcherTimer _processMonitorTimer;
+        private int _logoClickCount = 0;
+        private DateTime _lastLogoClickTime = DateTime.MinValue;
+        private List<TelemetryEventRecord> _allDevEvents = new();
+        private string _devEventFilter = "ALL";
+        private List<AlpTogetherUserRecord> _allAdminUsers = new();
+        private AlpTogetherUserRecord? _selectedAdminUser;
 
         public MainWindow()
         {
@@ -36,6 +44,8 @@ namespace AlpTogether
             _processMonitorTimer.Tick += ProcessMonitorTimer_Tick;
 
             Loaded += MainWindow_Loaded;
+            SourceInitialized += MainWindow_SourceInitialized;
+            StateChanged += Window_StateChanged;
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -49,6 +59,14 @@ namespace AlpTogether
             // Bind speed callback
             CatalogAndHybridInstallerService.Instance.OnGlobalBandwidthTick += Instance_OnGlobalBandwidthTick;
             CatalogAndHybridInstallerService.Instance.OnCatalogUpdated += Instance_OnCatalogUpdated;
+
+            // Developer / Admin Mode initialization
+            DeveloperAuthService.Instance.OnAdminModeChanged += Instance_OnAdminModeChanged;
+            UpdateAdminVisibility(DeveloperAuthService.Instance.IsAdminMode);
+
+            // Populate device HWID in dev tools
+            TxtDevThisHwid.Text = DeveloperAuthService.Instance.DeviceHwid;
+            TxtModalDeviceHwid.Text = DeveloperAuthService.Instance.DeviceHwid;
 
             // Load settings into UI
             LoadSettingsIntoUi();
@@ -73,8 +91,45 @@ namespace AlpTogether
             DrawSpeedChart();
             _processMonitorTimer.Start();
 
+            // Send client startup telemetry
+            _ = TelemetryAndHelpService.Instance.ReportEventAsync(
+                "CLIENT_STARTED",
+                "AlpTogether",
+                "AlpTogether Client",
+                "1.0.0",
+                $"İstemci başlatıldı ({Environment.OSVersion}, .NET {Environment.Version})");
+
             // Load incoming tickets & error telemetry in background
             _ = RefreshTelemetryInboxAsync();
+
+            if (DeveloperAuthService.Instance.IsAdminMode)
+            {
+                _ = RefreshDevTelemetryAsync();
+            }
+
+            // Listen to live permission changes (grant / revoke)
+            UserAuthAndPermissionService.Instance.OnPermissionsChanged += () =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (_selectedApp != null) UpdateHeroPanel(_selectedApp);
+                    RefreshFilteredAppCards();
+                });
+            };
+
+            // Kullanıcı Kayıt Kontrolü (1 HWID = 1 Benzersiz Takma İsim)
+            if (!UserAuthAndPermissionService.Instance.IsRegistered)
+            {
+                TxtPromptDeviceHwid.Text = UserAuthAndPermissionService.Instance.DeviceHwid;
+                ModalUsernamePrompt.Visibility = Visibility.Visible;
+                TxtPromptUsernameInput.Focus();
+            }
+            else
+            {
+                await UserAuthAndPermissionService.Instance.SyncSelfAndHeartbeatAsync();
+                if (_selectedApp != null) UpdateHeroPanel(_selectedApp);
+                RefreshFilteredAppCards();
+            }
         }
 
         private void ProcessMonitorTimer_Tick(object? sender, EventArgs e)
@@ -191,6 +246,20 @@ namespace AlpTogether
                 ? $"Hibrit Kurulum Aracı: {app.InstallerFileName} ({app.InstallerSilentArgs})"
                 : "Kurulum Tipi: Doğrudan Paket / Arşiv Senkronizasyonu";
             IcSelectedAppCompanions.ItemsSource = app.CompanionFiles;
+
+            if (ChkAppAutoStart != null)
+            {
+                ChkAppAutoStart.IsChecked = CatalogAndHybridInstallerService.Instance.IsAppAutoStartEnabled(app.Id);
+                ChkAppAutoStart.IsEnabled = app.Id != "alpnet-pulse";
+                if (app.Id == "alpnet-pulse")
+                {
+                    ChkAppAutoStart.ToolTip = "AlpNet Pulse sistem bileşeni olduğu için başlangıçta her zaman çalışır ve kapatılamaz.";
+                }
+                else
+                {
+                    ChkAppAutoStart.ToolTip = "Bu uygulamanın Windows açıldığında otomatik olarak arka planda başlamasını sağlar.";
+                }
+            }
         }
 
         private void RefreshFilteredAppCards()
@@ -277,7 +346,29 @@ namespace AlpTogether
             SwitchToView(ViewHelpAndFeedback);
             _ = RefreshTelemetryInboxAsync();
         }
-        private void BtnNavPublisher_Click(object sender, RoutedEventArgs e) => SwitchToView(ViewPublisherAndSettings);
+        private void Instance_OnAdminModeChanged(bool isAdmin)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                UpdateAdminVisibility(isAdmin);
+                if (isAdmin)
+                {
+                    _ = RefreshDevTelemetryAsync();
+                }
+            });
+        }
+
+        private void UpdateAdminVisibility(bool isAdmin)
+        {
+            BtnNavDevStudio.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void BtnNavDevStudio_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchToView(ViewPublisherAndSettings);
+            SwitchDevSubView(DevSubViewUsers, BtnDevSubTabUsers);
+            _ = RefreshAdminUsersAsync();
+        }
 
         // ==================== WINDOW CHROME & TOP BAR ====================
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -297,19 +388,164 @@ namespace AlpTogether
 
         private void BtnMaximize_Click(object sender, RoutedEventArgs e)
         {
+            WindowState = (WindowState == WindowState.Maximized) ? WindowState.Normal : WindowState.Maximized;
+        }
+
+        private void Window_StateChanged(object? sender, EventArgs e)
+        {
             if (WindowState == WindowState.Maximized)
             {
-                WindowState = WindowState.Normal;
-                OuterWindowBorder.CornerRadius = new CornerRadius(16);
+                OuterWindowBorder.CornerRadius = new CornerRadius(0);
+                OuterWindowBorder.Margin = new Thickness(6);
             }
             else
             {
-                WindowState = WindowState.Maximized;
-                OuterWindowBorder.CornerRadius = new CornerRadius(0);
+                OuterWindowBorder.CornerRadius = new CornerRadius(16);
+                OuterWindowBorder.Margin = new Thickness(0);
             }
         }
 
         private void BtnClose_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
+
+        #region Win32 Non-Client / Work Area Maximization Fix
+        private void MainWindow_SourceInitialized(object? sender, EventArgs e)
+        {
+            IntPtr handle = new WindowInteropHelper(this).Handle;
+            HwndSource.FromHwnd(handle)?.AddHook(WindowProc);
+        }
+
+        private IntPtr WindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_GETMINMAXINFO)
+            {
+                WmGetMinMaxInfo(hwnd, lParam);
+                handled = true;
+            }
+            return IntPtr.Zero;
+        }
+
+        private const int WM_GETMINMAXINFO = 0x0024;
+        private const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll")]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, [In, Out] MONITORINFO lpmi);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int x;
+            public int y;
+            public POINT(int x, int y) { this.x = x; this.y = y; }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MINMAXINFO
+        {
+            public POINT ptReserved;
+            public POINT ptMaxSize;
+            public POINT ptMaxPosition;
+            public POINT ptMinTrackSize;
+            public POINT ptMaxTrackSize;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public class MONITORINFO
+        {
+            public int cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+            public RECT rcMonitor = new RECT();
+            public RECT rcWork = new RECT();
+            public int dwFlags = 0;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        }
+
+        private void WmGetMinMaxInfo(IntPtr hwnd, IntPtr lParam)
+        {
+            MINMAXINFO mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+            IntPtr monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            if (monitor != IntPtr.Zero)
+            {
+                MONITORINFO mi = new MONITORINFO();
+                if (GetMonitorInfo(monitor, mi))
+                {
+                    RECT rcWork = mi.rcWork;
+                    RECT rcMonitor = mi.rcMonitor;
+
+                    mmi.ptMaxPosition.x = Math.Abs(rcWork.left - rcMonitor.left);
+                    mmi.ptMaxPosition.y = Math.Abs(rcWork.top - rcMonitor.top);
+                    mmi.ptMaxSize.x = Math.Abs(rcWork.right - rcWork.left);
+                    mmi.ptMaxSize.y = Math.Abs(rcWork.bottom - rcWork.top);
+                }
+            }
+            Marshal.StructureToPtr(mmi, lParam, true);
+        }
+        #endregion
+
+        #region Anime Mascot Interactive Showcase Handlers
+        private void BtnCloseMascotBanner_Click(object sender, RoutedEventArgs e)
+        {
+            AnimeMascotBanner.Visibility = Visibility.Collapsed;
+        }
+
+        private void BtnMascotApp_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string appId)
+            {
+                var app = CatalogAndHybridInstallerService.Instance.Apps.FirstOrDefault(a => string.Equals(a.Id, appId, StringComparison.OrdinalIgnoreCase));
+                if (app != null)
+                {
+                    SelectApp(app);
+                    TxtAnimeSpeechBubble.Text = appId switch
+                    {
+                        "alpnet-pulse" => "🌐 AlpNet Pulse seçildi! Akıllı WARP optimizasyonu ve canlı ses çevirisi ile oyunlarda en düşük ping ve anında iletişim seninle.",
+                        "alphagravity" => "🤖 AlphaGravity seçildi! Gemini, Claude ve yerel LLM modellerini bir araya getiren güçlü AI merkezine hoş geldin.",
+                        "alpfinans" => "📈 AlpFinans seçildi! Borsa, portföy ve finansal hareketlerini gerçek zamanlı takip etmeye hemen başlayabilirsin.",
+                        "alplingo" => "🎮 AlpLingo seçildi! Oyun içi ekran üzeri anlık çeviri ve OCR destekli yapay zeka çevirmeni hazır.",
+                        "alprust-plus" => "🛡 AlpRust+ seçildi! Rust akıllı cihazların, elektrik santrallerin ve bildirimlerin tek masaüstü ekranında.",
+                        _ => $"✨ {app.Name} uygulaması seçildi! Hemen sağdaki butondan başlatabilir veya kurabilirsin."
+                    };
+                }
+            }
+        }
+        #endregion
+
+        #region Windows AutoStart Toggle
+        private void ChkAppAutoStart_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedApp == null) return;
+            if (_selectedApp.Id == "alpnet-pulse")
+            {
+                ChkAppAutoStart.IsChecked = true;
+                MessageBox.Show("AlpNet Pulse sistem çekirdeği olduğu için Windows başlangıcında otomatik başlar ve değiştirilemez.", "Bilgi", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            bool enable = ChkAppAutoStart.IsChecked == true;
+            string exePath = !string.IsNullOrEmpty(_selectedApp.InstallPath) && !string.IsNullOrEmpty(_selectedApp.ExecutableName)
+                ? Path.Combine(_selectedApp.InstallPath, _selectedApp.ExecutableName)
+                : string.Empty;
+            bool ok = CatalogAndHybridInstallerService.Instance.SetAppAutoStart(_selectedApp.Id, exePath, enable);
+            if (ok)
+            {
+                AppLoggerService.Instance.Info("OTORUN", $"{_selectedApp.Name} başlangıç ayarı {(enable ? "etkinleştirildi" : "devre dışı bırakıldı")}.", "AlpTogether");
+            }
+            else
+            {
+                MessageBox.Show("Başlangıç ayarı kaydedilemedi. Uygulamanın kurulu olduğundan emin olun.", "Hata", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ChkAppAutoStart.IsChecked = !enable;
+            }
+        }
+        #endregion
 
         private void TxtSearchApps_TextChanged(object sender, TextChangedEventArgs e) => RefreshFilteredAppCards();
 
@@ -939,6 +1175,929 @@ namespace AlpTogether
             SettingsService.Instance.Save();
             AppLoggerService.Instance.Success("AYARLAR", "Bulut, GitHub ve Telemetri ayarları kaydedildi.");
             MessageBox.Show("İstemci ayarları başarıyla kaydedildi!", "Ayarlar Kaydedildi", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        // ==================== DEVELOPER STUDIO SUB-TABS ====================
+        private void SwitchDevSubView(UIElement targetView, Button? activeTabBtn)
+        {
+            DevSubViewUsers.Visibility = ReferenceEquals(DevSubViewUsers, targetView) ? Visibility.Visible : Visibility.Collapsed;
+            DevSubViewTelemetry.Visibility = ReferenceEquals(DevSubViewTelemetry, targetView) ? Visibility.Visible : Visibility.Collapsed;
+            DevSubViewPublisher.Visibility = ReferenceEquals(DevSubViewPublisher, targetView) ? Visibility.Visible : Visibility.Collapsed;
+            DevSubViewKeygen.Visibility = ReferenceEquals(DevSubViewKeygen, targetView) ? Visibility.Visible : Visibility.Collapsed;
+            DevSubViewSettings.Visibility = ReferenceEquals(DevSubViewSettings, targetView) ? Visibility.Visible : Visibility.Collapsed;
+
+            BtnDevSubTabUsers.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+            BtnDevSubTabTelemetry.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+            BtnDevSubTabPublisher.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+            BtnDevSubTabSettings.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+
+            if (activeTabBtn != null)
+            {
+                activeTabBtn.Style = (Style)FindResource("PinkPrimaryButtonStyle");
+            }
+        }
+
+        private void BtnDevSubTabUsers_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchDevSubView(DevSubViewUsers, BtnDevSubTabUsers);
+            _ = RefreshAdminUsersAsync();
+        }
+
+        private void BtnDevSubTabTelemetry_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchDevSubView(DevSubViewTelemetry, BtnDevSubTabTelemetry);
+            _ = RefreshDevTelemetryAsync();
+        }
+
+        // ==================== KULLANICI KAYIT MODALI (1 HWID = 1 BENZERSİZ İSİM) ====================
+        private async void BtnSaveUsernamePrompt_Click(object sender, RoutedEventArgs e)
+        {
+            string chosenName = TxtPromptUsernameInput.Text.Trim();
+            if (string.IsNullOrWhiteSpace(chosenName))
+            {
+                TxtPromptUsernameStatus.Text = "Lütfen bir kullanıcı adı girin.";
+                return;
+            }
+
+            BtnSaveUsernamePrompt.IsEnabled = false;
+            BtnSaveUsernamePrompt.Content = "Kontrol Ediliyor ve Kaydediliyor...";
+            TxtPromptUsernameStatus.Text = "";
+
+            var (success, message) = await UserAuthAndPermissionService.Instance.TryRegisterUsernameAsync(chosenName);
+            if (success)
+            {
+                ModalUsernamePrompt.Visibility = Visibility.Collapsed;
+                MessageBox.Show($"Hoş geldiniz, {chosenName}!\n\nKullanıcı adınız başarıyla kaydedildi ve bu cihazın HWID kimliğine bağlandı.\nUygulama yetkileri için yöneticiye (Alphan) bu adınızı iletebilirsiniz.",
+                    "Kayıt Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                TxtPromptUsernameStatus.Text = message;
+            }
+
+            BtnSaveUsernamePrompt.IsEnabled = true;
+            BtnSaveUsernamePrompt.Content = "✓ Kaydet ve AlpTogether'a Başla";
+        }
+
+        private void TxtPromptUsernameInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                BtnSaveUsernamePrompt_Click(sender, e);
+            }
+        }
+
+        // ==================== KULLANICI & WHITELIST YÖNETİM MASASI ====================
+        private async Task RefreshAdminUsersAsync()
+        {
+            BtnDevRefreshUsers.IsEnabled = false;
+            BtnDevRefreshUsers.Content = "Yenileniyor...";
+
+            try
+            {
+                _allAdminUsers = await UserAuthAndPermissionService.Instance.FetchAllUsersAsync();
+                TxtDevTotalUsersCount.Text = _allAdminUsers.Count.ToString();
+                FilterAdminUsers();
+
+                if (_selectedAdminUser != null)
+                {
+                    var updated = _allAdminUsers.FirstOrDefault(u => string.Equals(u.Hwid, _selectedAdminUser.Hwid, StringComparison.OrdinalIgnoreCase));
+                    if (updated != null)
+                    {
+                        _selectedAdminUser = updated;
+                        UpdateSelectedUserUi(updated);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLoggerService.Instance.Error("ADMİN-USER", "Kullanıcı tablosu yenilenemedi: " + ex.Message);
+            }
+            finally
+            {
+                BtnDevRefreshUsers.IsEnabled = true;
+                BtnDevRefreshUsers.Content = "🔄 Listeyi Yenile";
+            }
+        }
+
+        private void FilterAdminUsers()
+        {
+            string q = (TxtSearchUsers.Text ?? "").Trim();
+            if (string.IsNullOrEmpty(q))
+            {
+                LstAdminUsers.ItemsSource = null;
+                LstAdminUsers.ItemsSource = _allAdminUsers;
+            }
+            else
+            {
+                var filtered = _allAdminUsers.Where(u =>
+                    u.Username.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    u.AdminAlias.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    u.Hwid.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    u.AlpNetHwid.Contains(q, StringComparison.OrdinalIgnoreCase)
+                ).ToList();
+                LstAdminUsers.ItemsSource = null;
+                LstAdminUsers.ItemsSource = filtered;
+            }
+        }
+
+        private void TxtSearchUsers_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            FilterAdminUsers();
+        }
+
+        private void LstAdminUsers_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (LstAdminUsers.SelectedItem is AlpTogetherUserRecord user)
+            {
+                _selectedAdminUser = user;
+                UpdateSelectedUserUi(user);
+            }
+        }
+
+        private void UpdateSelectedUserUi(AlpTogetherUserRecord? user)
+        {
+            if (user == null)
+            {
+                PnlNoUserSelected.Visibility = Visibility.Visible;
+                PnlSelectedUserDetails.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            PnlNoUserSelected.Visibility = Visibility.Collapsed;
+            PnlSelectedUserDetails.Visibility = Visibility.Visible;
+
+            TxtDevUserAvatar.Text = user.InitialLetter;
+            TxtDevUserTitle.Text = user.DisplayName;
+            TxtDevUserRegDate.Text = user.RegisteredAtDisplay;
+            TxtDevUserLastSeen.Text = user.LastSeenDisplay;
+            TxtDevUserHwid.Text = $"HWID: {user.Hwid}" + (string.IsNullOrWhiteSpace(user.AlpNetHwid) ? "" : $" | AlpNet: {user.AlpNetHwid}");
+            TxtDevUserAliasInput.Text = user.AdminAlias;
+
+            // AlpLingo Status
+            if (user.AppPermissions.TryGetValue("alplingo", out var lingoPerm) && lingoPerm.HasAccess && !lingoPerm.IsExpired)
+            {
+                TxtAlpLingoStatusBadge.Text = lingoPerm.StatusBadge;
+                TxtAlpLingoStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(lingoPerm.StatusColorHex));
+                BrdAlpLingoStatus.BorderBrush = TxtAlpLingoStatusBadge.Foreground;
+                TxtAlpLingoStatusDesc.Text = lingoPerm.StatusDescription;
+            }
+            else
+            {
+                TxtAlpLingoStatusBadge.Text = "⛔ Yetkisiz";
+                TxtAlpLingoStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
+                BrdAlpLingoStatus.BorderBrush = TxtAlpLingoStatusBadge.Foreground;
+                TxtAlpLingoStatusDesc.Text = "AlpLingo için henüz yetki verilmemiş veya süresi dolmuş.";
+            }
+
+            // AlpNet Pulse Status
+            if (user.AppPermissions.TryGetValue("alpnet-pulse", out var pulsePerm) && pulsePerm.HasAccess && !pulsePerm.IsExpired)
+            {
+                TxtAlpNetStatusBadge.Text = pulsePerm.StatusBadge;
+                TxtAlpNetStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(pulsePerm.StatusColorHex));
+                BrdAlpNetStatus.BorderBrush = TxtAlpNetStatusBadge.Foreground;
+                TxtAlpNetStatusDesc.Text = pulsePerm.StatusDescription;
+            }
+            else
+            {
+                TxtAlpNetStatusBadge.Text = "⛔ Yetkisiz";
+                TxtAlpNetStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
+                BrdAlpNetStatus.BorderBrush = TxtAlpNetStatusBadge.Foreground;
+                TxtAlpNetStatusDesc.Text = "AlpNet Pulse için henüz yetki verilmemiş veya süresi dolmuş.";
+            }
+
+            // AlpFinans Status
+            if (user.AppPermissions.TryGetValue("alpfinans", out var finansPerm) && finansPerm.HasAccess && !finansPerm.IsExpired)
+            {
+                TxtAlpFinansStatusBadge.Text = finansPerm.StatusBadge;
+                TxtAlpFinansStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(finansPerm.StatusColorHex));
+                BrdAlpFinansStatus.BorderBrush = TxtAlpFinansStatusBadge.Foreground;
+                TxtAlpFinansStatusDesc.Text = finansPerm.StatusDescription;
+            }
+            else
+            {
+                TxtAlpFinansStatusBadge.Text = "⛔ Yetkisiz";
+                TxtAlpFinansStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
+                BrdAlpFinansStatus.BorderBrush = TxtAlpFinansStatusBadge.Foreground;
+                TxtAlpFinansStatusDesc.Text = "AlpFinans için henüz yetki verilmemiş veya süresi dolmuş.";
+            }
+
+            // AlphaGravity Status
+            if (user.AppPermissions.TryGetValue("alphagravity", out var gravPerm) && gravPerm.HasAccess && !gravPerm.IsExpired)
+            {
+                TxtAlphaGravityStatusBadge.Text = gravPerm.StatusBadge;
+                TxtAlphaGravityStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(gravPerm.StatusColorHex));
+                BrdAlphaGravityStatus.BorderBrush = TxtAlphaGravityStatusBadge.Foreground;
+                TxtAlphaGravityStatusDesc.Text = gravPerm.StatusDescription;
+            }
+            else
+            {
+                TxtAlphaGravityStatusBadge.Text = "⛔ Yetkisiz";
+                TxtAlphaGravityStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
+                BrdAlphaGravityStatus.BorderBrush = TxtAlphaGravityStatusBadge.Foreground;
+                TxtAlphaGravityStatusDesc.Text = "AlphaGravity için henüz yetki verilmemiş veya süresi dolmuş.";
+            }
+
+            // Update Admin Role button state
+            if (BtnDevToggleAdminRole != null)
+            {
+                if (user.IsAdmin)
+                {
+                    BtnDevToggleAdminRole.Content = "👑 Admin Yetkisini Geri Al";
+                    BtnDevToggleAdminRole.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+                }
+                else
+                {
+                    BtnDevToggleAdminRole.Content = "👑 Yönetici (Admin) Ata";
+                    BtnDevToggleAdminRole.Style = (Style)FindResource("PinkPrimaryButtonStyle");
+                }
+            }
+        }
+
+        private void BtnDevRefreshUsers_Click(object sender, RoutedEventArgs e)
+        {
+            _ = RefreshAdminUsersAsync();
+        }
+
+        private async void BtnDevImportLegacyAlpNet_Click(object sender, RoutedEventArgs e)
+        {
+            var confirm = MessageBox.Show(
+                "Firebase /users/ altındaki eski AlpNet Pulse kullanıcılarını aktarıp AlpNet Pulse yetkisi vermek istiyor musunuz?\n\n(Not: Var olan kullanıcılar ve anahtarları asla bozulmaz.)",
+                "Eski AlpNet Kullanıcılarını Aktar",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (confirm != MessageBoxResult.Yes) return;
+
+            BtnDevImportLegacyAlpNet.IsEnabled = false;
+            BtnDevImportLegacyAlpNet.Content = "Aktarılıyor...";
+
+            var (imported, merged) = await UserAuthAndPermissionService.Instance.ImportLegacyAlpNetUsersAsync();
+
+            MessageBox.Show(
+                $"İşlem Başarıyla Tamamlandı!\n\n" +
+                $"• Yeni Eklenen AlpNet Kullanıcısı: {imported}\n" +
+                $"• Mevcut Hesabıyla Birleştirilen (Örn. Alphan): {merged}\n\n" +
+                $"Tüm lisans anahtarları ve süreleri başarıyla çözümlenerek Whitelist Masasına entegre edildi.",
+                "AlpNet Kullanıcı ve Lisans Aktarımı", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            _ = RefreshAdminUsersAsync();
+            BtnDevImportLegacyAlpNet.IsEnabled = true;
+            BtnDevImportLegacyAlpNet.Content = "📥 Eski AlpNet Kullanıcılarını Aktar";
+        }
+
+        private async void BtnSaveUserAlias_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+
+            string alias = TxtDevUserAliasInput.Text.Trim();
+            BtnSaveUserAlias.IsEnabled = false;
+            BtnSaveUserAlias.Content = "Kaydediliyor...";
+
+            bool ok = await UserAuthAndPermissionService.Instance.UpdateUserAliasAsync(_selectedAdminUser.Hwid, alias);
+            if (ok)
+            {
+                _selectedAdminUser.AdminAlias = alias;
+                UpdateSelectedUserUi(_selectedAdminUser);
+                FilterAdminUsers();
+                MessageBox.Show("Kullanıcı takma adı / notu başarıyla güncellendi!", "Kaydedildi", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("Takma ad kaydedilirken hata oluştu. Bağlantınızı kontrol edin.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            BtnSaveUserAlias.IsEnabled = true;
+            BtnSaveUserAlias.Content = "💾 Kaydet";
+        }
+
+        private int GetDurationDaysFromCombo(ComboBox cmb)
+        {
+            if (cmb.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out int days))
+            {
+                return days;
+            }
+            return 30;
+        }
+
+        private async void BtnGrantAlpLingo_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+
+            int days = GetDurationDaysFromCombo(CmbDurationAlpLingo);
+            BtnGrantAlpLingo.IsEnabled = false;
+            BtnGrantAlpLingo.Content = "Yetki Veriliyor...";
+
+            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alplingo", days);
+            if (ok)
+            {
+                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpLingo yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            BtnGrantAlpLingo.IsEnabled = true;
+            BtnGrantAlpLingo.Content = "⚡ Yetki Ver / Uzat";
+        }
+
+        private async void BtnRevokeAlpLingo_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+
+            var res = MessageBox.Show(
+                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlpLingo yetkisini kaldırmak istiyor musunuz?\n\n(ÖNEMLİ: Kullanıcı veritabanından silinmeyecektir, sadece AlpLingo erişimi kapatılacaktır.)",
+                "Yetkiyi Kaldır",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (res != MessageBoxResult.Yes) return;
+
+            BtnRevokeAlpLingo.IsEnabled = false;
+            BtnRevokeAlpLingo.Content = "Kaldırılıyor...";
+
+            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alplingo");
+            if (ok)
+            {
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpLingo yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            BtnRevokeAlpLingo.IsEnabled = true;
+            BtnRevokeAlpLingo.Content = "⛔ Yetkiyi Kaldır";
+        }
+
+        private async void BtnGrantAlpNet_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+
+            int days = GetDurationDaysFromCombo(CmbDurationAlpNet);
+            BtnGrantAlpNet.IsEnabled = false;
+            BtnGrantAlpNet.Content = "Yetki Veriliyor...";
+
+            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alpnet-pulse", days);
+            if (ok)
+            {
+                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpNet Pulse yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            BtnGrantAlpNet.IsEnabled = true;
+            BtnGrantAlpNet.Content = "⚡ Yetki Ver / Uzat";
+        }
+
+        private async void BtnRevokeAlpNet_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+
+            var res = MessageBox.Show(
+                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlpNet Pulse yetkisini kaldırmak istiyor musunuz?\n\n(ÖNEMLİ: Kullanıcı veritabanından silinmeyecektir, sadece AlpNet Pulse erişimi kapatılacaktır.)",
+                "Yetkiyi Kaldır",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (res != MessageBoxResult.Yes) return;
+
+            BtnRevokeAlpNet.IsEnabled = false;
+            BtnRevokeAlpNet.Content = "Kaldırılıyor...";
+
+            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alpnet-pulse");
+            if (ok)
+            {
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpNet Pulse yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            BtnRevokeAlpNet.IsEnabled = true;
+            BtnRevokeAlpNet.Content = "⛔ Yetkiyi Kaldır";
+        }
+
+        #region AlpFinans & AlphaGravity & Admin Role Handlers
+        private async void BtnDevToggleAdminRole_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+            bool newAdminState = !_selectedAdminUser.IsAdmin;
+            string actionText = newAdminState ? "Admin olarak atamak" : "Admin yetkisini geri almak";
+            var result = MessageBox.Show($"'{_selectedAdminUser.DisplayName}' kullanıcısını {actionText} istediğinize emin misiniz?",
+                "Admin Rol Yönetimi", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
+
+            BtnDevToggleAdminRole.IsEnabled = false;
+            bool ok = await UserAuthAndPermissionService.Instance.SetUserAdminRoleAsync(_selectedAdminUser.Hwid, newAdminState);
+            if (ok)
+            {
+                _selectedAdminUser.IsAdmin = newAdminState;
+                UpdateSelectedUserUi(_selectedAdminUser);
+                MessageBox.Show($"Kullanıcı rolü güncellendi: {(newAdminState ? "👑 Admin" : "Standart Kullanıcı")}", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Rol güncellenirken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            BtnDevToggleAdminRole.IsEnabled = true;
+        }
+
+        private async void BtnGrantAlpFinans_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+            int days = GetDurationDaysFromCombo(CmbDurationAlpFinans);
+            BtnGrantAlpFinans.IsEnabled = false;
+            BtnGrantAlpFinans.Content = "Yetki Veriliyor...";
+
+            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alpfinans", days);
+            if (ok)
+            {
+                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpFinans yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            BtnGrantAlpFinans.IsEnabled = true;
+            BtnGrantAlpFinans.Content = "⚡ Yetki Ver / Uzat";
+        }
+
+        private async void BtnRevokeAlpFinans_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+            var res = MessageBox.Show(
+                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlpFinans yetkisini kaldırmak istiyor musunuz?",
+                "Yetkiyi Kaldır", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (res != MessageBoxResult.Yes) return;
+
+            BtnRevokeAlpFinans.IsEnabled = false;
+            BtnRevokeAlpFinans.Content = "Kaldırılıyor...";
+            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alpfinans");
+            if (ok)
+            {
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpFinans yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            BtnRevokeAlpFinans.IsEnabled = true;
+            BtnRevokeAlpFinans.Content = "⛔ Yetkiyi Kaldır";
+        }
+
+        private async void BtnGrantAlphaGravity_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+            int days = GetDurationDaysFromCombo(CmbDurationAlphaGravity);
+            BtnGrantAlphaGravity.IsEnabled = false;
+            BtnGrantAlphaGravity.Content = "Yetki Veriliyor...";
+
+            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alphagravity", days);
+            if (ok)
+            {
+                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlphaGravity yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            BtnGrantAlphaGravity.IsEnabled = true;
+            BtnGrantAlphaGravity.Content = "⚡ Yetki Ver / Uzat";
+        }
+
+        private async void BtnRevokeAlphaGravity_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+            var res = MessageBox.Show(
+                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlphaGravity yetkisini kaldırmak istiyor musunuz?",
+                "Yetkiyi Kaldır", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (res != MessageBoxResult.Yes) return;
+
+            BtnRevokeAlphaGravity.IsEnabled = false;
+            BtnRevokeAlphaGravity.Content = "Kaldırılıyor...";
+            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alphagravity");
+            if (ok)
+            {
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlphaGravity yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            BtnRevokeAlphaGravity.IsEnabled = true;
+            BtnRevokeAlphaGravity.Content = "⛔ Yetkiyi Kaldır";
+        }
+        #endregion
+
+        private async void BtnDeleteUserRecord_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+
+            var res = MessageBox.Show(
+                $"⚠️ TEHLİKELİ İŞLEM!\n\n'{_selectedAdminUser.DisplayName}' ({_selectedAdminUser.Hwid}) kullanıcısını ve tüm verilerini veritabanından kalıcı olarak silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz!",
+                "Kullanıcıyı Tamamen Sil",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (res != MessageBoxResult.Yes) return;
+
+            BtnDeleteUserRecord.IsEnabled = false;
+            BtnDeleteUserRecord.Content = "Siliniyor...";
+
+            bool ok = await UserAuthAndPermissionService.Instance.DeleteUserAsync(_selectedAdminUser.Hwid);
+            if (ok)
+            {
+                MessageBox.Show("Kullanıcı veritabanından tamamen silindi.", "Silindi", MessageBoxButton.OK, MessageBoxImage.Information);
+                _selectedAdminUser = null;
+                UpdateSelectedUserUi(null);
+                await RefreshAdminUsersAsync();
+            }
+            else
+            {
+                MessageBox.Show("Kullanıcı silinirken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                BtnDeleteUserRecord.IsEnabled = true;
+                BtnDeleteUserRecord.Content = "🗑 Kullanıcıyı Tamamen Sil";
+            }
+        }
+
+        private void BtnDevSubTabPublisher_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchDevSubView(DevSubViewPublisher, BtnDevSubTabPublisher);
+        }
+
+        private void BtnDevSubTabKeygen_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchDevSubView(DevSubViewKeygen, null);
+            TxtDevThisHwid.Text = DeveloperAuthService.Instance.DeviceHwid;
+        }
+
+        private void BtnDevSubTabSettings_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchDevSubView(DevSubViewSettings, BtnDevSubTabSettings);
+            LoadSettingsIntoUi();
+        }
+
+        private void BtnDevLockMode_Click(object sender, RoutedEventArgs e)
+        {
+            var res = MessageBox.Show(
+                "Geliştirici modundan çıkıp standart kullanıcı görünümüne geçmek istiyor musunuz?\n\n(Tekrar açmak için Ctrl+Shift+D tuşlayabilir veya sol üst logoya 5 kez tıklayabilirsiniz)",
+                "Geliştirici Modunu Kapat",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (res == MessageBoxResult.Yes)
+            {
+                DeveloperAuthService.Instance.LockAdminMode();
+                SwitchToView(ViewStoreLibrary);
+            }
+        }
+
+        // ==================== CANLI TELEMETRİ & KULLANICI LOGLARI ====================
+        private async Task RefreshDevTelemetryAsync()
+        {
+            BtnRefreshDevEvents.IsEnabled = false;
+            BtnRefreshDevEvents.Content = "Yenileniyor...";
+
+            try
+            {
+                var events = await TelemetryAndHelpService.Instance.FetchRecentEventsAsync(250);
+                var errors = await TelemetryAndHelpService.Instance.FetchRecentErrorsAsync();
+
+                // Convert errors into TelemetryEventRecord if missing
+                foreach (var err in errors)
+                {
+                    if (!events.Any(x => x.EventId == err.ReportId))
+                    {
+                        events.Add(new TelemetryEventRecord
+                        {
+                            EventId = err.ReportId,
+                            Timestamp = err.Timestamp,
+                            DeviceId = err.DeviceId,
+                            MachineName = err.MachineName,
+                            EventType = "ERROR",
+                            AppId = err.AppId,
+                            AppName = err.AppName,
+                            AppVersion = err.AppVersion,
+                            Details = err.ErrorMessage,
+                            ExtraInfo = err.StackTrace
+                        });
+                    }
+                }
+
+                _allDevEvents = events.OrderByDescending(x => x.Timestamp).ToList();
+
+                // Update Metric Stat Counters
+                TxtDevStatTotalEvents.Text = $"{_allDevEvents.Count} Olay";
+                TxtDevStatDownloads.Text = $"{_allDevEvents.Count(x => x.EventType == "DOWNLOAD_STARTED" || x.EventType == "INSTALL_SUCCESS")} İşlem";
+                TxtDevStatErrors.Text = $"{_allDevEvents.Count(x => x.EventType == "ERROR")} Hata";
+                TxtDevStatDevices.Text = $"{_allDevEvents.Select(x => x.DeviceId).Where(d => !string.IsNullOrWhiteSpace(d)).Distinct().Count()} Cihaz";
+
+                // Populate Kişi Bazlı Log Kontrol (CmbDevFilterUser)
+                if (CmbDevFilterUser != null)
+                {
+                    string prevSelected = CmbDevFilterUser.SelectedItem as string ?? "Tümü";
+                    var userList = _allDevEvents
+                        .Select(e => !string.IsNullOrWhiteSpace(e.UserName)
+                            ? $"{e.UserName} ({e.MachineName})"
+                            : (!string.IsNullOrWhiteSpace(e.MachineName) ? e.MachineName : e.DeviceId))
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .Distinct()
+                        .OrderBy(s => s)
+                        .ToList();
+
+                    CmbDevFilterUser.Items.Clear();
+                    CmbDevFilterUser.Items.Add("Tümü");
+                    foreach (var u in userList) CmbDevFilterUser.Items.Add(u);
+
+                    if (CmbDevFilterUser.Items.Contains(prevSelected))
+                        CmbDevFilterUser.SelectedItem = prevSelected;
+                    else
+                        CmbDevFilterUser.SelectedIndex = 0;
+                }
+
+                ApplyDevEventFilter();
+            }
+            catch (Exception ex)
+            {
+                AppLoggerService.Instance.Error("TELEMETRİ", "Telemetri yüklenirken hata: " + ex.Message);
+            }
+            finally
+            {
+                BtnRefreshDevEvents.IsEnabled = true;
+                BtnRefreshDevEvents.Content = "🔄 Canlı Verileri Yenile";
+            }
+        }
+
+        private void ApplyDevEventFilter()
+        {
+            string search = (TxtDevSearch.Text ?? "").Trim().ToLowerInvariant();
+
+            var filtered = _allDevEvents.Where(ev =>
+            {
+                if (_devEventFilter == "DOWNLOADS" && ev.EventType != "DOWNLOAD_STARTED") return false;
+                if (_devEventFilter == "INSTALLS" && ev.EventType != "INSTALL_SUCCESS") return false;
+                if (_devEventFilter == "LAUNCHES" && ev.EventType != "APP_LAUNCHED") return false;
+                if (_devEventFilter == "ERRORS" && ev.EventType != "ERROR") return false;
+
+                if (CmbDevFilterUser?.SelectedIndex > 0 && CmbDevFilterUser.SelectedItem is string selUser && selUser != "Tümü")
+                {
+                    string target = !string.IsNullOrWhiteSpace(ev.UserName)
+                        ? $"{ev.UserName} ({ev.MachineName})"
+                        : (!string.IsNullOrWhiteSpace(ev.MachineName) ? ev.MachineName : ev.DeviceId);
+                    if (!string.Equals(target, selUser, StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(ev.UserName, selUser, StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(ev.MachineName, selUser, StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(ev.DeviceId, selUser, StringComparison.OrdinalIgnoreCase))
+                        return false;
+                }
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    bool match = (ev.AppName ?? "").ToLowerInvariant().Contains(search) ||
+                                 (ev.DeviceId ?? "").ToLowerInvariant().Contains(search) ||
+                                 (ev.MachineName ?? "").ToLowerInvariant().Contains(search) ||
+                                 (ev.Details ?? "").ToLowerInvariant().Contains(search);
+                    if (!match) return false;
+                }
+
+                return true;
+            }).ToList();
+
+            LstDevTelemetryEvents.ItemsSource = filtered;
+
+            if (filtered.Count > 0 && LstDevTelemetryEvents.SelectedItem == null)
+            {
+                LstDevTelemetryEvents.SelectedIndex = 0;
+            }
+        }
+
+        private void BtnRefreshDevEvents_Click(object sender, RoutedEventArgs e) => _ = RefreshDevTelemetryAsync();
+
+        private void CmbDevFilterUser_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyDevEventFilter();
+        }
+
+        private async void BtnDevClearOldLogs_Click(object sender, RoutedEventArgs e)
+        {
+            var res = MessageBox.Show(
+                "Buluttaki eski telemetri olaylarını ve hata kayıtlarını temizlemek istediğinize emin misiniz?",
+                "Eski Logları Temizle",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            if (res != MessageBoxResult.Yes) return;
+
+            BtnDevClearOldLogs.IsEnabled = false;
+            BtnDevClearOldLogs.Content = "Temizleniyor...";
+            bool ok = await UserAuthAndPermissionService.Instance.ClearOldTelemetryAsync(true);
+            if (ok)
+            {
+                MessageBox.Show("Buluttaki telemetri ve hata kayıtları başarıyla temizlendi!", "Temizlendi", MessageBoxButton.OK, MessageBoxImage.Information);
+                await RefreshDevTelemetryAsync();
+            }
+            else
+            {
+                MessageBox.Show("Kayıtlar temizlenirken bir hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            BtnDevClearOldLogs.IsEnabled = true;
+            BtnDevClearOldLogs.Content = "🧹 Eskileri Temizle";
+        }
+
+        private void BtnDevFilterAll_Click(object sender, RoutedEventArgs e) { _devEventFilter = "ALL"; ApplyDevEventFilter(); }
+        private void BtnDevFilterDownloads_Click(object sender, RoutedEventArgs e) { _devEventFilter = "DOWNLOADS"; ApplyDevEventFilter(); }
+        private void BtnDevFilterInstalls_Click(object sender, RoutedEventArgs e) { _devEventFilter = "INSTALLS"; ApplyDevEventFilter(); }
+        private void BtnDevFilterLaunches_Click(object sender, RoutedEventArgs e) { _devEventFilter = "LAUNCHES"; ApplyDevEventFilter(); }
+        private void BtnDevFilterErrors_Click(object sender, RoutedEventArgs e) { _devEventFilter = "ERRORS"; ApplyDevEventFilter(); }
+
+        private void TxtDevSearch_TextChanged(object sender, TextChangedEventArgs e) => ApplyDevEventFilter();
+
+        private void LstDevTelemetryEvents_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (LstDevTelemetryEvents.SelectedItem is TelemetryEventRecord ev)
+            {
+                TxtDevDetailEventId.Text = ev.EventId;
+                TxtDevDetailTime.Text = ev.Timestamp;
+                TxtDevDetailType.Text = $"{ev.EventType} ({ev.EventBadgeText})";
+                TxtDevDetailApp.Text = ev.AppName;
+                TxtDevDetailVersion.Text = ev.AppVersion;
+                TxtDevDetailDeviceId.Text = ev.DeviceId;
+                TxtDevDetailMachine.Text = ev.MachineName;
+                TxtDevDetailUser.Text = ev.UserName;
+                TxtDevDetailMessage.Text = ev.Details;
+                TxtDevDetailStackTrace.Text = string.IsNullOrWhiteSpace(ev.ExtraInfo) ? "Detaylı hata izi yok." : ev.ExtraInfo;
+            }
+        }
+
+        private void BtnDevCopySelectedEvent_Click(object sender, RoutedEventArgs e)
+        {
+            if (LstDevTelemetryEvents.SelectedItem is TelemetryEventRecord ev)
+            {
+                string text = $"[Olay]: {ev.EventType} | [App]: {ev.AppName} v{ev.AppVersion}\n" +
+                              $"[Zaman]: {ev.Timestamp} | [Cihaz]: {ev.DeviceId} ({ev.MachineName} - {ev.UserName})\n" +
+                              $"[Detay]: {ev.Details}\n" +
+                              (string.IsNullOrWhiteSpace(ev.ExtraInfo) ? "" : $"[Stack]:\n{ev.ExtraInfo}");
+                Clipboard.SetText(text);
+                MessageBox.Show("Olay detayı panoya kopyalandı!", "Kopyalandı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        // ==================== ALPTOGETHER ADMIN KEYGEN ====================
+        private void BtnDevCopyThisHwid_Click(object sender, RoutedEventArgs e)
+        {
+            Clipboard.SetText(DeveloperAuthService.Instance.DeviceHwid);
+            MessageBox.Show($"Bu cihazın HWID kimliği panoya kopyalandı:\n{DeveloperAuthService.Instance.DeviceHwid}", "Kopyalandı", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void BtnDevSelfActivate_Click(object sender, RoutedEventArgs e)
+        {
+            string key = DeveloperAuthService.GenerateAdminKey(DeveloperAuthService.Instance.DeviceHwid, new DateTime(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc));
+            bool ok = DeveloperAuthService.Instance.TryUnlockAdmin(key, out string msg);
+            if (ok)
+            {
+                MessageBox.Show("Bu cihaz başarıyla süresiz Admin olarak etkinleştirildi!", "Admin Aktif", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void BtnDevGenerateAdminKey_Click(object sender, RoutedEventArgs e)
+        {
+            string target = TxtDevTargetHwid.Text.Trim();
+            DateTime exp = CmbDevKeyExpiry.SelectedIndex switch
+            {
+                0 => DateTime.UtcNow.AddDays(30),
+                1 => DateTime.UtcNow.AddDays(90),
+                2 => DateTime.UtcNow.AddDays(365),
+                _ => new DateTime(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc)
+            };
+
+            string key = DeveloperAuthService.GenerateAdminKey(target, exp);
+            TxtDevGeneratedKeyResult.Text = key;
+            TxtDevKeygenStatus.Text = $"✔ Lisans üretildi! (Bitiş: {exp.ToLocalTime():dd.MM.yyyy})";
+        }
+
+        private void BtnDevCopyGeneratedKey_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(TxtDevGeneratedKeyResult.Text))
+            {
+                Clipboard.SetText(TxtDevGeneratedKeyResult.Text);
+                MessageBox.Show("Üretilen admin anahtarı panoya kopyalandı!", "Kopyalandı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private async void BtnDevPushKeyToFirebase_Click(object sender, RoutedEventArgs e)
+        {
+            string targetHwid = TxtDevTargetHwid.Text.Trim();
+            string key = TxtDevGeneratedKeyResult.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(targetHwid) || string.IsNullOrWhiteSpace(key))
+            {
+                MessageBox.Show("Lütfen önce hedef HWID girip anahtar üretin.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            TxtDevKeygenStatus.Text = "Buluta gönderiliyor...";
+            bool ok = await DeveloperAuthService.Instance.PushAdminLicenseToFirebaseAsync(targetHwid, key);
+            TxtDevKeygenStatus.Text = ok
+                ? "✔ Lisans Firebase bulutuna kaydedildi! Hedef cihaz otomatik yetkilendirilecek."
+                : "⚠ Buluta kaydedilemedi. Firebase bağlantısını kontrol edin.";
+        }
+
+        // ==================== GİZLİ TETİKLEYİCİLER & GİRİŞ MODAL ====================
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.D && (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) == (ModifierKeys.Control | ModifierKeys.Shift))
+            {
+                ShowAdminUnlockModal();
+                e.Handled = true;
+            }
+        }
+
+        private void BrandLogo_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if ((DateTime.Now - _lastLogoClickTime).TotalSeconds > 3)
+            {
+                _logoClickCount = 0;
+            }
+
+            _lastLogoClickTime = DateTime.Now;
+            _logoClickCount++;
+
+            if (_logoClickCount >= 5)
+            {
+                _logoClickCount = 0;
+                ShowAdminUnlockModal();
+                e.Handled = true;
+            }
+        }
+
+        private void ShowAdminUnlockModal()
+        {
+            if (DeveloperAuthService.Instance.IsPrimaryDevMachine || DeveloperAuthService.Instance.IsAdminMode)
+            {
+                DeveloperAuthService.Instance.UnlockDeveloperModeDirectly();
+                AdminUnlockOverlay.Visibility = Visibility.Collapsed;
+                SwitchToView(ViewPublisherAndSettings);
+                return;
+            }
+
+            TxtModalDeviceHwid.Text = DeveloperAuthService.Instance.DeviceHwid;
+            TxtModalAdminInput.Text = "";
+            TxtModalStatus.Text = "";
+            AdminUnlockOverlay.Visibility = Visibility.Visible;
+            TxtModalAdminInput.Focus();
+        }
+
+        private void BtnModalClose_Click(object sender, RoutedEventArgs e)
+        {
+            AdminUnlockOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void BtnModalCopyHwid_Click(object sender, RoutedEventArgs e)
+        {
+            Clipboard.SetText(DeveloperAuthService.Instance.DeviceHwid);
+            TxtModalStatus.Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255));
+            TxtModalStatus.Text = "Cihaz HWID panoya kopyalandı!";
+        }
+
+        private void BtnModalUnlock_Click(object sender, RoutedEventArgs e)
+        {
+            string input = TxtModalAdminInput.Text.Trim();
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                TxtModalStatus.Foreground = new SolidColorBrush(Color.FromRgb(255, 23, 68));
+                TxtModalStatus.Text = "Lütfen bir admin anahtarı veya parola girin.";
+                return;
+            }
+
+            bool success = DeveloperAuthService.Instance.TryUnlockAdmin(input, out string message);
+            if (success)
+            {
+                AdminUnlockOverlay.Visibility = Visibility.Collapsed;
+                SwitchToView(ViewPublisherAndSettings);
+                MessageBox.Show(message, "Geliştirici Modu Açıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                TxtModalStatus.Foreground = new SolidColorBrush(Color.FromRgb(255, 23, 68));
+                TxtModalStatus.Text = "Hata: " + message;
+            }
         }
     }
 }

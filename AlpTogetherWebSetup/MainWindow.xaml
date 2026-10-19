@@ -42,12 +42,12 @@
             </DockPanel>
 
             <!-- Center Brand & Info -->
-            <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,12,0,12">
-                <Border Width="84" Height="84" CornerRadius="20" BorderBrush="#FF5CAA" BorderThickness="2" HorizontalAlignment="Center" Margin="0,0,0,14">
+            <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,10">
+                <Border Width="84" Height="84" CornerRadius="20" BorderBrush="#FF5CAA" BorderThickness="2" HorizontalAlignment="Center" Margin="0,0,0,12" Background="#14081E" ClipToBounds="True">
                     <Border.Effect>
                         <DropShadowEffect Color="#FF2E93" BlurRadius="22" ShadowDepth="0" Opacity="0.65" />
                     </Border.Effect>
-                    <Image Source="pack://application:,,,/Assets/alptogether_logo_pink.png" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <Image Source="pack://application:,,,/Assets/alptogether_logo_pink.png" Stretch="Uniform" Margin="6" RenderOptions.BitmapScalingMode="HighQuality" />
                 </Border>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -59,7 +59,16 @@
                            Foreground="#D4A6C5"
                            FontSize="12.5"
                            HorizontalAlignment="Center"
-                           Margin="0,4,0,0" />
+                           Margin="0,4,0,10" />
+
+                <!-- Desktop Shortcut Toggle Option -->
+                <CheckBox x:Name="ChkCreateDesktopShortcut"
+                          Content="Masaüstüne kısayol simgesi oluştur"
+                          IsChecked="True"
+                          Foreground="#FFB2D8"
+                          FontSize="12"
+                          Cursor="Hand"
+                          HorizontalAlignment="Center" />
             </StackPanel>
 
             <!-- Bottom Action / Progress -->

@@ -90,9 +90,12 @@ namespace AlpTogetherWebSetup
                     throw new Exception("AlpTogether.exe indirilemedi veya bulunamadı.");
                 }
 
-                PbDownload.Value = 90;
-                TxtStatus.Text = "Masaüstü kısayolu oluşturuluyor...";
-                CreateDesktopShortcut(targetExe, installDir, "AlpTogether");
+                if (ChkCreateDesktopShortcut.IsChecked == true)
+                {
+                    PbDownload.Value = 90;
+                    TxtStatus.Text = "Masaüstü kısayolu oluşturuluyor...";
+                    CreateDesktopShortcut(targetExe, installDir, "AlpTogether");
+                }
 
                 PbDownload.Value = 100;
                 TxtStatus.Text = "AlpTogether başlatılıyor...";
