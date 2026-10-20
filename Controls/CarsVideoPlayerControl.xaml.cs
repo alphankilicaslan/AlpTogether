@@ -22,6 +22,9 @@ namespace AlpTogether.Controls
         private bool _isLoopEnabled = true;
         private bool _isExpandedTheater = false;
         private bool _wasPlayingBeforeHidden = false;
+        private bool _wasPlayingBeforeMinimized = false;
+        private bool _isInitializing = false;
+        private Window? _parentWindow;
         private readonly System.Diagnostics.Stopwatch _seekThrottleStopwatch = new();
 
         public CarsVideoPlayerControl()
@@ -48,9 +51,10 @@ namespace AlpTogether.Controls
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // Ayarları yükle
+            _isInitializing = true;
             try
             {
+                // Ayarları yükle
                 var settings = SettingsService.Instance.Current;
                 _isLoopEnabled = settings.CarsVideoIsLoopEnabled;
                 _isExpandedTheater = settings.CarsVideoIsExpandedTheater;
@@ -70,6 +74,17 @@ namespace AlpTogether.Controls
                 CarsMedia.Volume = 0.50;
                 CarsMedia.IsMuted = true;
             }
+            finally
+            {
+                _isInitializing = false;
+            }
+
+            _parentWindow = Window.GetWindow(this);
+            if (_parentWindow != null)
+            {
+                _parentWindow.StateChanged -= ParentWindow_StateChanged;
+                _parentWindow.StateChanged += ParentWindow_StateChanged;
+            }
 
             RenderOptions.SetBitmapScalingMode(CarsMedia, BitmapScalingMode.Linear);
             RenderOptions.SetEdgeMode(CarsMedia, EdgeMode.Aliased);
@@ -80,6 +95,31 @@ namespace AlpTogether.Controls
 
             // Hibrit video kaynağını çözümle ve başlat
             InitializeVideoSource();
+        }
+
+        private void ParentWindow_StateChanged(object? sender, EventArgs e)
+        {
+            if (_parentWindow == null) return;
+
+            if (_parentWindow.WindowState == WindowState.Minimized)
+            {
+                if (_isPlaying)
+                {
+                    _wasPlayingBeforeMinimized = true;
+                    CarsMedia.Pause();
+                    _progressTimer.Stop();
+                }
+            }
+            else
+            {
+                if (_wasPlayingBeforeMinimized)
+                {
+                    _wasPlayingBeforeMinimized = false;
+                    CarsMedia.Play();
+                    _isPlaying = true;
+                    _progressTimer.Start();
+                }
+            }
         }
 
         public void InitializeVideoSource(string? overridePathOrUrl = null, bool forceCloud = false)
@@ -124,8 +164,9 @@ namespace AlpTogether.Controls
             }
             else
             {
-                SourceBadgeBorder.BorderBrush = (Brush)FindResource("PinkHotBrush");
-                TxtSourceBadge.Foreground = (Brush)FindResource("PinkHotBrush");
+                var hotBrush = TryFindResource("PinkHotBrush") as Brush ?? new SolidColorBrush(Color.FromRgb(0xFF, 0x5C, 0xAA));
+                SourceBadgeBorder.BorderBrush = hotBrush;
+                TxtSourceBadge.Foreground = hotBrush;
             }
 
             ErrorFallbackPanel.Visibility = Visibility.Collapsed;
@@ -143,6 +184,12 @@ namespace AlpTogether.Controls
             if (!_isUserSeeking && _duration.TotalSeconds > 0)
             {
                 TimelineSlider.Value = CarsMedia.Position.TotalSeconds;
+            }
+
+            if (_isUserSeeking && Mouse.LeftButton == MouseButtonState.Released)
+            {
+                _isUserSeeking = false;
+                CarsMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
             }
 
             string currentTimeStr = FormatTime(CarsMedia.Position);
@@ -181,6 +228,7 @@ namespace AlpTogether.Controls
         {
             if (_isLoopEnabled)
             {
+                CarsMedia.Stop();
                 CarsMedia.Position = TimeSpan.Zero;
                 CarsMedia.Play();
                 _isPlaying = true;
@@ -231,6 +279,11 @@ namespace AlpTogether.Controls
 
         private void VideoViewport_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (e.ClickCount == 2)
+            {
+                BtnFullscreen_Click(sender, e);
+                return;
+            }
             TogglePlayPause();
         }
 
@@ -250,12 +303,14 @@ namespace AlpTogether.Controls
             {
                 CarsMedia.Pause();
                 _isPlaying = false;
+                _progressTimer.Stop();
                 ShowToast("⏸ Duraklatıldı");
             }
             else
             {
                 CarsMedia.Play();
                 _isPlaying = true;
+                _progressTimer.Start();
                 ShowToast("▶ Oynatılıyor");
             }
             UpdatePlayPauseButton();
@@ -291,19 +346,31 @@ namespace AlpTogether.Controls
         private void TimelineSlider_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             _isUserSeeking = true;
+            _seekThrottleStopwatch.Restart();
         }
 
         private void TimelineSlider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             _isUserSeeking = false;
             CarsMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
+            _seekThrottleStopwatch.Reset();
         }
 
         private void TimelineSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (_isUserSeeking)
             {
-                CarsMedia.Position = TimeSpan.FromSeconds(e.NewValue);
+                // UI anlık güncellemesi (kullanıcıya akıcı 60 FPS görsel tepki)
+                string currentTimeStr = FormatTime(TimeSpan.FromSeconds(e.NewValue));
+                string durationStr = FormatTime(_duration);
+                TxtTimeDisplay.Text = $"{currentTimeStr} / {durationStr}";
+
+                // DirectShow / EVR dekoderine aşırı yükleme yapmamak için seek çağrılarını 150ms ile sınırla (UI kilitlenmesini önler)
+                if (!_seekThrottleStopwatch.IsRunning || _seekThrottleStopwatch.ElapsedMilliseconds >= 150)
+                {
+                    CarsMedia.Position = TimeSpan.FromSeconds(e.NewValue);
+                    _seekThrottleStopwatch.Restart();
+                }
             }
         }
 
@@ -337,6 +404,8 @@ namespace AlpTogether.Controls
 
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            if (_isInitializing) return;
+
             if (CarsMedia != null)
             {
                 CarsMedia.Volume = e.NewValue;
@@ -480,6 +549,13 @@ namespace AlpTogether.Controls
             ExpandedPlayerCard.Visibility = Visibility.Collapsed;
             CollapsedMiniStrip.Visibility = Visibility.Visible;
 
+            // Arka planda CPU / GPU harcanmasını engellemek için simge durumuna alındığında duraklat
+            if (_isPlaying)
+            {
+                _wasPlayingBeforeHidden = true;
+                PausePlayback();
+            }
+
             try
             {
                 SettingsService.Instance.Current.CarsVideoBannerCollapsed = true;
@@ -492,6 +568,15 @@ namespace AlpTogether.Controls
         {
             CollapsedMiniStrip.Visibility = Visibility.Collapsed;
             ExpandedPlayerCard.Visibility = Visibility.Visible;
+
+            if (_wasPlayingBeforeHidden)
+            {
+                _wasPlayingBeforeHidden = false;
+                CarsMedia.Play();
+                _isPlaying = true;
+                _progressTimer.Start();
+                UpdatePlayPauseButton();
+            }
 
             try
             {
@@ -514,24 +599,35 @@ namespace AlpTogether.Controls
         {
             if (!IsVisible)
             {
+                _progressTimer.Stop();
                 if (_isPlaying)
                 {
                     _wasPlayingBeforeHidden = true;
                     CarsMedia.Pause();
+                    _isPlaying = false;
+                    UpdatePlayPauseButton();
                 }
             }
             else
             {
-                if (_wasPlayingBeforeHidden)
+                if (_wasPlayingBeforeHidden && ExpandedPlayerCard.Visibility == Visibility.Visible)
                 {
                     _wasPlayingBeforeHidden = false;
                     CarsMedia.Play();
+                    _isPlaying = true;
+                    _progressTimer.Start();
+                    UpdatePlayPauseButton();
                 }
             }
         }
 
         private void UserControl_Unloaded(object sender, RoutedEventArgs e)
         {
+            if (_parentWindow != null)
+            {
+                _parentWindow.StateChanged -= ParentWindow_StateChanged;
+            }
+
             _progressTimer.Stop();
             _toastTimer.Stop();
 
@@ -545,12 +641,21 @@ namespace AlpTogether.Controls
             }
             catch { }
 
+            // EVR / DirectShow COM grafiklerini ve 1.18 GB dosya handle'ını bellekten tamamen serbest bırak (ReleaseOnUnload)
             CarsMedia.Stop();
             CarsMedia.Close();
+            CarsMedia.Source = null;
+            _isPlaying = false;
+        }
+
+        public void ReleaseResources()
+        {
+            UserControl_Unloaded(this, new RoutedEventArgs());
         }
 
         public void PausePlayback()
         {
+            _progressTimer.Stop();
             if (_isPlaying)
             {
                 CarsMedia.Pause();
