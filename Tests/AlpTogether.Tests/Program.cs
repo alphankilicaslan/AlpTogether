@@ -695,7 +695,16 @@ namespace AlpTogether.Tests
             {
                 var authService = UserAuthAndPermissionService.Instance;
 
-                // Set up a valid test permission in memory
+                // Ensure username is configured for authorization checks
+                if (string.IsNullOrWhiteSpace(authService.CurrentUsername))
+                {
+                    SettingsService.Instance.Current.RegisteredUsername = "Tester";
+                }
+
+                // Switch to regular user mode to rigorously test non-admin offline behavior
+                DeveloperAuthService.Instance.LockAdminMode();
+
+                // Set up test permissions in memory
                 authService.SetCachedPermissionForTesting("alplingo-test", new UserAppPermission
                 {
                     HasAccess = true,
@@ -703,8 +712,14 @@ namespace AlpTogether.Tests
                     ExpiresAt = DateTime.Now.AddDays(30).ToString("yyyy-MM-dd HH:mm:ss"),
                     GrantedBy = "Alphan (Admin)"
                 });
+                authService.SetCachedPermissionForTesting("revoked-app", new UserAppPermission
+                {
+                    HasAccess = false,
+                    DurationDays = 0,
+                    GrantedBy = "Revoked"
+                });
 
-                // 1. Valid offline grace period (Simulate internet dropped 2 hours ago)
+                // 1. Valid offline grace period for normal user (Simulate internet dropped 2 hours ago)
                 DateTime twoHoursAgo = DateTime.UtcNow.AddHours(-2);
                 authService.SetOfflineModeForTesting(true, twoHoursAgo);
 
@@ -728,19 +743,38 @@ namespace AlpTogether.Tests
                     Console.WriteLine($" -> NetworkStatusDescription verified: '{authService.NetworkStatusDescription}'");
                 }
 
-                // Check HasAppAccess in offline mode
+                // Check HasAppAccess in offline mode as regular user
                 bool hasAccess = authService.HasAppAccess("alplingo-test", out string accessReason, out int daysLeft);
-                if (!hasAccess || (!accessReason.Contains("Çevrimdışı Mod") && !accessReason.Contains("Geliştirici")))
+                if (!hasAccess || !accessReason.Contains("Çevrimdışı Mod"))
                 {
-                    Console.WriteLine($" FAIL: Expected offline access to be granted! Access: {hasAccess}, Reason: '{accessReason}'");
+                    Console.WriteLine($" FAIL: Expected regular user offline access to be granted! Access: {hasAccess}, Reason: '{accessReason}'");
                     failures++;
                 }
                 else
                 {
-                    Console.WriteLine($" -> Offline app access permitted within grace period: '{accessReason}'");
+                    Console.WriteLine($" -> Regular user offline app access permitted within grace period: '{accessReason}'");
                 }
 
-                // 2. Expired offline grace period (Simulate offline for 26 hours)
+                // Test UI badge & button text synchronization in valid offline mode
+                var testAppItem = new AlpAppItem
+                {
+                    Id = "alplingo-test",
+                    Name = "AlpLingo",
+                    IsInstalled = true,
+                    InstalledVersion = "1.0.0",
+                    LatestVersion = "1.0.0"
+                };
+                if (testAppItem.StateBadgeText != "KURULU (ÇEVRİMDİŞİ MOD)")
+                {
+                    Console.WriteLine($" FAIL: Expected 'KURULU (ÇEVRİMDİŞİ MOD)', got '{testAppItem.StateBadgeText}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Verified UI StateBadgeText in offline grace period: '{testAppItem.StateBadgeText}'");
+                }
+
+                // 2. Expired offline grace period for normal user (Simulate offline for 26 hours)
                 DateTime twentySixHoursAgo = DateTime.UtcNow.AddHours(-26);
                 authService.SetOfflineModeForTesting(true, twentySixHoursAgo);
 
@@ -759,20 +793,97 @@ namespace AlpTogether.Tests
                     Console.WriteLine(" -> 26 hours offline correctly detected as expired grace period.");
                 }
 
-                // 3. Clock rollback detection (Simulate system clock set 1 hour before sync time)
-                DateTime futureSync = DateTime.UtcNow.AddHours(2);
-                authService.SetOfflineModeForTesting(true, futureSync);
-                if (authService.IsOfflineGracePeriodValid)
+                // Check HasAppAccess rejection for expired grace period
+                bool hasExpiredAccess = authService.HasAppAccess("alplingo-test", out string expiredReason, out _);
+                if (hasExpiredAccess)
                 {
-                    Console.WriteLine(" FAIL: Clock rollback should invalidate grace period!");
+                    Console.WriteLine(" FAIL: HasAppAccess returned true for expired offline grace period!");
+                    failures++;
+                }
+                else if (!expiredReason.Contains("doldu"))
+                {
+                    Console.WriteLine($" FAIL: Unexpected expired reason: '{expiredReason}'");
                     failures++;
                 }
                 else
                 {
-                    Console.WriteLine(" -> Clock manipulation (system time < last sync) successfully detected and blocked.");
+                    Console.WriteLine($" -> HasAppAccess correctly rejected expired offline grace period: '{expiredReason}'");
                 }
 
-                // 4. Online recovery (Simulate internet re-connection)
+                // Verify UI badge for expired grace period
+                if (testAppItem.StateBadgeText != "⛔ ÇEVRİMDİŞİ (SÜRE DOLDU)")
+                {
+                    Console.WriteLine($" FAIL: Expected '⛔ ÇEVRİMDİŞİ (SÜRE DOLDU)', got '{testAppItem.StateBadgeText}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Verified UI StateBadgeText for expired grace period: '{testAppItem.StateBadgeText}'");
+                }
+                if (testAppItem.PrimaryButtonText != "⛔ BAŞLAT (SÜRE DOLDU)")
+                {
+                    Console.WriteLine($" FAIL: Expected '⛔ BAŞLAT (SÜRE DOLDU)', got '{testAppItem.PrimaryButtonText}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Verified UI PrimaryButtonText for expired grace period: '{testAppItem.PrimaryButtonText}'");
+                }
+
+                // 3. Clock rollback detection (Simulate system clock set 2 hours before sync time)
+                DateTime futureSync = DateTime.UtcNow.AddHours(2);
+                authService.SetOfflineModeForTesting(true, futureSync);
+                bool hasClockTamperAccess = authService.HasAppAccess("alplingo-test", out string clockTamperReason, out _);
+                if (hasClockTamperAccess)
+                {
+                    Console.WriteLine(" FAIL: Clock rollback should block app access!");
+                    failures++;
+                }
+                else if (!clockTamperReason.Contains("geriye alınmış"))
+                {
+                    Console.WriteLine($" FAIL: Unexpected clock tamper reason: '{clockTamperReason}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Clock manipulation successfully detected and blocked: '{clockTamperReason}'");
+                }
+
+                // 4. Unregistered / Unpermitted app check while offline
+                bool hasUnpermittedAccess = authService.HasAppAccess("unpermitted-unknown-app", out string unpermReason, out _);
+                if (hasUnpermittedAccess)
+                {
+                    Console.WriteLine(" FAIL: Expected unpermitted app to be blocked offline!");
+                    failures++;
+                }
+                else if (!unpermReason.Contains("kaydı bulunamadı"))
+                {
+                    Console.WriteLine($" FAIL: Unexpected unpermitted app reason: '{unpermReason}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Unpermitted app correctly blocked offline: '{unpermReason}'");
+                }
+
+                // 5. Explicitly revoked app check while offline
+                bool hasRevokedAccess = authService.HasAppAccess("revoked-app", out string revokedReason, out _);
+                if (hasRevokedAccess)
+                {
+                    Console.WriteLine(" FAIL: Expected revoked app to be blocked offline!");
+                    failures++;
+                }
+                else if (!revokedReason.Contains("kaldırmış"))
+                {
+                    Console.WriteLine($" FAIL: Unexpected revoked app reason: '{revokedReason}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Revoked app correctly blocked offline: '{revokedReason}'");
+                }
+
+                // 6. Online recovery (Simulate internet re-connection)
                 authService.SetOfflineModeForTesting(false, DateTime.UtcNow);
                 if (authService.IsOfflineMode || authService.NetworkStatusDescription != "Ağ: Hazır")
                 {
@@ -784,7 +895,20 @@ namespace AlpTogether.Tests
                     Console.WriteLine(" -> Online recovery successfully restored status to 'Ağ: Hazır'.");
                 }
 
-                // 5. Test disk file persistence roundtrip
+                // Restore Developer / Admin mode
+                DeveloperAuthService.Instance.UnlockDeveloperModeDirectly();
+                bool hasAdminAccess = authService.HasAppAccess("alplingo-test", out string adminReason, out _);
+                if (!hasAdminAccess || !adminReason.Contains("Geliştirici"))
+                {
+                    Console.WriteLine($" FAIL: Expected admin access after developer unlock! Reason: '{adminReason}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Admin mode restored and verified: '{adminReason}'");
+                }
+
+                // 7. Test disk file persistence roundtrip
                 authService.SaveSecurePermissionCache(false);
                 if (!File.Exists(authService.SecureCacheFilePath))
                 {
