@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
     <AssemblyName>AlpTogether</AssemblyName>
     <RootNamespace>AlpTogether</RootNamespace>
