@@ -64,7 +64,8 @@
             "Geriye d\u00F6n\u00FCk %100 \u00E7evrimd\u0131\u015F\u0131 lisans uyumlulu\u011Fu korundu; mevcut anahtara sahip kullan\u0131c\u0131lar kesintisiz \u00E7al\u0131\u015Fmaya devam eder.",
             "Aktivasyon ekran\u0131na \u0027\u2726 AlpTogether Yetkisini Do\u011Frula \uD83D\uDD04\u0027 tek-t\u0131k h\u0131zl\u0131 sorgulama butonu entegre edildi.",
             "Bulut kullan\u0131c\u0131 kalp at\u0131\u015F\u0131 (heartbeat) ve ekosistem senkronizasyonu g\u00FCncellendi."
-          ]
+          ],
+          "ImageUrl": null
         },
         {
           "AppName": "",
@@ -78,7 +79,8 @@
             "AlpTogether Hibrit Kurulum Motoru ile hem AlpNet.Setup.exe (/auto) hem de do\u011Frudan dosya senkronizasyonu eklendi.",
             "Cloudflare WARP profil anahtar\u0131 \u00E7ak\u0131\u015Fma tespiti ve otomatik onar\u0131m (wgcf-profile.conf) entegre edildi.",
             "Canl\u0131 ses \u00E7eviri motoru (translator.exe) gecikmesi %35 d\u00FC\u015F\u00FCr\u00FCld\u00FC."
-          ]
+          ],
+          "ImageUrl": null
         }
       ],
       "IsInstalled": false,
@@ -93,8 +95,8 @@
       "HealthStatus": "Do\u011Frulanmad\u0131",
       "SelectedHybridMode": 0,
       "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "\u26D4 Y\u00DCKLE (YETK\u0130 GEREKL\u0130)",
-      "StateBadgeText": "\u26D4 YETK\u0130S\u0130Z (WHITELIST GEREKL\u0130)",
+      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "StateBadgeText": "BULUTTA MEVCUT",
       "VersionDisplay": "Son S\u00FCr\u00FCm: v2.2.5  \u2022  81.4 MB"
     },
     {
@@ -152,7 +154,8 @@
           "Changes": [
             "AlpTogether merkezi bulut whitelist do\u011Frulamas\u0131 entegre edildi.",
             "Geli\u015Ftirici ana makinesi (MONSTERALPHAN) i\u00E7in an\u0131nda eri\u015Fim tan\u0131mland\u0131."
-          ]
+          ],
+          "ImageUrl": null
         },
         {
           "AppName": "",
@@ -165,7 +168,8 @@
           "Changes": [
             "SimulatorWindow ile 12 ayl\u0131k enflasyon ve yat\u0131r\u0131m getirisi projeksiyonu eklendi.",
             "SQLite yerel veritaban\u0131 otomatik yedekleme ve onar\u0131m kontrol\u00FC eklendi."
-          ]
+          ],
+          "ImageUrl": null
         }
       ],
       "IsInstalled": false,
@@ -180,8 +184,8 @@
       "HealthStatus": "Do\u011Frulanmad\u0131",
       "SelectedHybridMode": 0,
       "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "\u26D4 Y\u00DCKLE (YETK\u0130 GEREKL\u0130)",
-      "StateBadgeText": "\u26D4 YETK\u0130S\u0130Z (WHITELIST GEREKL\u0130)",
+      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "StateBadgeText": "BULUTTA MEVCUT",
       "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  34.2 MB"
     },
     {
@@ -242,7 +246,8 @@
             "AlpTogether merkezi bulut whitelist do\u011Frulamas\u0131 entegre edildi.",
             "Kullan\u0131c\u0131 API anahtarlar\u0131 kal\u0131c\u0131 kullan\u0131c\u0131 profiline (AppData) kaydedilerek oturumlar aras\u0131 korundu.",
             "Tam ba\u011F\u0131ms\u0131z (self-contained) tek dosya \u00E7al\u0131\u015Ft\u0131r\u0131labilir mimariyle ba\u015Flatma kararl\u0131l\u0131\u011F\u0131 sa\u011Fland\u0131."
-          ]
+          ],
+          "ImageUrl": null
         },
         {
           "AppName": "",
@@ -255,7 +260,8 @@
           "Changes": [
             "WebView2 tabanl\u0131 interaktif 3B d\u00FC\u011F\u00FCm grafi\u011Fi ve kurumsal haf\u0131za entegrasyonu.",
             "VoiceBridge ger\u00E7ek zamanl\u0131 sesli etkile\u015Fim ve \u00F6\u011Frenme raporu mod\u00FCl\u00FC."
-          ]
+          ],
+          "ImageUrl": null
         }
       ],
       "IsInstalled": false,
@@ -270,8 +276,8 @@
       "HealthStatus": "Do\u011Frulanmad\u0131",
       "SelectedHybridMode": 0,
       "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "\u26D4 Y\u00DCKLE (YETK\u0130 GEREKL\u0130)",
-      "StateBadgeText": "\u26D4 YETK\u0130S\u0130Z (WHITELIST GEREKL\u0130)",
+      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "StateBadgeText": "BULUTTA MEVCUT",
       "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  208 MB"
     },
     {
@@ -326,7 +332,8 @@
           "Changes": [
             "Sunucu FCM bildirim dinleyicisi yeniden ba\u011Flanma h\u0131z\u0131 iyile\u015Ftirildi.",
             "Harita \u00FCzerindeki kargo gemisi, helikopter rotas\u0131 ve ak\u0131ll\u0131 cihaz kontrolleri g\u00FCncellendi."
-          ]
+          ],
+          "ImageUrl": null
         }
       ],
       "IsInstalled": false,
@@ -341,8 +348,8 @@
       "HealthStatus": "Do\u011Frulanmad\u0131",
       "SelectedHybridMode": 0,
       "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "\u26D4 Y\u00DCKLE (YETK\u0130 GEREKL\u0130)",
-      "StateBadgeText": "\u26D4 YETK\u0130S\u0130Z (WHITELIST GEREKL\u0130)",
+      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "StateBadgeText": "BULUTTA MEVCUT",
       "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  92.0 MB"
     },
     {
@@ -393,7 +400,8 @@
             "Ak\u0131ll\u0131 kontrast kontrol\u00FC ile sar\u0131, alt\u0131n, mavi ve t\u00FCm renklerdeki oyun altyaz\u0131lar\u0131n\u0131n okunmas\u0131 sa\u011Fland\u0131.",
             "F8 ile diyalog alan\u0131 se\u00E7ildi\u011Fi anda \u00E7evirinin otomatik ba\u015Flat\u0131lmas\u0131 ve ekranda anl\u0131k durum bildirimi eklendi.",
             "Windows masa\u00FCst\u00FC yakalama (BitBlt/OpenInputDesktop) ba\u011Flant\u0131s\u0131 ve \u00E7ift monit\u00F6r deste\u011Fi g\u00FC\u00E7lendirildi."
-          ]
+          ],
+          "ImageUrl": null
         },
         {
           "AppName": "",
@@ -407,7 +415,8 @@
             "Meta NLLB-200 \u00E7evrimd\u0131\u015F\u0131 \u00E7eviri motoru ile NVIDIA RTX CUDA ve CPU hibrit h\u0131zland\u0131rma.",
             "F8 ile anl\u0131k ekran diyalog b\u00F6lgesi (ROI) se\u00E7imi ve F9 ile \u015Feffaf altyaz\u0131 katman\u0131 kontrol\u00FC.",
             "Ak\u0131ll\u0131 parlakl\u0131k de\u011Fi\u015Fim filtresi ile diyalog sabitken %0 CPU/GPU kullan\u0131m\u0131 ve s\u0131f\u0131r FPS kayb\u0131."
-          ]
+          ],
+          "ImageUrl": null
         }
       ],
       "IsInstalled": false,
@@ -422,8 +431,8 @@
       "HealthStatus": "Do\u011Frulanmad\u0131",
       "SelectedHybridMode": 0,
       "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "\u26D4 Y\u00DCKLE (YETK\u0130 GEREKL\u0130)",
-      "StateBadgeText": "\u26D4 YETK\u0130S\u0130Z (WHITELIST GEREKL\u0130)",
+      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "StateBadgeText": "BULUTTA MEVCUT",
       "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  1.45 GB"
     }
   ]
