@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -22,6 +24,75 @@ namespace AlpTogether.Services
         private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
         private readonly System.Windows.Threading.DispatcherTimer _heartbeatTimer;
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LASTINPUTINFO
+        {
+            public uint cbSize;
+            public uint dwTime;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
+        public static (bool IsAfk, int IdleMinutes) GetIdleState()
+        {
+            try
+            {
+                LASTINPUTINFO lii = new LASTINPUTINFO();
+                lii.cbSize = (uint)Marshal.SizeOf(lii);
+                if (GetLastInputInfo(ref lii))
+                {
+                    uint idleTicks = (uint)Environment.TickCount - lii.dwTime;
+                    int idleMins = (int)(idleTicks / 60000);
+                    return (idleMins >= 5, idleMins);
+                }
+            }
+            catch { }
+            return (false, 0);
+        }
+
+        public static (string ActivityText, string ActivityApp) DetectCurrentActivity()
+        {
+            try
+            {
+                var procList = new[]
+                {
+                    (Name: "AlpLingo", App: "AlpLingo", Title: "AlpLingo"),
+                    (Name: "AlpNet.Pulse", App: "AlpNet", Title: "AlpNet Pulse"),
+                    (Name: "AlpNetPulse", App: "AlpNet", Title: "AlpNet Pulse"),
+                    (Name: "AlphaGravity", App: "AlphaGravity", Title: "AlphaGravity"),
+                    (Name: "AlpFinans", App: "AlpFinans", Title: "AlpFinans"),
+                    (Name: "RustPlusDesk", App: "AlpRust+", Title: "AlpRust+"),
+                    (Name: "AlpRustPlus", App: "AlpRust+", Title: "AlpRust+")
+                };
+
+                foreach (var pDef in procList)
+                {
+                    var procs = Process.GetProcessesByName(pDef.Name);
+                    if (procs.Length > 0)
+                    {
+                        var proc = procs[0];
+                        TimeSpan duration = TimeSpan.Zero;
+                        try
+                        {
+                            duration = DateTime.Now - proc.StartTime;
+                        }
+                        catch { }
+
+                        string durationStr = "";
+                        if (duration.TotalMinutes < 1) durationStr = "1 dk";
+                        else if (duration.TotalHours < 1) durationStr = $"{(int)duration.TotalMinutes} dk";
+                        else durationStr = $"{(int)duration.TotalHours} sa {duration.Minutes} dk";
+
+                        return ($"⚡ {pDef.Title} Açık ({durationStr})", pDef.App);
+                    }
+                }
+            }
+            catch { }
+
+            return ("💤 AlpTogether Açık (Masaüstünde)", "AlpTogether");
+        }
+
         public string DeviceHwid => DeveloperAuthService.Instance.DeviceHwid;
         public string LocalAlpNetHwid { get; private set; } = string.Empty;
 
@@ -39,7 +110,7 @@ namespace AlpTogether.Services
 
             _heartbeatTimer = new System.Windows.Threading.DispatcherTimer
             {
-                Interval = TimeSpan.FromMinutes(2)
+                Interval = TimeSpan.FromSeconds(30)
             };
             _heartbeatTimer.Tick += async (s, e) => await SyncSelfAndHeartbeatAsync();
             _heartbeatTimer.Start();
@@ -491,15 +562,25 @@ namespace AlpTogether.Services
                     await AutoDetectAndLinkLocalAlpNetLicenseAsync(userRec);
                 }
 
-                // Anlık durum (LastSeen & MachineName) heartbeat güncellemesi gönder
+                // Anlık durum (LastSeen, MachineName, AFK & Aktivite) heartbeat güncellemesi gönder
                 if (IsRegistered)
                 {
+                    var (isAfk, afkMinutes) = GetIdleState();
+                    var (actText, actApp) = DetectCurrentActivity();
+                    if (isAfk)
+                    {
+                        actText = actText.Replace("⚡", "💤") + $" [Boşta - {afkMinutes} dk]";
+                    }
+
                     var heartbeatData = new
                     {
                         lastSeen = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                         machineName = Environment.MachineName,
                         alpnetHwid = LocalAlpNetHwid,
-                        clientVersion = "1.0.0"
+                        clientVersion = "1.0.0",
+                        isAfk = isAfk,
+                        afkMinutes = afkMinutes,
+                        currentActivity = actText
                     };
                     string patchJson = JsonSerializer.Serialize(heartbeatData);
                     using var patchContent = new StringContent(patchJson, Encoding.UTF8, "application/json");
@@ -664,6 +745,25 @@ namespace AlpTogether.Services
                 }
                 catch { }
 
+                // 3. Fetch AlpNet legacy users node to resolve real-time WARP active state & VPN timestamps
+                Dictionary<string, JsonElement> alpnetUsers = new(StringComparer.OrdinalIgnoreCase);
+                try
+                {
+                    string alpnetUrl = GetFirebaseUrl("users");
+                    using var alpCts = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+                    var alpResp = await _httpClient.GetAsync(alpnetUrl, alpCts.Token);
+                    if (alpResp.IsSuccessStatusCode)
+                    {
+                        string alpJson = await alpResp.Content.ReadAsStringAsync();
+                        if (!string.IsNullOrWhiteSpace(alpJson) && alpJson != "null")
+                        {
+                            var aDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(alpJson);
+                            if (aDict != null) alpnetUsers = new(aDict, StringComparer.OrdinalIgnoreCase);
+                        }
+                    }
+                }
+                catch { }
+
                 if (resp.IsSuccessStatusCode)
                 {
                     string json = await resp.Content.ReadAsStringAsync();
@@ -689,6 +789,23 @@ namespace AlpTogether.Services
                                     {
                                         if (!string.IsNullOrWhiteSpace(meta.Machine)) user.MachineName = meta.Machine;
                                         if (!string.IsNullOrWhiteSpace(meta.User)) user.PcUser = meta.User;
+                                    }
+
+                                    // Map AlpNet WARP status & timestamps
+                                    JsonElement alpElem = default;
+                                    bool hasAlp = (!string.IsNullOrWhiteSpace(user.AlpNetHwid) && alpnetUsers.TryGetValue(user.AlpNetHwid, out alpElem)) ||
+                                                  (!string.IsNullOrWhiteSpace(user.Hwid) && alpnetUsers.TryGetValue(user.Hwid, out alpElem));
+
+                                    if (hasAlp && alpElem.ValueKind == JsonValueKind.Object)
+                                    {
+                                        if (alpElem.TryGetProperty("warp_active", out var waElem))
+                                            user.WarpActive = waElem.GetBoolean();
+                                        if (alpElem.TryGetProperty("warp_started_at", out var wsElem))
+                                            user.WarpStartedAt = wsElem.GetString() ?? "";
+                                        if (alpElem.TryGetProperty("warp_stopped_at", out var wstElem))
+                                            user.WarpStoppedAt = wstElem.GetString() ?? "";
+                                        if (alpElem.TryGetProperty("warp_total_hours_today", out var wtElem) && wtElem.TryGetDouble(out double th))
+                                            user.WarpTotalHoursToday = th;
                                     }
 
                                     // Resolve friendly user identity from keygen history (Barış, Ferdicik, etc.)

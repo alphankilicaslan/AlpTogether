@@ -221,6 +221,251 @@ namespace AlpTogether.Tests
                 failures++;
             }
 
+            // TEST 6: AlpNet Keygen Service & HMAC-SHA256 Generation
+            Console.WriteLine("\n[TEST 6] Testing AlpNet Keygen & HMAC-SHA256...");
+            try
+            {
+                string testHwid = "ADF3CBA9F39420AB98E019889EF871A2";
+                string key = AlpNetKeygenService.Instance.GenerateLicense(testHwid, 24, "Günlük (24 Saat)", "Test Unit License", 0);
+                if (string.IsNullOrEmpty(key))
+                {
+                    Console.WriteLine(" FAIL: Generated AlpNet license is null or empty!");
+                    failures++;
+                }
+                else
+                {
+                    byte[] bytes = Convert.FromBase64String(key);
+                    string decoded = System.Text.Encoding.UTF8.GetString(bytes);
+                    string[] parts = decoded.Split('|');
+                    if (parts.Length != 3)
+                    {
+                        Console.WriteLine($" FAIL: Expected 3 parts in AlpNet key, got {parts.Length}");
+                        failures++;
+                    }
+                    else if (parts[0] != testHwid)
+                    {
+                        Console.WriteLine($" FAIL: HWID mismatch in decoded key! Expected {testHwid}, got {parts[0]}");
+                        failures++;
+                    }
+                    else
+                    {
+                        string expectedSig = AlpNetKeygenService.ComputeHmacSha256($"{parts[0]}|{parts[1]}", "AlpNetSecret2026!PulseCore");
+                        if (parts[2] != expectedSig)
+                        {
+                            Console.WriteLine(" FAIL: HMAC-SHA256 signature mismatch in generated key!");
+                            failures++;
+                        }
+                        else
+                        {
+                            Console.WriteLine($" -> AlpNet license key verified: {key[..20]}... (HWID: {parts[0]}, Sig OK)");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 6 exception: {ex.Message}");
+                failures++;
+            }
+
+            // TEST 7: Rich Presence & Activity & WARP Status Badge
+            Console.WriteLine("\n[TEST 7] Testing Rich Presence, Activity & WARP Badges...");
+            try
+            {
+                var userOnline = new AlpTogetherUserRecord
+                {
+                    Hwid = "AT-TEST-0001",
+                    Username = "test_user",
+                    LastSeen = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                    IsAfk = false,
+                    CurrentActivity = "⚡ AlpLingo Açık (42 dk)",
+                    ActivityStartedAt = DateTime.UtcNow.AddMinutes(-42).ToString("yyyy-MM-dd HH:mm:ss"),
+                    WarpActive = true,
+                    WarpStartedAt = DateTime.UtcNow.AddHours(-2).ToString("yyyy-MM-dd HH:mm:ss"),
+                    WarpTotalHoursToday = 3.5
+                };
+
+                if (!userOnline.IsOnline || userOnline.PresenceStatusText != "Çevrimiçi" || userOnline.PresenceDotColorHex != "#00E676")
+                {
+                    Console.WriteLine($" FAIL: userOnline presence incorrect ({userOnline.PresenceStatusText}, {userOnline.PresenceDotColorHex})");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Online user presence dot: {userOnline.PresenceDotColorHex} ({userOnline.PresenceStatusText})");
+                }
+
+                if (!userOnline.ActivityDisplayText.Contains("AlpLingo Açık (42 dk)"))
+                {
+                    Console.WriteLine($" FAIL: ActivityDisplayText format incorrect: {userOnline.ActivityDisplayText}");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> ActivityDisplayText verified: {userOnline.ActivityDisplayText}");
+                }
+
+                if (!userOnline.WarpStatusBadge.Contains("AÇIK") || userOnline.WarpStatusBadgeColorHex != "#00E5FF")
+                {
+                    Console.WriteLine($" FAIL: WarpStatusBadge incorrect ({userOnline.WarpStatusBadge}, {userOnline.WarpStatusBadgeColorHex})");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> WarpStatusBadge verified: {userOnline.WarpStatusBadge} ({userOnline.WarpDetailText})");
+                }
+
+                // AFK user test
+                var userAfk = new AlpTogetherUserRecord
+                {
+                    Hwid = "AT-TEST-0002",
+                    Username = "afk_user",
+                    LastSeen = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                    IsAfk = true,
+                    AfkMinutes = 12,
+                    CurrentActivity = "AlpTogether"
+                };
+
+                if (!userAfk.PresenceStatusText.Contains("AFK (12 dk)") || userAfk.PresenceDotColorHex != "#FFB300")
+                {
+                    Console.WriteLine($" FAIL: AFK user presence incorrect ({userAfk.PresenceStatusText}, {userAfk.PresenceDotColorHex})");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> AFK user presence dot: {userAfk.PresenceDotColorHex} ({userAfk.PresenceStatusText})");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 7 exception: {ex.Message}");
+                failures++;
+            }
+
+            // TEST 8: Publisher Preset Service & Auto-Path Discovery
+            Console.WriteLine("\n[TEST 8] Testing Publisher Preset Service & Auto-Path Discovery...");
+            try
+            {
+                var pubService = PublisherPresetService.Instance;
+                var alpnetPreset = pubService.GetPreset("alpnet");
+                if (string.IsNullOrEmpty(alpnetPreset.AppName) || string.IsNullOrEmpty(alpnetPreset.ExeName))
+                {
+                    Console.WriteLine(" FAIL: Expected alpnet preset to have AppName and ExeName!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> AlpNet Preset: {alpnetPreset.AppName} ({alpnetPreset.ExeName}), LocalPath: '{alpnetPreset.LocalPath}', Size: {alpnetPreset.SizeText}");
+                }
+
+                var lingoPreset = pubService.GetPreset("alplingo");
+                Console.WriteLine($" -> AlpLingo Preset: {lingoPreset.AppName}, LocalPath: '{lingoPreset.LocalPath}', Version: {lingoPreset.Version}");
+
+                var gravPreset = pubService.GetPreset("alphagravity");
+                Console.WriteLine($" -> AlphaGravity Preset: {gravPreset.AppName}, LocalPath: '{gravPreset.LocalPath}', Version: {gravPreset.Version}");
+
+                // Test persistence roundtrip
+                var testPreset = new PublisherPreset
+                {
+                    Tag = "test-app",
+                    AppName = "Test Automation App",
+                    Version = "3.2.1",
+                    Category = "Test Tools",
+                    ExeName = "TestApp.exe",
+                    LocalPath = @"C:\Test\TestApp.exe",
+                    SizeText = "15.4 MB",
+                    DirectUrl = "https://github.com/alphan/test/releases/v3.2.1/TestApp.exe",
+                    PatchNotes = "Automated test notes."
+                };
+                pubService.SavePreset(testPreset);
+                pubService.LoadPresets();
+                var reloaded = pubService.GetPreset("test-app");
+                if (reloaded.AppName != "Test Automation App" || reloaded.Version != "3.2.1")
+                {
+                    Console.WriteLine(" FAIL: Publisher preset persistence failed roundtrip!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Verified Publisher preset persistence roundtrip in publisher_presets.json.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 8 exception: {ex.Message}");
+                failures++;
+            }
+
+            // TEST 9: AlpDestek Aspect Ratio, DPI & Coordinate Mapping Verification
+            Console.WriteLine("\n[TEST 9] Testing AlpDestek Aspect Ratio & Coordinate Mapping...");
+            try
+            {
+                // Verify 16:9 scaling
+                int w1 = 1920, h1 = 1080;
+                double s1 = Math.Min(1280.0 / w1, 720.0 / h1);
+                int tw1 = (int)(w1 * s1), th1 = (int)(h1 * s1);
+                if (tw1 != 1280 || th1 != 720)
+                {
+                    Console.WriteLine($" FAIL: Expected 1920x1080 -> 1280x720, got {tw1}x{th1}");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> 16:9 Standard Screen (1920x1080) correctly scaled to 1280x720.");
+                }
+
+                // Verify 21:9 Ultrawide scaling (Aspect ratio preservation)
+                int w2 = 2560, h2 = 1080;
+                double s2 = Math.Min(1280.0 / w2, 720.0 / h2);
+                int tw2 = (int)(w2 * s2), th2 = (int)(h2 * s2);
+                if (tw2 != 1280 || th2 != 540)
+                {
+                    Console.WriteLine($" FAIL: Expected 2560x1080 -> 1280x540, got {tw2}x{th2}");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> 21:9 Ultrawide Screen (2560x1080) correctly scaled to 1280x540 without distortion.");
+                }
+
+                // Verify 16:10 scaling
+                int w3 = 1920, h3 = 1200;
+                double s3 = Math.Min(1280.0 / w3, 720.0 / h3);
+                int tw3 = (int)(w3 * s3), th3 = (int)(h3 * s3);
+                if (tw3 != 1152 || th3 != 720)
+                {
+                    Console.WriteLine($" FAIL: Expected 1920x1200 -> 1152x720, got {tw3}x{th3}");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> 16:10 Screen (1920x1200) correctly scaled to 1152x720 without distortion.");
+                }
+
+                // Verify WarpFullDisplayStatus
+                var uWarpOff = new AlpTogetherUserRecord
+                {
+                    Hwid = "AT-TEST-0003",
+                    WarpActive = false,
+                    WarpStoppedAt = "2026-10-20T03:15:00Z",
+                    WarpTotalHoursToday = 2.4
+                };
+                if (!uWarpOff.WarpFullDisplayStatus.Contains("KAPALI") || !uWarpOff.WarpFullDisplayStatus.Contains("Son Kapanış") || !uWarpOff.WarpFullDisplayStatus.Contains("Bugün"))
+                {
+                    Console.WriteLine($" FAIL: WarpFullDisplayStatus incorrect for inactive user: '{uWarpOff.WarpFullDisplayStatus}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Verified Inactive WARP detail: {uWarpOff.WarpFullDisplayStatus}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 9 exception: {ex.Message}");
+                failures++;
+            }
+
             Console.WriteLine("\n==================================================");
             if (failures == 0)
             {

@@ -173,6 +173,30 @@ namespace AlpTogether.Models
         [JsonPropertyName("clientVersion")]
         public string ClientVersion { get; set; } = "1.0.0";
 
+        [JsonPropertyName("isAfk")]
+        public bool IsAfk { get; set; }
+
+        [JsonPropertyName("afkMinutes")]
+        public int AfkMinutes { get; set; }
+
+        [JsonPropertyName("currentActivity")]
+        public string CurrentActivity { get; set; } = string.Empty;
+
+        [JsonPropertyName("activityStartedAt")]
+        public string ActivityStartedAt { get; set; } = string.Empty;
+
+        [JsonPropertyName("warpActive")]
+        public bool WarpActive { get; set; }
+
+        [JsonPropertyName("warpStartedAt")]
+        public string WarpStartedAt { get; set; } = string.Empty;
+
+        [JsonPropertyName("warpStoppedAt")]
+        public string WarpStoppedAt { get; set; } = string.Empty;
+
+        [JsonPropertyName("warpTotalHoursToday")]
+        public double WarpTotalHoursToday { get; set; }
+
         [JsonPropertyName("appPermissions")]
         public Dictionary<string, UserAppPermission> AppPermissions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -275,6 +299,109 @@ namespace AlpTogether.Models
             return false;
         }
 
+        [JsonIgnore]
+        public bool IsOnline
+        {
+            get
+            {
+                if (DateTime.TryParse(LastSeen, out var dt))
+                {
+                    var spanLocal = Math.Abs((DateTime.Now - dt).TotalMinutes);
+                    var spanUtc = Math.Abs((DateTime.UtcNow - dt).TotalMinutes);
+                    return Math.Min(spanLocal, spanUtc) <= 3.0;
+                }
+                return false;
+            }
+        }
+
+        [JsonIgnore]
+        public string PresenceStatusText
+        {
+            get
+            {
+                if (!IsOnline) return "Çevrimdışı";
+                if (IsAfk) return $"Boşta / AFK ({AfkMinutes} dk)";
+                return "Çevrimiçi";
+            }
+        }
+
+        [JsonIgnore]
+        public string PresenceDotColorHex
+        {
+            get
+            {
+                if (!IsOnline) return "#757575"; // Grey
+                if (IsAfk) return "#FFB300"; // Yellow / Orange
+                return "#00E676"; // Green
+            }
+        }
+
+        [JsonIgnore]
+        public string ActivityDisplayText
+        {
+            get
+            {
+                if (!IsOnline) return "💤 Çevrimdışı";
+                if (!string.IsNullOrWhiteSpace(CurrentActivity))
+                    return CurrentActivity;
+                if (IsAfk) return $"💤 Boşta ({AfkMinutes} dk)";
+                return "⚡ AlpTogether Açık (Masaüstünde)";
+            }
+        }
+
+        [JsonIgnore]
+        public string WarpStatusBadge
+        {
+            get
+            {
+                if (WarpActive) return "WARP: 🟢 AÇIK";
+                return "WARP: ⚪ KAPALI";
+            }
+        }
+
+        [JsonIgnore]
+        public string WarpStatusBadgeColorHex => WarpActive ? "#00E5FF" : "#7E5676";
+
+        [JsonIgnore]
+        public string WarpDetailText
+        {
+            get
+            {
+                string usageStr = WarpTotalHoursToday > 0 ? $"Bugün: {WarpTotalHoursToday:0.1} sa" : "";
+                if (WarpActive)
+                {
+                    string startStr = "";
+                    if (DateTime.TryParse(WarpStartedAt, out var dt))
+                        startStr = $"Açılış: {dt.ToLocalTime():HH:mm}";
+                    return string.Join(" • ", new[] { startStr, usageStr }.Where(s => !string.IsNullOrEmpty(s)));
+                }
+                else
+                {
+                    string stopStr = "";
+                    if (DateTime.TryParse(WarpStoppedAt, out var dt))
+                        stopStr = $"Son Kapanış: {dt.ToLocalTime():HH:mm}";
+                    return string.Join(" • ", new[] { stopStr, usageStr }.Where(s => !string.IsNullOrEmpty(s)));
+                }
+            }
+        }
+
+        [JsonIgnore]
+        public string WarpFullDisplayStatus
+        {
+            get
+            {
+                string detail = WarpDetailText;
+                if (WarpActive)
+                {
+                    return string.IsNullOrEmpty(detail) ? "WARP: 🟢 AÇIK" : $"WARP: 🟢 AÇIK ({detail})";
+                }
+                else
+                {
+                    return string.IsNullOrEmpty(detail) ? "WARP: ⚪ KAPALI" : $"WARP: ⚪ KAPALI ({detail})";
+                }
+            }
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? prop = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -291,5 +418,41 @@ namespace AlpTogether.Models
     {
         public string Title { get; set; } = string.Empty;
         public int Days { get; set; }
+    }
+
+    public class SupportSession
+    {
+        [JsonPropertyName("sessionId")]
+        public string SessionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("adminHwid")]
+        public string AdminHwid { get; set; } = string.Empty;
+
+        [JsonPropertyName("adminName")]
+        public string AdminName { get; set; } = "Alphan (Admin)";
+
+        [JsonPropertyName("targetHwid")]
+        public string TargetHwid { get; set; } = string.Empty;
+
+        [JsonPropertyName("targetUsername")]
+        public string TargetUsername { get; set; } = string.Empty;
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "requested"; // requested, accepted, rejected, active, terminated
+
+        [JsonPropertyName("requestedAt")]
+        public string RequestedAt { get; set; } = string.Empty;
+
+        [JsonPropertyName("startedAt")]
+        public string StartedAt { get; set; } = string.Empty;
+
+        [JsonPropertyName("endedAt")]
+        public string EndedAt { get; set; } = string.Empty;
+
+        [JsonPropertyName("directEndpoint")]
+        public string DirectEndpoint { get; set; } = string.Empty;
+
+        [JsonPropertyName("relayFrameKey")]
+        public string RelayFrameKey { get; set; } = string.Empty;
     }
 }

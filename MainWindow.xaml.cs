@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,6 +33,8 @@ namespace AlpTogether
         private string _devEventFilter = "ALL";
         private List<AlpTogetherUserRecord> _allAdminUsers = new();
         private AlpTogetherUserRecord? _selectedAdminUser;
+        private KeygenLicenseItem? _itemToBan;
+        private KeygenLicenseItem? _itemToRename;
 
         public MainWindow()
         {
@@ -130,6 +133,9 @@ namespace AlpTogether
                 if (_selectedApp != null) UpdateHeroPanel(_selectedApp);
                 RefreshFilteredAppCards();
             }
+
+            // Start AlpDestek background listener (detects incoming admin technical support requests)
+            AlpDestekService.Instance.StartClientSessionListener();
         }
 
         private void ProcessMonitorTimer_Tick(object? sender, EventArgs e)
@@ -1056,6 +1062,39 @@ namespace AlpTogether
         }
 
         // ==================== DEVELOPER PUBLISHER & SETTINGS ====================
+        private void CmbPubAppSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CmbPubAppSelector.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+            {
+                if (tag == "custom")
+                {
+                    TxtPubAppName.Text = "Özel Uygulama";
+                    TxtPubVersion.Text = "1.0.0";
+                    TxtPubCategory.Text = "Genel";
+                    TxtPubExeName.Text = "App.exe";
+                    TxtPubLocalPath.Text = "";
+                    TxtPubSizeText.Text = "20.0 MB";
+                    TxtPubDirectUrl.Text = "";
+                    TxtPubInstallerUrl.Text = "";
+                    TxtPubDescription.Text = "";
+                    TxtPubPatchNotes.Text = "İlk sürüm yayınlandı.";
+                    return;
+                }
+
+                var preset = PublisherPresetService.Instance.GetPreset(tag);
+                TxtPubAppName.Text = preset.AppName;
+                TxtPubVersion.Text = preset.Version;
+                TxtPubCategory.Text = preset.Category;
+                TxtPubExeName.Text = preset.ExeName;
+                TxtPubLocalPath.Text = preset.LocalPath;
+                TxtPubSizeText.Text = preset.SizeText;
+                TxtPubDirectUrl.Text = preset.DirectUrl.Replace("{version}", preset.Version);
+                TxtPubInstallerUrl.Text = preset.InstallerUrl;
+                TxtPubDescription.Text = preset.Description;
+                TxtPubPatchNotes.Text = preset.PatchNotes;
+            }
+        }
+
         private void BtnPickLocalExeForPublish_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog
@@ -1067,6 +1106,7 @@ namespace AlpTogether
             if (dlg.ShowDialog(this) == true && File.Exists(dlg.FileName))
             {
                 var fi = new FileInfo(dlg.FileName);
+                TxtPubLocalPath.Text = dlg.FileName;
                 TxtPubExeName.Text = fi.Name;
                 TxtPubAppName.Text = Path.GetFileNameWithoutExtension(fi.Name);
                 double mb = fi.Length / (1024.0 * 1024.0);
@@ -1076,7 +1116,16 @@ namespace AlpTogether
                 {
                     var fvi = FileVersionInfo.GetVersionInfo(dlg.FileName);
                     if (!string.IsNullOrWhiteSpace(fvi.FileVersion))
-                        TxtPubVersion.Text = fvi.FileVersion;
+                    {
+                        TxtPubVersion.Text = fvi.FileVersion.Trim();
+                        if (TxtPubDirectUrl.Text.Contains("/releases/download/"))
+                        {
+                            TxtPubDirectUrl.Text = System.Text.RegularExpressions.Regex.Replace(
+                                TxtPubDirectUrl.Text,
+                                @"/releases/download/v[^/]+/",
+                                $"/releases/download/v{fvi.FileVersion.Trim()}/");
+                        }
+                    }
                 }
                 catch { }
             }
@@ -1144,6 +1193,27 @@ namespace AlpTogether
 
             if (ok)
             {
+                // Persist preset into permanent memory
+                if (CmbPubAppSelector.SelectedItem is ComboBoxItem cItem && cItem.Tag is string currentTag && currentTag != "custom")
+                {
+                    var p = new PublisherPreset
+                    {
+                        Tag = currentTag,
+                        AppName = appName,
+                        Version = version,
+                        Category = TxtPubCategory.Text.Trim(),
+                        ExeName = exeName,
+                        LocalPath = TxtPubLocalPath.Text.Trim(),
+                        SizeText = TxtPubSizeText.Text.Trim(),
+                        DirectUrl = TxtPubDirectUrl.Text.Trim(),
+                        InstallerUrl = TxtPubInstallerUrl.Text.Trim(),
+                        Description = TxtPubDescription.Text.Trim(),
+                        PatchNotes = TxtPubPatchNotes.Text.Trim(),
+                        LastPublishedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    };
+                    PublisherPresetService.Instance.SavePreset(p);
+                }
+
                 SelectApp(newApp);
             }
         }
@@ -1189,6 +1259,7 @@ namespace AlpTogether
             BtnDevSubTabUsers.Style = (Style)FindResource("PinkSecondaryButtonStyle");
             BtnDevSubTabTelemetry.Style = (Style)FindResource("PinkSecondaryButtonStyle");
             BtnDevSubTabPublisher.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+            BtnDevSubTabKeygen.Style = (Style)FindResource("PinkSecondaryButtonStyle");
             BtnDevSubTabSettings.Style = (Style)FindResource("PinkSecondaryButtonStyle");
 
             if (activeTabBtn != null)
@@ -1329,8 +1400,23 @@ namespace AlpTogether
 
             TxtDevUserAvatar.Text = user.InitialLetter;
             TxtDevUserTitle.Text = user.DisplayName;
+            TxtDevUserPresenceStatus.Text = $"({user.PresenceStatusText})";
+            try
+            {
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(user.PresenceDotColorHex));
+                DotDevUserPresence.Fill = brush;
+                TxtDevUserPresenceStatus.Foreground = brush;
+            }
+            catch { }
+            TxtDevUserActivity.Text = user.ActivityDisplayText;
             TxtDevUserRegDate.Text = user.RegisteredAtDisplay;
             TxtDevUserLastSeen.Text = user.LastSeenDisplay;
+            TxtDevUserWarpStatus.Text = user.WarpFullDisplayStatus;
+            try
+            {
+                TxtDevUserWarpStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(user.WarpStatusBadgeColorHex));
+            }
+            catch { }
             TxtDevUserHwid.Text = $"HWID: {user.Hwid}" + (string.IsNullOrWhiteSpace(user.AlpNetHwid) ? "" : $" | AlpNet: {user.AlpNetHwid}");
             TxtDevUserAliasInput.Text = user.AdminAlias;
 
@@ -1809,10 +1895,360 @@ namespace AlpTogether
             SwitchDevSubView(DevSubViewPublisher, BtnDevSubTabPublisher);
         }
 
+        // ==================== ALPDESTEK CANLI DESTEK & UZAK MASAÜSTÜ ====================
+        private void BtnStartLiveSupport_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null)
+            {
+                MessageBox.Show("Lütfen önce soldaki listeden canlı bağlanmak istediğiniz kullanıcıyı seçin.", "Kullanıcı Seçilmedi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                var viewer = new RemoteDesktopViewerWindow(_selectedAdminUser.Hwid, _selectedAdminUser.DisplayName);
+                viewer.Owner = this;
+                viewer.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Canlı destek penceresi açılamadı: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ==================== ALPNET LİSANS & KEYGEN MASASI ====================
         private void BtnDevSubTabKeygen_Click(object sender, RoutedEventArgs e)
         {
-            SwitchDevSubView(DevSubViewKeygen, null);
+            SwitchDevSubView(DevSubViewKeygen, BtnDevSubTabKeygen);
             TxtDevThisHwid.Text = DeveloperAuthService.Instance.DeviceHwid;
+            RefreshKeygenUi();
+        }
+
+        private void RefreshKeygenUi()
+        {
+            TxtAlpNetTotalRevenue.Text = $"₺{AlpNetKeygenService.Instance.TotalRevenue:0.00}";
+            TxtAlpNetActiveSubs.Text = AlpNetKeygenService.Instance.ActiveSubs.ToString();
+            TxtAlpNetTotalLicenses.Text = AlpNetKeygenService.Instance.TotalLicenses.ToString();
+
+            LstAlpNetHistory.ItemsSource = null;
+            LstAlpNetHistory.ItemsSource = AlpNetKeygenService.Instance.History;
+
+            LstAlpNetBlacklist.ItemsSource = null;
+            LstAlpNetBlacklist.ItemsSource = AlpNetKeygenService.Instance.BannedHistory;
+        }
+
+        private void SwitchKeygenSubTab(FrameworkElement activePanel, Button activeBtn)
+        {
+            PnlKeygenGenerator.Visibility = ReferenceEquals(PnlKeygenGenerator, activePanel) ? Visibility.Visible : Visibility.Collapsed;
+            PnlKeygenHistory.Visibility = ReferenceEquals(PnlKeygenHistory, activePanel) ? Visibility.Visible : Visibility.Collapsed;
+            PnlKeygenBlacklist.Visibility = ReferenceEquals(PnlKeygenBlacklist, activePanel) ? Visibility.Visible : Visibility.Collapsed;
+            PnlKeygenLive.Visibility = ReferenceEquals(PnlKeygenLive, activePanel) ? Visibility.Visible : Visibility.Collapsed;
+            PnlKeygenAppState.Visibility = ReferenceEquals(PnlKeygenAppState, activePanel) ? Visibility.Visible : Visibility.Collapsed;
+
+            BtnKeygenTabGenerator.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+            BtnKeygenTabHistory.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+            BtnKeygenTabBlacklist.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+            BtnKeygenTabLive.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+            BtnKeygenTabAppState.Style = (Style)FindResource("PinkSecondaryButtonStyle");
+
+            activeBtn.Style = (Style)FindResource("PinkPrimaryButtonStyle");
+        }
+
+        private void BtnKeygenTabGenerator_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchKeygenSubTab(PnlKeygenGenerator, BtnKeygenTabGenerator);
+        }
+
+        private void BtnKeygenTabHistory_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchKeygenSubTab(PnlKeygenHistory, BtnKeygenTabHistory);
+            RefreshKeygenUi();
+        }
+
+        private void BtnKeygenTabBlacklist_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchKeygenSubTab(PnlKeygenBlacklist, BtnKeygenTabBlacklist);
+            RefreshKeygenUi();
+        }
+
+        private async void BtnKeygenTabLive_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchKeygenSubTab(PnlKeygenLive, BtnKeygenTabLive);
+            await RefreshLiveDevicesAsync();
+        }
+
+        private async void BtnKeygenTabAppState_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchKeygenSubTab(PnlKeygenAppState, BtnKeygenTabAppState);
+            await RefreshAppStateAsync();
+        }
+
+        private void BtnAlpNetGenerate_Click(object sender, RoutedEventArgs e)
+        {
+            string hwid = TxtAlpNetHwid.Text.Trim();
+            if (string.IsNullOrWhiteSpace(hwid))
+            {
+                MessageBox.Show("Lütfen hedef Donanım Kimliğini (HWID) girin.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            int hours = CmbAlpNetDuration.SelectedIndex switch
+            {
+                0 => 1,
+                1 => 6,
+                2 => 12,
+                3 => 24,
+                4 => 24 * 7,
+                5 => 24 * 30,
+                6 => 24 * 365,
+                7 => 24 * 36500,
+                _ => 24 * 30
+            };
+
+            string durationStr = (CmbAlpNetDuration.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Aylık (30 Gün)";
+            decimal price = decimal.TryParse(TxtAlpNetPrice.Text.Trim(), out var p) ? p : 0;
+            string note = TxtAlpNetNote.Text.Trim();
+
+            try
+            {
+                string key = AlpNetKeygenService.Instance.GenerateLicense(hwid, hours, durationStr, note, price);
+                TxtAlpNetOutputKey.Text = key;
+                TxtAlpNetGenStatus.Text = "Lisans başarıyla üretildi ve buluta gönderildi!";
+                RefreshKeygenUi();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lisans üretilemedi: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void BtnAlpNetCopyKey_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(TxtAlpNetOutputKey.Text))
+            {
+                Clipboard.SetText(TxtAlpNetOutputKey.Text);
+                TxtAlpNetGenStatus.Text = "Lisans panoya kopyalandı!";
+            }
+        }
+
+        private void BtnAlpNetDeleteExpired_Click(object sender, RoutedEventArgs e)
+        {
+            var res = MessageBox.Show("Süresi dolmuş tüm lisansları veritabanından kalıcı olarak silmek istiyor musunuz?", "Onay", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (res == MessageBoxResult.Yes)
+            {
+                int removed = AlpNetKeygenService.Instance.DeleteExpiredLicenses();
+                RefreshKeygenUi();
+                MessageBox.Show($"{removed} adet süresi dolmuş lisans temizlendi.", "Temizlendi", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void BtnHistoryItemCopy_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
+            {
+                Clipboard.SetText(item.KeyString);
+                MessageBox.Show("Lisans anahtarı panoya kopyalandı!", "Kopyalandı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void BtnHistoryItemRename_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
+            {
+                _itemToRename = item;
+                TxtAlpNetRenameInput.Text = item.Note;
+                AlpNetRenameOverlay.Visibility = Visibility.Visible;
+                TxtAlpNetRenameInput.Focus();
+                TxtAlpNetRenameInput.SelectAll();
+            }
+        }
+
+        private void BtnAlpNetRenameSave_Click(object sender, RoutedEventArgs e)
+        {
+            if (_itemToRename != null)
+            {
+                AlpNetKeygenService.Instance.UpdateNote(_itemToRename, TxtAlpNetRenameInput.Text);
+                RefreshKeygenUi();
+            }
+            AlpNetRenameOverlay.Visibility = Visibility.Collapsed;
+            _itemToRename = null;
+        }
+
+        private void BtnAlpNetRenameCancel_Click(object sender, RoutedEventArgs e)
+        {
+            AlpNetRenameOverlay.Visibility = Visibility.Collapsed;
+            _itemToRename = null;
+        }
+
+        private void BtnHistoryItemDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
+            {
+                var res = MessageBox.Show("Bu lisansı geçmişten tamamen silmek istediğinize emin misiniz?", "Onay", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (res == MessageBoxResult.Yes)
+                {
+                    AlpNetKeygenService.Instance.DeleteLicense(item);
+                    RefreshKeygenUi();
+                }
+            }
+        }
+
+        private void BtnHistoryItemBan_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
+            {
+                _itemToBan = item;
+                AlpNetBanOverlay.Visibility = Visibility.Visible;
+            }
+        }
+
+        private async void BtnAlpNetBanKey_Click(object sender, RoutedEventArgs e)
+        {
+            AlpNetBanOverlay.Visibility = Visibility.Collapsed;
+            if (_itemToBan == null) return;
+            await AlpNetKeygenService.Instance.ProcessBanAsync(_itemToBan, _itemToBan.KeyString, "SİLİNDİ (ANAHTAR)");
+            RefreshKeygenUi();
+            _itemToBan = null;
+        }
+
+        private async void BtnAlpNetBanHwid_Click(object sender, RoutedEventArgs e)
+        {
+            AlpNetBanOverlay.Visibility = Visibility.Collapsed;
+            if (_itemToBan == null) return;
+
+            string hwid = "";
+            try
+            {
+                string rawKey = _itemToBan.KeyString.Replace("-", "").Replace("ALPNETPULSE", "");
+                byte[] decodedBytes = Convert.FromBase64String(rawKey);
+                string fullKeyData = Encoding.UTF8.GetString(decodedBytes);
+                string[] parts = fullKeyData.Split('|');
+                if (parts.Length > 0) hwid = parts[0];
+            }
+            catch { }
+
+            if (string.IsNullOrEmpty(hwid)) hwid = _itemToBan.KeyString;
+            await AlpNetKeygenService.Instance.ProcessBanAsync(_itemToBan, hwid, "YASAKLI (HWID)");
+            RefreshKeygenUi();
+            _itemToBan = null;
+        }
+
+        private void BtnAlpNetBanCancel_Click(object sender, RoutedEventArgs e)
+        {
+            AlpNetBanOverlay.Visibility = Visibility.Collapsed;
+            _itemToBan = null;
+        }
+
+        private async void BtnBlacklistItemUnban_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
+            {
+                await AlpNetKeygenService.Instance.RemoveFromBlacklistAsync(item);
+                RefreshKeygenUi();
+                MessageBox.Show("Yasak başarıyla kaldırıldı ve lisans tekrar aktif edildi!", "Yasak Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private async Task RefreshLiveDevicesAsync()
+        {
+            BtnAlpNetRefreshLive.IsEnabled = false;
+            var list = await AlpNetKeygenService.Instance.FetchLiveDevicesAsync();
+            LstAlpNetLiveDevices.ItemsSource = null;
+            LstAlpNetLiveDevices.ItemsSource = list;
+            BtnAlpNetRefreshLive.IsEnabled = true;
+        }
+
+        private async void BtnAlpNetRefreshLive_Click(object sender, RoutedEventArgs e)
+        {
+            await RefreshLiveDevicesAsync();
+        }
+
+        private void BtnLiveItemCopyHwid_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is KeygenActiveDevice dev)
+            {
+                Clipboard.SetText(dev.Hwid);
+                TxtAlpNetDirectMsgStatus.Text = "HWID panoya kopyalandı!";
+            }
+        }
+
+        private void BtnLiveItemBan_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is KeygenActiveDevice dev)
+            {
+                _itemToBan = new KeygenLicenseItem
+                {
+                    KeyString = dev.LicenseKey,
+                    Note = "CANLI CİHAZ (HWID: " + dev.Hwid + ")"
+                };
+                AlpNetBanOverlay.Visibility = Visibility.Visible;
+            }
+        }
+
+        private async void BtnAlpNetSendDirectMsg_Click(object sender, RoutedEventArgs e)
+        {
+            if (LstAlpNetLiveDevices.SelectedItem is KeygenActiveDevice dev)
+            {
+                string msg = TxtAlpNetDirectMsg.Text.Trim();
+                if (string.IsNullOrWhiteSpace(msg)) return;
+
+                bool ok = await AlpNetKeygenService.Instance.SendDirectMessageAsync(dev.Hwid, msg);
+                TxtAlpNetDirectMsgStatus.Text = ok ? "Mesaj Gönderildi!" : "Gönderilemedi.";
+                TxtAlpNetDirectMsg.Text = "";
+            }
+            else
+            {
+                MessageBox.Show("Lütfen mesaj göndermek için listeden bir cihaz seçin.", "Cihaz Seçilmedi", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private async Task RefreshAppStateAsync()
+        {
+            var state = await AlpNetKeygenService.Instance.FetchAppStateAsync();
+            ChkAlpNetMaintenance.IsChecked = state.maintenance;
+            TxtAlpNetMaintenanceMsg.Text = state.maintenanceMsg;
+            TxtAlpNetBroadcastMsg.Text = state.broadcastMsg;
+            TxtAlpNetVersion.Text = state.version;
+            TxtAlpNetUpdateUrl.Text = state.updateUrl;
+        }
+
+        private async void BtnAlpNetSaveMaintenance_Click(object sender, RoutedEventArgs e)
+        {
+            TxtAlpNetSettingsStatus.Text = "Kaydediliyor...";
+            bool ok = await AlpNetKeygenService.Instance.PatchAppStateAsync(new
+            {
+                maintenance = ChkAlpNetMaintenance.IsChecked == true,
+                maintenanceMsg = TxtAlpNetMaintenanceMsg.Text.Trim()
+            });
+            TxtAlpNetSettingsStatus.Text = ok ? "✔ Bakım modu güncellendi!" : "⚠ Kaydedilemedi.";
+        }
+
+        private async void BtnAlpNetSaveBroadcast_Click(object sender, RoutedEventArgs e)
+        {
+            TxtAlpNetSettingsStatus.Text = "Duyuru yayınlanıyor...";
+            bool ok = await AlpNetKeygenService.Instance.PatchAppStateAsync(new
+            {
+                broadcastMsg = TxtAlpNetBroadcastMsg.Text.Trim()
+            });
+            TxtAlpNetSettingsStatus.Text = ok ? "✔ Duyuru anında yayınlandı!" : "⚠ Yayınlanamadı.";
+        }
+
+        private async void BtnAlpNetClearBroadcast_Click(object sender, RoutedEventArgs e)
+        {
+            TxtAlpNetBroadcastMsg.Text = "";
+            bool ok = await AlpNetKeygenService.Instance.PatchAppStateAsync(new { broadcastMsg = "" });
+            TxtAlpNetSettingsStatus.Text = ok ? "✔ Duyuru yayından kaldırıldı." : "⚠ Kaldırılamadı.";
+        }
+
+        private async void BtnAlpNetSaveUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            TxtAlpNetSettingsStatus.Text = "Sürüm bilgisi kaydediliyor...";
+            bool ok = await AlpNetKeygenService.Instance.PatchAppStateAsync(new
+            {
+                version = TxtAlpNetVersion.Text.Trim(),
+                updateUrl = TxtAlpNetUpdateUrl.Text.Trim()
+            });
+            TxtAlpNetSettingsStatus.Text = ok ? "✔ Yeni sürüm ve indirme linki yayınlandı!" : "⚠ Kaydedilemedi.";
         }
 
         private void BtnDevSubTabSettings_Click(object sender, RoutedEventArgs e)

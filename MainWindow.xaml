@@ -1685,6 +1685,14 @@
                                             Margin="0,0,8,6"
                                             Click="BtnDevSubTabPublisher_Click" />
 
+                                    <Button x:Name="BtnDevSubTabKeygen"
+                                            Content="🔑 AlpNet Lisans &amp; Keygen"
+                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                            Padding="14,8"
+                                            FontSize="12"
+                                            Margin="0,0,8,6"
+                                            Click="BtnDevSubTabKeygen_Click" />
+
                                     <Button x:Name="BtnDevSubTabSettings"
                                             Content="⚙ Bulut &amp; İstemci Ayarları"
                                             Style="{StaticResource PinkSecondaryButtonStyle}"
@@ -1850,7 +1858,7 @@
                                                                            VerticalAlignment="Center" />
                                                             </Border>
 
-                                                            <!-- Right Badges: AlpLingo, AlpNet, AlpFinans, AlphaGravity -->
+                                                            <!-- Right Badges: AlpLingo, AlpNet, AlpFinans, AlphaGravity, WARP -->
                                                             <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center" MaxWidth="160" HorizontalAlignment="Right" Margin="6,0,0,0">
                                                                 <Border Background="#251235" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
                                                                     <TextBlock Text="{Binding AlpLingoSummary}" Foreground="#FF85C0" FontSize="8.5" FontWeight="Bold" />
@@ -1864,19 +1872,25 @@
                                                                 <Border Background="#24102C" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
                                                                     <TextBlock Text="{Binding AlphaGravitySummary}" Foreground="#BA68C8" FontSize="8.5" FontWeight="Bold" />
                                                                 </Border>
+                                                                <Border Background="#122030" BorderBrush="{Binding WarpStatusBadgeColorHex}" BorderThickness="0.8" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
+                                                                    <TextBlock Text="{Binding WarpStatusBadge}" Foreground="{Binding WarpStatusBadgeColorHex}" FontSize="8.5" FontWeight="Bold" />
+                                                                </Border>
                                                             </WrapPanel>
 
                                                             <!-- Center User Info -->
                                                             <StackPanel VerticalAlignment="Center">
                                                                 <StackPanel Orientation="Horizontal">
-                                                                    <TextBlock Text="{Binding DisplayName}" Foreground="#FFFFFF" FontSize="13" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxWidth="150" />
+                                                                    <Ellipse Width="8" Height="8" Fill="{Binding PresenceDotColorHex}" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip="{Binding PresenceStatusText}" />
+                                                                    <TextBlock Text="{Binding DisplayName}" Foreground="#FFFFFF" FontSize="13" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxWidth="140" />
                                                                     <Border Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVis}}" Background="#FFD700" CornerRadius="4" Padding="4,1" Margin="6,0,0,0" VerticalAlignment="Center">
                                                                         <TextBlock Text="👑 ADMİN" Foreground="#12071C" FontSize="8.5" FontWeight="ExtraBold" />
                                                                     </Border>
                                                                 </StackPanel>
-                                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                                <TextBlock Text="{Binding ActivityDisplayText}" Foreground="#00E5FF" FontSize="9.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                                                                <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
                                                                     <TextBlock Text="🕒 " Foreground="#A97E9C" FontSize="10" />
-                                                                    <TextBlock Text="{Binding LastSeenDisplay}" Foreground="#00E676" FontSize="10" FontWeight="SemiBold" />
+                                                                    <TextBlock Text="{Binding LastSeenDisplay}" Foreground="#00E676" FontSize="10" FontWeight="SemiBold" Margin="0,0,8,0" />
+                                                                    <TextBlock Text="{Binding WarpStatusBadge}" Foreground="{Binding WarpStatusBadgeColorHex}" FontSize="9.5" FontWeight="Bold" />
                                                                 </StackPanel>
                                                                 <TextBlock Text="{Binding Hwid}" Foreground="#7E5676" FontSize="9.5" FontFamily="Consolas" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
                                                             </StackPanel>
@@ -1915,18 +1929,33 @@
                                                                 <Button x:Name="BtnDevToggleAdminRole"
                                                                         Content="👑 Yönetici (Admin) Ata"
                                                                         Style="{StaticResource PinkPrimaryButtonStyle}"
-                                                                        Padding="14,8"
-                                                                        FontSize="12"
+                                                                        Padding="14,6"
+                                                                        FontSize="11.5"
+                                                                        Margin="0,0,0,6"
                                                                         Click="BtnDevToggleAdminRole_Click"
                                                                         ToolTip="Seçili kullanıcıya tam yönetici (admin) rolü verir veya geri alır." />
+
+                                                                <Button x:Name="BtnStartLiveSupport"
+                                                                        Content="💻 Canlı Destek (AlpDestek)"
+                                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                                        Padding="14,6"
+                                                                        FontSize="11.5"
+                                                                        Click="BtnStartLiveSupport_Click"
+                                                                        ToolTip="Bu kullanıcının bilgisayarına canlı bağlanmak için AlpDestek oturumu başlatır." />
                                                             </StackPanel>
                                                             <StackPanel VerticalAlignment="Center">
-                                                                <TextBlock x:Name="TxtDevUserTitle" Text="Ahmet" Foreground="#FFFFFF" FontSize="17" FontWeight="ExtraBold" />
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Ellipse x:Name="DotDevUserPresence" Width="9" Height="9" Fill="#00E676" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                                    <TextBlock x:Name="TxtDevUserTitle" Text="Ahmet" Foreground="#FFFFFF" FontSize="17" FontWeight="ExtraBold" />
+                                                                    <TextBlock x:Name="TxtDevUserPresenceStatus" Text="(Çevrimiçi)" Foreground="#00E676" FontSize="12" FontWeight="SemiBold" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                                                </StackPanel>
+                                                                <TextBlock x:Name="TxtDevUserActivity" Text="⚡ AlpLingo Açık (42 dk)" Foreground="#00E5FF" FontSize="11" FontWeight="SemiBold" Margin="0,2,0,0" />
                                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                                     <TextBlock Text="Kayıt: " Foreground="#A97E9C" FontSize="11" />
                                                                     <TextBlock x:Name="TxtDevUserRegDate" Text="18.10.2026 18:27" Foreground="#D9B6CD" FontSize="11" Margin="0,0,12,0" />
                                                                     <TextBlock Text="Son Görülme: " Foreground="#A97E9C" FontSize="11" />
-                                                                    <TextBlock x:Name="TxtDevUserLastSeen" Text="Şimdi aktif" Foreground="#00E676" FontSize="11" FontWeight="Bold" />
+                                                                    <TextBlock x:Name="TxtDevUserLastSeen" Text="Şimdi aktif" Foreground="#00E676" FontSize="11" FontWeight="Bold" Margin="0,0,12,0" />
+                                                                    <TextBlock x:Name="TxtDevUserWarpStatus" Text="WARP: Kapalı" Foreground="#7E5676" FontSize="11" FontWeight="Bold" />
                                                                 </StackPanel>
                                                                 <TextBlock x:Name="TxtDevUserHwid" Text="AT-B495-E9F5-8F0F-1234" Foreground="#7E5676" FontSize="10.5" FontFamily="Consolas" Margin="0,2,0,0" />
                                                             </StackPanel>
@@ -2535,11 +2564,39 @@
                                                    FontSize="21"
                                                    FontWeight="ExtraBold"
                                                    Margin="0,0,0,4" />
-                                        <TextBlock Text="Yeni bir uygulama geliştirdiğinizde veya mevcut bir uygulamaya güncelleme çıkardığınızda buradan yayınlayın; anında tüm AlpTogether kullanıcılarına düşer!"
-                                                   Foreground="#D9B6CD"
-                                                   FontSize="12"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,0,0,14" />
+                                        <!-- Fast App Selector Dropdown -->
+                                        <Border Background="#1D0C2C" BorderBrush="#FF2E93" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,14">
+                                            <StackPanel>
+                                                <TextBlock Text="🎯 Hızlı Uygulama Seçici (Kayıtlı Yollar, Sürümler &amp; Şablonlar):" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,6" />
+                                                <ComboBox x:Name="CmbPubAppSelector"
+                                                          Background="#140A20"
+                                                          Foreground="#FFEAF5"
+                                                          BorderBrush="#7A2866"
+                                                          Padding="8,6"
+                                                          SelectionChanged="CmbPubAppSelector_SelectionChanged">
+                                                    <ComboBoxItem Content="🔌 AlpNet Pulse (Ağ, WARP &amp; Sesli Çeviri)" Tag="alpnet" />
+                                                    <ComboBoxItem Content="✦ AlpLingo (AI Oyun İçi Çeviri &amp; OCR)" Tag="alplingo" />
+                                                    <ComboBoxItem Content="🤖 AlphaGravity (Çoklu Model AI Asistanı)" Tag="alphagravity" />
+                                                    <ComboBoxItem Content="📈 AlpFinans (Borsa, Kripto &amp; Portföy)" Tag="alpfinans" />
+                                                    <ComboBoxItem Content="🦀 AlpRust+ (Rust+ Cihaz, Kamera &amp; Raid Alarmı)" Tag="alprust-plus" />
+                                                    <ComboBoxItem Content="⚙ [Özel / Yeni Uygulama]" Tag="custom" />
+                                                </ComboBox>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                                <TextBlock Text="📁 Hazır Derleme / Yerel .exe Dosya Yolu (Otomatik Tanınır):" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                                <TextBox x:Name="TxtPubLocalPath" Style="{StaticResource PinkTextBoxStyle}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
+                                                <Button Content="📂 Dosya Seç" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="14,8" Click="BtnPickLocalExeForPublish_Click" ToolTip="Bilgisayarınızdaki derlenmiş .exe dosyasını seçer." />
+                                            </StackPanel>
+                                        </Grid>
 
                                         <Grid Margin="0,0,0,10">
                                             <Grid.ColumnDefinitions>
@@ -2616,138 +2673,383 @@
 
                             <!-- ==================== SUB-VIEW 3: ADMIN KEYGEN & CİHAZ YÖNETİMİ ==================== -->
                             <ScrollViewer x:Name="DevSubViewKeygen" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1.1*" />
-                                        <ColumnDefinition Width="1*" />
-                                    </Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,0,20">
+                                    <!-- TOP KEYGEN STATS & BANNER -->
+                                    <Border Background="#160822" BorderBrush="#FF2E93" BorderThickness="1.2" CornerRadius="16" Padding="20,16" Margin="0,0,0,14">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
 
-                                    <!-- Left: Key Generator Form -->
-                                    <Border Grid.Column="0" Background="#160B23" BorderBrush="#FF2E93" BorderThickness="1.2" CornerRadius="16" Padding="22,20" Margin="0,0,14,0">
-                                        <StackPanel>
-                                            <Border Background="#FF2E93" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left" Margin="0,0,0,8">
-                                                <TextBlock Text="ALPTOGETHER ADMIN KEYGEN" Foreground="#FFFFFF" FontSize="10" FontWeight="ExtraBold" />
-                                            </Border>
+                                            <StackPanel Grid.Column="0">
+                                                <Border Background="#FF2E93" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left" Margin="0,0,0,6">
+                                                    <TextBlock Text="ALPNET &amp; ALPTOGETHER LİSANS MASASI" Foreground="#FFFFFF" FontSize="10" FontWeight="ExtraBold" />
+                                                </Border>
+                                                <TextBlock Text="🔑 Merkezi Lisans, Cihaz &amp; Keygen Yönetim Merkezi" Foreground="#FFFFFF" FontSize="18" FontWeight="ExtraBold" Margin="0,0,0,4" />
+                                                <TextBlock Text="Harici keygen programına ihtiyaç olmadan tüm AlpNet ve AlpTogether lisanslarını, kara listeyi, canlı istemcileri ve bakım durumunu buradan yönetin."
+                                                           Foreground="#D9B6CD" FontSize="11.5" />
+                                            </StackPanel>
 
-                                            <TextBlock Text="🔑 Geliştirici &amp; Admin Lisans Üretici" Foreground="#FFFFFF" FontSize="19" FontWeight="ExtraBold" Margin="0,0,0,4" />
-                                            <TextBlock Text="AlpTogether Admin Modu için cihaza özel HMAC-SHA256 imzalı lisans üretir. Bu anahtar AlpNet HWID ve Keygen algoritması ile kesinlikle çakışmaz."
-                                                       Foreground="#D9B6CD" FontSize="11.5" TextWrapping="Wrap" Margin="0,0,0,16" />
+                                            <!-- Stat Counters -->
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="10" Padding="12,8" Margin="0,0,10,0">
+                                                    <StackPanel HorizontalAlignment="Center">
+                                                        <TextBlock Text="TOPLAM GELİR" Foreground="#A97E9C" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
+                                                        <TextBlock x:Name="TxtAlpNetTotalRevenue" Text="₺0.00" Foreground="#00E676" FontSize="16" FontWeight="ExtraBold" HorizontalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Border>
 
-                                            <!-- This Device HWID -->
-                                            <Border Background="#1F0D30" BorderBrush="#4A205F" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,14">
-                                                <StackPanel>
-                                                    <TextBlock Text="BU BİLGİSAYARIN HWID KİMLİĞİ:" Foreground="#FF85C0" FontSize="10.5" FontWeight="Bold" Margin="0,0,0,4" />
-                                                    <DockPanel>
-                                                        <Button x:Name="BtnDevCopyThisHwid"
-                                                                Content="📋 Kopyala"
-                                                                DockPanel.Dock="Right"
-                                                                Style="{StaticResource PinkSecondaryButtonStyle}"
-                                                                Padding="10,6"
-                                                                Margin="6,0,0,0"
-                                                                Click="BtnDevCopyThisHwid_Click" />
-                                                        <TextBox x:Name="TxtDevThisHwid" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" FontWeight="Bold" Foreground="#00E5FF" />
+                                                <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="10" Padding="12,8" Margin="0,0,10,0">
+                                                    <StackPanel HorizontalAlignment="Center">
+                                                        <TextBlock Text="AKTİF ABONE" Foreground="#A97E9C" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
+                                                        <TextBlock x:Name="TxtAlpNetActiveSubs" Text="0" Foreground="#00E5FF" FontSize="16" FontWeight="ExtraBold" HorizontalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="10" Padding="12,8" Margin="0,0,12,0">
+                                                    <StackPanel HorizontalAlignment="Center">
+                                                        <TextBlock Text="TOPLAM LİSANS" Foreground="#A97E9C" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
+                                                        <TextBlock x:Name="TxtAlpNetTotalLicenses" Text="0" Foreground="#FF85C0" FontSize="16" FontWeight="ExtraBold" HorizontalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Button x:Name="BtnAlpNetDeleteExpired"
+                                                        Content="🧹 Süresi Dolanları Sil"
+                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                        Padding="12,8"
+                                                        FontSize="11.5"
+                                                        Click="BtnAlpNetDeleteExpired_Click"
+                                                        ToolTip="Geçmişteki süresi dolmuş lisansları veritabanından kalıcı olarak temizler." />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- KEYGEN SUB-TABS NAVIGATION -->
+                                    <Border Background="#140920" BorderBrush="#3B1C4B" BorderThickness="1" CornerRadius="12" Padding="8" Margin="0,0,0,14">
+                                        <WrapPanel>
+                                            <Button x:Name="BtnKeygenTabGenerator" Content="🔑 Lisans Üretici" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="14,7" FontSize="11.5" Margin="0,0,6,0" Click="BtnKeygenTabGenerator_Click" />
+                                            <Button x:Name="BtnKeygenTabHistory" Content="📜 Lisans Geçmişi" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="14,7" FontSize="11.5" Margin="0,0,6,0" Click="BtnKeygenTabHistory_Click" />
+                                            <Button x:Name="BtnKeygenTabBlacklist" Content="⛔ Kara Liste" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="14,7" FontSize="11.5" Margin="0,0,6,0" Click="BtnKeygenTabBlacklist_Click" />
+                                            <Button x:Name="BtnKeygenTabLive" Content="🟢 Canlı Cihazlar &amp; DM" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="14,7" FontSize="11.5" Margin="0,0,6,0" Click="BtnKeygenTabLive_Click" />
+                                            <Button x:Name="BtnKeygenTabAppState" Content="🛠 Uygulama Durumu" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="14,7" FontSize="11.5" Click="BtnKeygenTabAppState_Click" />
+                                        </WrapPanel>
+                                    </Border>
+
+                                    <!-- ==================== TAB 1: LİSANS ÜRETİCİ ==================== -->
+                                    <Grid x:Name="PnlKeygenGenerator" Visibility="Visible">
+                                        <Grid.ColumnDefinitions>
+                                            <!-- AlpNet License Generator -->
+                                            <ColumnDefinition Width="1.1*" />
+                                            <!-- AlpTogether Admin Key Generator -->
+                                            <ColumnDefinition Width="1*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- AlpNet Pulse License Form -->
+                                        <Border Grid.Column="0" Background="#160B23" BorderBrush="#00E5FF" BorderThickness="1.2" CornerRadius="16" Padding="20,18" Margin="0,0,12,0">
+                                            <StackPanel>
+                                                <Border Background="#00E5FF" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left" Margin="0,0,0,8">
+                                                    <TextBlock Text="ALPNET PULSE LİSANS MOTORU" Foreground="#0E0517" FontSize="10" FontWeight="ExtraBold" />
+                                                </Border>
+
+                                                <TextBlock Text="🔌 AlpNet Pulse Lisansı Üret" Foreground="#FFFFFF" FontSize="17" FontWeight="ExtraBold" Margin="0,0,0,4" />
+                                                <TextBlock Text="HMAC-SHA256 imzası ile AlpNet istemcilerinde çalışan lisans anahtarı üretir ve anında Firebase bulutuna işler." Foreground="#D9B6CD" FontSize="11.5" TextWrapping="Wrap" Margin="0,0,0,14" />
+
+                                                <TextBlock Text="Hedef Cihaz HWID (Donanım Kimliği):" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                                <TextBox x:Name="TxtAlpNetHwid" Style="{StaticResource PinkTextBoxStyle}" Margin="0,0,0,10" />
+
+                                                <Grid Margin="0,0,0,10">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="120" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                                        <TextBlock Text="Lisans Süresi:" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                                        <ComboBox x:Name="CmbAlpNetDuration" Background="#140A20" Foreground="#FFEAF5" BorderBrush="#452157" Padding="8,6" SelectedIndex="5">
+                                                            <ComboBoxItem Content="1 Saatlik" />
+                                                            <ComboBoxItem Content="6 Saatlik" />
+                                                            <ComboBoxItem Content="12 Saatlik" />
+                                                            <ComboBoxItem Content="Günlük (24 Saat)" />
+                                                            <ComboBoxItem Content="Haftalık (7 Gün)" />
+                                                            <ComboBoxItem Content="Aylık (30 Gün)" />
+                                                            <ComboBoxItem Content="Yıllık (365 Gün)" />
+                                                            <ComboBoxItem Content="Sınırsız (Ömür Boyu)" />
+                                                        </ComboBox>
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="Ücret (₺):" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                                        <TextBox x:Name="TxtAlpNetPrice" Style="{StaticResource PinkTextBoxStyle}" Text="0" />
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <TextBlock Text="Kullanıcı / Sipariş Notu (Örn: Mehmet Bey - Discord):" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                                <TextBox x:Name="TxtAlpNetNote" Style="{StaticResource PinkTextBoxStyle}" Margin="0,0,0,14" />
+
+                                                <Button x:Name="BtnAlpNetGenerate"
+                                                        Content="⚡ AlpNet Lisansını Üret &amp; Buluta İşle"
+                                                        Style="{StaticResource PinkPrimaryButtonStyle}"
+                                                        Padding="16,11"
+                                                        Margin="0,0,0,12"
+                                                        Click="BtnAlpNetGenerate_Click" />
+
+                                                <TextBlock Text="Üretilen Lisans Anahtarı:" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                                <TextBox x:Name="TxtAlpNetOutputKey" Style="{StaticResource PinkTextBoxStyle}" Height="54" TextWrapping="Wrap" IsReadOnly="True" FontFamily="Consolas" FontSize="11" Margin="0,0,0,10" />
+
+                                                <DockPanel>
+                                                    <Button x:Name="BtnAlpNetCopyKey" Content="📋 Anahtarı Kopyala" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,7" Click="BtnAlpNetCopyKey_Click" />
+                                                    <TextBlock x:Name="TxtAlpNetGenStatus" Text="" Foreground="#00E676" FontSize="11.5" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- AlpTogether Admin Key Generator -->
+                                        <Border Grid.Column="1" Background="#160B23" BorderBrush="#FF2E93" BorderThickness="1.2" CornerRadius="16" Padding="20,18">
+                                            <StackPanel>
+                                                <Border Background="#FF2E93" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left" Margin="0,0,0,8">
+                                                    <TextBlock Text="ALPTOGETHER ADMIN KEYGEN" Foreground="#FFFFFF" FontSize="10" FontWeight="ExtraBold" />
+                                                </Border>
+
+                                                <TextBlock Text="👑 AlpTogether Admin Lisansı Üret" Foreground="#FFFFFF" FontSize="17" FontWeight="ExtraBold" Margin="0,0,0,4" />
+                                                <TextBlock Text="AlpTogether istemcilerinde tam yönetici yetkisi veren ATDEV formatında anahtar üretir." Foreground="#D9B6CD" FontSize="11.5" TextWrapping="Wrap" Margin="0,0,0,14" />
+
+                                                <!-- This Device HWID -->
+                                                <Border Background="#1F0D30" BorderBrush="#4A205F" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10">
+                                                    <StackPanel>
+                                                        <TextBlock Text="BU BİLGİSAYARIN HWID KİMLİĞİ:" Foreground="#FF85C0" FontSize="10" FontWeight="Bold" Margin="0,0,0,3" />
+                                                        <DockPanel>
+                                                            <Button x:Name="BtnDevCopyThisHwid" Content="📋 Kopyala" DockPanel.Dock="Right" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="8,4" Margin="6,0,0,0" Click="BtnDevCopyThisHwid_Click" />
+                                                            <TextBox x:Name="TxtDevThisHwid" Style="{StaticResource PinkTextBoxStyle}" IsReadOnly="True" FontWeight="Bold" Foreground="#00E5FF" Height="30" FontSize="11" />
+                                                        </DockPanel>
+                                                        <Button x:Name="BtnDevSelfActivate" Content="⚡ Bu Cihaza Süresiz Kalıcı Admin Yetkisi Tanımla" Style="{StaticResource PinkSecondaryButtonStyle}" Margin="0,6,0,0" Padding="10,5" FontSize="11" Click="BtnDevSelfActivate_Click" />
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <TextBlock Text="Hedef HWID (Boş = Tüm Cihazlar):" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,3" />
+                                                <TextBox x:Name="TxtDevTargetHwid" Style="{StaticResource PinkTextBoxStyle}" Height="30" Margin="0,0,0,10" />
+
+                                                <TextBlock Text="Lisans Süresi:" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,3" />
+                                                <ComboBox x:Name="CmbDevKeyExpiry" Background="#140A20" Foreground="#FFEAF5" BorderBrush="#452157" Padding="8,5" SelectedIndex="3" Margin="0,0,0,12">
+                                                    <ComboBoxItem Content="30 Gün (1 Ay)" />
+                                                    <ComboBoxItem Content="90 Gün (3 Ay)" />
+                                                    <ComboBoxItem Content="365 Gün (1 Yıl)" />
+                                                    <ComboBoxItem Content="Sınırsız / Kalıcı (2099 Yılına Kadar)" />
+                                                </ComboBox>
+
+                                                <Button x:Name="BtnDevGenerateAdminKey" Content="🔑 Admin Lisans Anahtarı Üret" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="14,9" Margin="0,0,0,10" Click="BtnDevGenerateAdminKey_Click" />
+
+                                                <TextBox x:Name="TxtDevGeneratedKeyResult" Style="{StaticResource PinkTextBoxStyle}" Height="48" TextWrapping="Wrap" IsReadOnly="True" FontFamily="Consolas" FontSize="10.5" Margin="0,0,0,8" />
+
+                                                <WrapPanel>
+                                                    <Button x:Name="BtnDevCopyGeneratedKey" Content="📋 Kopyala" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,6" FontSize="11" Margin="0,0,8,0" Click="BtnDevCopyGeneratedKey_Click" />
+                                                    <Button x:Name="BtnDevPushKeyToFirebase" Content="☁ Buluta Gönder" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="10,6" FontSize="11" Click="BtnDevPushKeyToFirebase_Click" />
+                                                </WrapPanel>
+
+                                                <TextBlock x:Name="TxtDevKeygenStatus" Text="" Foreground="#00E676" FontSize="11" FontWeight="Bold" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- ==================== TAB 2: LİSANS GEÇMİŞİ ==================== -->
+                                    <Grid x:Name="PnlKeygenHistory" Visibility="Collapsed">
+                                        <Border Background="#160822" BorderBrush="#3B1C4B" BorderThickness="1" CornerRadius="16" Padding="16">
+                                            <StackPanel>
+                                                <DockPanel Margin="0,0,0,12">
+                                                    <TextBlock Text="📜 Tüm Üretilen AlpNet Lisansları (Yerel &amp; Bulut Arşivi)" Foreground="#FFFFFF" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" />
+                                                </DockPanel>
+
+                                                <ListBox x:Name="LstAlpNetHistory" Background="Transparent" BorderThickness="0" MaxHeight="520" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#1C0E2B" BorderBrush="#331442" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,3">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="Auto" />
+                                                                    </Grid.ColumnDefinitions>
+
+                                                                    <StackPanel Grid.Column="0">
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <Border Background="#FF2E93" CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                                                                <TextBlock Text="{Binding Duration}" Foreground="#FFFFFF" FontSize="9.5" FontWeight="Bold" />
+                                                                            </Border>
+                                                                            <TextBlock Text="{Binding Note}" Foreground="#FFFFFF" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
+                                                                            <Border Background="#200E2C" BorderBrush="{Binding StatusColorHex}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="8,0,0,0">
+                                                                                <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusColorHex}" FontSize="9.5" FontWeight="Bold" />
+                                                                            </Border>
+                                                                        </StackPanel>
+
+                                                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
+                                                                            <TextBlock Text="Oluşturulma: " Foreground="#A97E9C" FontSize="10.5" />
+                                                                            <TextBlock Text="{Binding CreatedAt}" Foreground="#D9B6CD" FontSize="10.5" Margin="0,0,12,0" />
+                                                                            <TextBlock Text="Ücret: " Foreground="#A97E9C" FontSize="10.5" />
+                                                                            <TextBlock Text="{Binding FormattedPrice}" Foreground="#00E676" FontSize="10.5" FontWeight="Bold" />
+                                                                        </StackPanel>
+
+                                                                        <TextBlock Text="{Binding KeyString}" Foreground="#00E5FF" FontFamily="Consolas" FontSize="10.5" TextTrimming="CharacterEllipsis" />
+                                                                    </StackPanel>
+
+                                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                                                                        <Button Content="📋" Tag="{Binding}" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="8,4" Margin="0,0,6,0" ToolTip="Anahtarı Kopyala" Click="BtnHistoryItemCopy_Click" />
+                                                                        <Button Content="✏" Tag="{Binding}" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="8,4" Margin="0,0,6,0" ToolTip="Notu / İsmi Değiştir" Click="BtnHistoryItemRename_Click" />
+                                                                        <Button Content="⛔" Tag="{Binding}" Background="#FF1744" Foreground="#FFFFFF" FontWeight="Bold" BorderThickness="0" Padding="8,4" Margin="0,0,6,0" ToolTip="Yasakla (Ban)" Click="BtnHistoryItemBan_Click" />
+                                                                        <Button Content="🗑" Tag="{Binding}" Background="#3D1420" Foreground="#FF85C0" BorderThickness="1" BorderBrush="#FF2E93" Padding="8,4" ToolTip="Listeden Sil" Click="BtnHistoryItemDelete_Click" />
+                                                                    </StackPanel>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- ==================== TAB 3: KARA LİSTE ==================== -->
+                                    <Grid x:Name="PnlKeygenBlacklist" Visibility="Collapsed">
+                                        <Border Background="#160822" BorderBrush="#FF1744" BorderThickness="1" CornerRadius="16" Padding="16">
+                                            <StackPanel>
+                                                <TextBlock Text="⛔ Yasaklı Cihazlar &amp; İptal Edilen Lisanslar (Blacklist)" Foreground="#FF1744" FontSize="15" FontWeight="Bold" Margin="0,0,0,12" />
+
+                                                <ListBox x:Name="LstAlpNetBlacklist" Background="Transparent" BorderThickness="0" MaxHeight="520" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#1F0814" BorderBrush="#FF1744" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,3">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="Auto" />
+                                                                    </Grid.ColumnDefinitions>
+
+                                                                    <StackPanel Grid.Column="0">
+                                                                        <TextBlock Text="{Binding Note}" Foreground="#FF1744" FontSize="13" FontWeight="Bold" />
+                                                                        <TextBlock Text="{Binding KeyString}" Foreground="#D9B6CD" FontFamily="Consolas" FontSize="10.5" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    </StackPanel>
+
+                                                                    <Button Grid.Column="1" Content="🔓 Yasağı Kaldır" Tag="{Binding}" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,6" FontSize="11" VerticalAlignment="Center" Click="BtnBlacklistItemUnban_Click" />
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- ==================== TAB 4: CANLI CİHAZLAR & DM ==================== -->
+                                    <Grid x:Name="PnlKeygenLive" Visibility="Collapsed">
+                                        <Border Background="#160822" BorderBrush="#3B1C4B" BorderThickness="1" CornerRadius="16" Padding="16">
+                                            <StackPanel>
+                                                <!-- Toolbar with Refresh & DM -->
+                                                <Border Background="#1A0D28" BorderBrush="#55246D" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,12">
+                                                    <DockPanel LastChildFill="True">
+                                                        <Button x:Name="BtnAlpNetRefreshLive" Content="🔄 Cihazları Yenile" DockPanel.Dock="Right" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,6" FontSize="11.5" Click="BtnAlpNetRefreshLive_Click" />
+
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="💬 Seçili Cihaza DM:" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                            <TextBox x:Name="TxtAlpNetDirectMsg" Style="{StaticResource PinkTextBoxStyle}" Width="280" Height="30" FontSize="11" Margin="0,0,8,0" />
+                                                            <Button x:Name="BtnAlpNetSendDirectMsg" Content="Gönder" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="12,5" FontSize="11" Click="BtnAlpNetSendDirectMsg_Click" />
+                                                            <TextBlock x:Name="TxtAlpNetDirectMsgStatus" Text="" Foreground="#00E676" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" />
+                                                        </StackPanel>
                                                     </DockPanel>
-                                                    <Button x:Name="BtnDevSelfActivate"
-                                                            Content="⚡ Bu Cihaza Süresiz Kalıcı Admin Yetkisi Tanımla"
-                                                            Style="{StaticResource PinkSecondaryButtonStyle}"
-                                                            Margin="0,8,0,0"
-                                                            Padding="12,7"
-                                                            Click="BtnDevSelfActivate_Click" />
-                                                </StackPanel>
-                                            </Border>
+                                                </Border>
 
-                                            <!-- Target HWID -->
-                                            <TextBlock Text="Hedef Cihaz HWID (Örn: AT-XXXX-XXXX-XXXX veya Boş = Tüm Cihazlar):" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
-                                            <TextBox x:Name="TxtDevTargetHwid" Style="{StaticResource PinkTextBoxStyle}" Margin="0,0,0,12" />
+                                                <ListBox x:Name="LstAlpNetLiveDevices" Background="Transparent" BorderThickness="0" MaxHeight="500" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#1C0E2B" BorderBrush="#331442" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,3">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="Auto" />
+                                                                    </Grid.ColumnDefinitions>
 
-                                            <!-- Duration -->
-                                            <TextBlock Text="Lisans Süresi:" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
-                                            <ComboBox x:Name="CmbDevKeyExpiry"
-                                                      Background="#140A20"
-                                                      Foreground="#FFEAF5"
-                                                      BorderBrush="#452157"
-                                                      Padding="8,6"
-                                                      SelectedIndex="3"
-                                                      Margin="0,0,0,14">
-                                                <ComboBoxItem Content="30 Gün (1 Ay)" />
-                                                <ComboBoxItem Content="90 Gün (3 Ay)" />
-                                                <ComboBoxItem Content="365 Gün (1 Yıl)" />
-                                                <ComboBoxItem Content="Sınırsız / Kalıcı (2099 Yılına Kadar)" />
-                                            </ComboBox>
+                                                                    <StackPanel Grid.Column="0">
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <Ellipse Width="8" Height="8" Fill="{Binding StatusColorHex}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                                            <TextBlock Text="{Binding Status}" Foreground="{Binding StatusColorHex}" FontSize="11" FontWeight="Bold" Margin="0,0,10,0" />
+                                                                            <TextBlock Text="v" Foreground="#A97E9C" FontSize="10.5" />
+                                                                            <TextBlock Text="{Binding Version}" Foreground="#00E5FF" FontSize="10.5" FontWeight="Bold" Margin="0,0,12,0" />
+                                                                            <TextBlock Text="Son Görülme: " Foreground="#A97E9C" FontSize="10.5" />
+                                                                            <TextBlock Text="{Binding LastSeenText}" Foreground="#D9B6CD" FontSize="10.5" />
+                                                                        </StackPanel>
 
-                                            <!-- Generate Button -->
-                                            <Button x:Name="BtnDevGenerateAdminKey"
-                                                    Content="🔑 Admin Lisans Anahtarı Üret (Generate Key)"
-                                                    Style="{StaticResource PinkPrimaryButtonStyle}"
-                                                    Padding="16,11"
-                                                    Margin="0,0,0,14"
-                                                    Click="BtnDevGenerateAdminKey_Click" />
+                                                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                                            <TextBlock Text="HWID: " Foreground="#A97E9C" FontSize="10.5" />
+                                                                            <TextBlock Text="{Binding Hwid}" Foreground="#FFFFFF" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,14,0" />
+                                                                            <TextBlock Text="Lisans: " Foreground="#A97E9C" FontSize="10.5" />
+                                                                            <TextBlock Text="{Binding LicenseKey}" Foreground="#FF85C0" FontFamily="Consolas" FontSize="10.5" TextTrimming="CharacterEllipsis" MaxWidth="220" />
+                                                                        </StackPanel>
+                                                                    </StackPanel>
 
-                                            <!-- Result Box -->
-                                            <TextBlock Text="Üretilen Lisans Anahtarı:" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
-                                            <TextBox x:Name="TxtDevGeneratedKeyResult"
-                                                     Style="{StaticResource PinkTextBoxStyle}"
-                                                     Height="64"
-                                                     TextWrapping="Wrap"
-                                                     IsReadOnly="True"
-                                                     FontFamily="Consolas"
-                                                     FontSize="11"
-                                                     Margin="0,0,0,10" />
+                                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                                                                        <Button Content="📋 HWID" Tag="{Binding}" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="8,4" FontSize="10.5" Margin="0,0,6,0" Click="BtnLiveItemCopyHwid_Click" />
+                                                                        <Button Content="⛔ Yasakla" Tag="{Binding}" Background="#FF1744" Foreground="#FFFFFF" FontWeight="Bold" BorderThickness="0" Padding="8,4" FontSize="10.5" Click="BtnLiveItemBan_Click" />
+                                                                    </StackPanel>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
 
-                                            <WrapPanel>
-                                                <Button x:Name="BtnDevCopyGeneratedKey"
-                                                        Content="📋 Anahtarı Kopyala"
-                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
-                                                        Padding="12,8"
-                                                        Margin="0,0,8,0"
-                                                        Click="BtnDevCopyGeneratedKey_Click" />
+                                    <!-- ==================== TAB 5: UYGULAMA DURUMU ==================== -->
+                                    <Grid x:Name="PnlKeygenAppState" Visibility="Collapsed">
+                                        <Border Background="#160822" BorderBrush="#3B1C4B" BorderThickness="1" CornerRadius="16" Padding="20">
+                                            <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+                                                <TextBlock Text="🛠 AlpNet Canlı Sunucu Durumu &amp; Yayın Kontrolü" Foreground="#FFFFFF" FontSize="16" FontWeight="ExtraBold" Margin="0,0,0,14" />
 
-                                                <Button x:Name="BtnDevPushKeyToFirebase"
-                                                        Content="☁ Buluta Gönder (Cihazı Doğrudan Yetkilendir)"
-                                                        Style="{StaticResource PinkSecondaryButtonStyle}"
-                                                        Padding="12,8"
-                                                        Click="BtnDevPushKeyToFirebase_Click" />
-                                            </WrapPanel>
+                                                <!-- Maintenance Card -->
+                                                <Border Background="#1F0D30" BorderBrush="#55246D" BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,0,0,12">
+                                                    <StackPanel>
+                                                        <CheckBox x:Name="ChkAlpNetMaintenance" Content="⚠️ Bakım Modunu Aktif Et (Kullanıcı Girişlerini Engeller)" Foreground="#FFB300" FontWeight="Bold" FontSize="12" Margin="0,0,0,8" />
+                                                        <TextBlock Text="Bakım Mesajı:" Foreground="#D9B6CD" FontSize="11" Margin="0,0,0,4" />
+                                                        <TextBox x:Name="TxtAlpNetMaintenanceMsg" Style="{StaticResource PinkTextBoxStyle}" Height="48" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                                        <Button x:Name="BtnAlpNetSaveMaintenance" Content="💾 Bakım Durumunu Kaydet" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="12,6" HorizontalAlignment="Left" Click="BtnAlpNetSaveMaintenance_Click" />
+                                                    </StackPanel>
+                                                </Border>
 
-                                            <TextBlock x:Name="TxtDevKeygenStatus" Text="" Foreground="#00E676" FontSize="11.5" FontWeight="Bold" Margin="0,8,0,0" TextWrapping="Wrap" />
-                                        </StackPanel>
-                                    </Border>
+                                                <!-- Broadcast Card -->
+                                                <Border Background="#1F0D30" BorderBrush="#55246D" BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,0,0,12">
+                                                    <StackPanel>
+                                                        <TextBlock Text="📢 Anlık Bildirim &amp; Duyuru Yayını (Broadcast):" Foreground="#00E5FF" FontWeight="Bold" FontSize="12" Margin="0,0,0,4" />
+                                                        <TextBox x:Name="TxtAlpNetBroadcastMsg" Style="{StaticResource PinkTextBoxStyle}" Height="48" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                                        <WrapPanel>
+                                                            <Button x:Name="BtnAlpNetSaveBroadcast" Content="📢 Duyuruyu Yayınla" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="12,6" Margin="0,0,8,0" Click="BtnAlpNetSaveBroadcast_Click" />
+                                                            <Button x:Name="BtnAlpNetClearBroadcast" Content="🧹 Duyuruyu Kaldır" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,6" Click="BtnAlpNetClearBroadcast_Click" />
+                                                        </WrapPanel>
+                                                    </StackPanel>
+                                                </Border>
 
-                                    <!-- Right: Architecture & Security Info -->
-                                    <Border Grid.Column="1" Background="#140920" BorderBrush="#3B1C4B" BorderThickness="1" CornerRadius="16" Padding="20,18">
-                                        <StackPanel>
-                                            <TextBlock Text="🛡 AlpTogether &amp; AlpNet İzolasyon Rehberi" Foreground="#FFFFFF" FontSize="16" FontWeight="ExtraBold" Margin="0,0,0,10" />
+                                                <!-- Version & Update Card -->
+                                                <Border Background="#1F0D30" BorderBrush="#55246D" BorderThickness="1" CornerRadius="12" Padding="14">
+                                                    <StackPanel>
+                                                        <TextBlock Text="🚀 Güncelleme Sürümü ve İndirme Bağlantısı:" Foreground="#FF85C0" FontWeight="Bold" FontSize="12" Margin="0,0,0,6" />
+                                                        <Grid Margin="0,0,0,8">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="140" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                                                <TextBlock Text="Sürüm (Version):" Foreground="#A97E9C" FontSize="10.5" Margin="0,0,0,3" />
+                                                                <TextBox x:Name="TxtAlpNetVersion" Style="{StaticResource PinkTextBoxStyle}" Height="32" />
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="1">
+                                                                <TextBlock Text="İndirme URL:" Foreground="#A97E9C" FontSize="10.5" Margin="0,0,0,3" />
+                                                                <TextBox x:Name="TxtAlpNetUpdateUrl" Style="{StaticResource PinkTextBoxStyle}" Height="32" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                        <Button x:Name="BtnAlpNetSaveUpdate" Content="💾 Güncelleme Bilgilerini Kaydet" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="12,6" HorizontalAlignment="Left" Click="BtnAlpNetSaveUpdate_Click" />
+                                                    </StackPanel>
+                                                </Border>
 
-                                            <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-                                                <TextBlock Foreground="#FFEAF5" FontSize="11.5" TextWrapping="Wrap" LineHeight="18">
-                                                    <Run FontWeight="Bold" Foreground="#00E5FF">1. HWID Ayrımı: </Run>
-                                                    AlpNet klasik MD5 kullanırken, AlpTogether <Run FontWeight="Bold" Foreground="#FF5CAA">"AT-"</Run> önekli SHA-256 tuzlu blok mimarisi kullanır. İki sistemin HWID değerleri asla eşleşemez.
-                                                </TextBlock>
-                                            </Border>
-
-                                            <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-                                                <TextBlock Foreground="#FFEAF5" FontSize="11.5" TextWrapping="Wrap" LineHeight="18">
-                                                    <Run FontWeight="Bold" Foreground="#00E5FF">2. Anahtar İmzası (Secret): </Run>
-                                                    AlpNet <Run FontStyle="Italic">AlpNetSecret2026!PulseCore</Run> anahtarı ve 3 parçalı yapı kullanır. AlpTogether ise <Run FontWeight="Bold" Foreground="#FF5CAA">ATDEV</Run> 4 parçalı HMAC-SHA256 imzası ile çalışır. Birinin anahtarı diğerinde kesinlikle geçersizdir.
-                                                </TextBlock>
-                                            </Border>
-
-                                            <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-                                                <TextBlock Foreground="#FFEAF5" FontSize="11.5" TextWrapping="Wrap" LineHeight="18">
-                                                    <Run FontWeight="Bold" Foreground="#00E5FF">3. Bulut Düğümleri (Firebase): </Run>
-                                                    AlpNet <Run FontStyle="Italic">/users/</Run> ve <Run FontStyle="Italic">/trials/</Run> köklerini kullanır. AlpTogether'ın tüm telemetri, katalog ve lisans kayıtları <Run FontWeight="Bold" Foreground="#FF5CAA">/alptogether/</Run> alt klasöründe tamamen izoledir.
-                                                </TextBlock>
-                                            </Border>
-
-                                            <Border Background="#200E2C" BorderBrush="#55246D" BorderThickness="1" CornerRadius="8" Padding="12">
-                                                <TextBlock Foreground="#FFEAF5" FontSize="11.5" TextWrapping="Wrap" LineHeight="18">
-                                                    <Run FontWeight="Bold" Foreground="#00E5FF">4. Geliştirici Kısayolu: </Run>
-                                                    Uygulama açıkken <Run FontWeight="Bold" Foreground="#FF5CAA">Ctrl + Shift + D</Run> tuşlarına basarak veya sol üstteki AlpTogether logosuna 5 kez tıklayarak admin giriş penceresini açabilirsiniz.
-                                                </TextBlock>
-                                            </Border>
-                                        </StackPanel>
-                                    </Border>
-                                </Grid>
+                                                <TextBlock x:Name="TxtAlpNetSettingsStatus" Text="" Foreground="#00E676" FontSize="12" FontWeight="Bold" Margin="0,10,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
                             </ScrollViewer>
 
                             <!-- ==================== SUB-VIEW 4: SETTINGS ==================== -->
@@ -2986,6 +3288,55 @@
                                 FontSize="13.5"
                                 FontWeight="Bold"
                                 Click="BtnSaveUsernamePrompt_Click" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ALPNET KEYGEN RENAME OVERLAY MODAL -->
+            <Grid x:Name="AlpNetRenameOverlay"
+                  Visibility="Collapsed"
+                  Panel.ZIndex="1500"
+                  Background="#E6070310">
+                <Border Width="420"
+                        Background="#190C28"
+                        BorderBrush="#00E5FF"
+                        BorderThickness="1.5"
+                        CornerRadius="14"
+                        Padding="24,20"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="✏ Lisans Notunu / İsmini Değiştir" Foreground="#FFFFFF" FontSize="16" FontWeight="ExtraBold" Margin="0,0,0,8" />
+                        <TextBlock Text="Bu lisans için yeni bir açıklama veya alıcı ismi girin:" Foreground="#D9B6CD" FontSize="11.5" Margin="0,0,0,10" />
+                        <TextBox x:Name="TxtAlpNetRenameInput" Style="{StaticResource PinkTextBoxStyle}" Height="38" FontSize="12.5" Margin="0,0,0,14" />
+                        <DockPanel LastChildFill="False">
+                            <Button Content="Vazgeç" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="14,7" Click="BtnAlpNetRenameCancel_Click" />
+                            <Button Content="💾 Kaydet" DockPanel.Dock="Right" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="16,7" Click="BtnAlpNetRenameSave_Click" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ALPNET KEYGEN BAN OVERLAY MODAL -->
+            <Grid x:Name="AlpNetBanOverlay"
+                  Visibility="Collapsed"
+                  Panel.ZIndex="1500"
+                  Background="#E6070310">
+                <Border Width="460"
+                        Background="#1A0713"
+                        BorderBrush="#FF1744"
+                        BorderThickness="1.5"
+                        CornerRadius="14"
+                        Padding="24,20"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="⛔ Lisans / Cihaz Yasaklama (Ban)" Foreground="#FF1744" FontSize="16" FontWeight="ExtraBold" Margin="0,0,0,8" />
+                        <TextBlock Text="Bu işlem hedef cihazı veya lisansı Firebase kara listesine ekler ve erişimini anında keser. Nasıl yasaklamak istiyorsunuz?" Foreground="#D9B6CD" FontSize="11.5" TextWrapping="Wrap" Margin="0,0,0,16" />
+
+                        <Button x:Name="BtnAlpNetBanKey" Content="🔑 Sadece Bu Lisans Anahtarını Yasakla" Background="#FF1744" Foreground="#FFFFFF" FontWeight="Bold" Padding="14,9" Margin="0,0,0,8" BorderThickness="0" Cursor="Hand" Click="BtnAlpNetBanKey_Click" />
+                        <Button x:Name="BtnAlpNetBanHwid" Content="💻 Hedef Bilgisayarı (HWID) Tamamen Yasakla" Background="#B71C1C" Foreground="#FFFFFF" FontWeight="Bold" Padding="14,9" Margin="0,0,0,12" BorderThickness="0" Cursor="Hand" Click="BtnAlpNetBanHwid_Click" />
+                        <Button Content="Vazgeç" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="14,7" HorizontalAlignment="Center" Click="BtnAlpNetBanCancel_Click" />
                     </StackPanel>
                 </Border>
             </Grid>
