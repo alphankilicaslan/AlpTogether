@@ -14,7 +14,7 @@
       "HighlightText": "H\u0130BR\u0130T KURULUM DESTEKL\u0130 (AlpNet.Setup.exe \u002B Do\u011Frudan Paket Senkronizasyonu)",
       "AccentColorHex": "#1E88E5",
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alpnet_official.png",
-      "LatestVersion": "2.2.5",
+      "LatestVersion": "2.2.6",
       "ReleaseDate": "18 Ekim 2026",
       "DownloadSizeText": "81.4 MB",
       "SizeBytes": 81400000,
@@ -55,7 +55,7 @@
           "AppName": "",
           "AppId": "",
           "AppIconUri": "",
-          "Version": "2.2.5",
+          "Version": "2.2.6",
           "ReleaseDate": "18 Ekim 2026",
           "Title": "AlpTogether Bulut Whitelist \u0026 Merkezi Yetkilendirme Entegrasyonu",
           "Tag": "YEN\u0130L\u0130K \u0026 EKOS\u0130STEM",
@@ -97,7 +97,7 @@
       "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
       "PrimaryButtonText": "HEMEN Y\u00DCKLE",
       "StateBadgeText": "BULUTTA MEVCUT",
-      "VersionDisplay": "Son S\u00FCr\u00FCm: v2.2.5  \u2022  81.4 MB"
+      "VersionDisplay": "Son S\u00FCr\u00FCm: v2.2.6  \u2022  81.4 MB"
     },
     {
       "Id": "alpfinans",

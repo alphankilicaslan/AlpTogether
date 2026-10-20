@@ -174,11 +174,11 @@ namespace AlpTogether.Services
                 {
                     Tag = "alpnet",
                     AppName = "AlpNet Pulse",
-                    Version = "2.2.5",
+                    Version = "2.2.6",
                     Category = "Ağ, WARP & Çeviri",
                     ExeName = "AlpNet.Pulse.exe",
                     SizeText = "28.5 MB",
-                    DirectUrl = "https://github.com/alphankilicaslan/AlpNet/releases/download/v2.2.5/AlpNet.Pulse.exe",
+                    DirectUrl = "https://github.com/alphankilicaslan/AlpNet/releases/download/v2.2.6/AlpNet.Pulse.exe",
                     InstallerUrl = "",
                     Description = "Cloudflare WARP tüneli, ultra düşük gecikmeli VPN ve gerçek zamanlı sesli diyalog çevirmeni.",
                     PatchNotes = "Wiresock hızlı başlatma entegrasyonu (hizmet tekrar kurulmadan anında başlar).\n25 saniyelik otomatik watchdog heartbeat ve tünel onarımı eklendi.\nAlternatif port geçişleri (500 -> 2408 -> 4500 -> 1701) devrede."

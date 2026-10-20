@@ -244,7 +244,7 @@
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
                                         <Setter Property="Padding" Value="0" />
-                                        <Setter Property="Margin" Value="0,3" />
+                                        <Setter Property="Margin" Value="0,2" />
                                         <Setter Property="Cursor" Value="Hand" />
                                         <Setter Property="Template">
                                             <Setter.Value>
@@ -1754,8 +1754,8 @@
                                                                             Background="#1C0E2B"
                                                                             BorderBrush="#331442"
                                                                             BorderThickness="1"
-                                                                            CornerRadius="10"
-                                                                            Padding="10,8">
+                                                                            CornerRadius="8"
+                                                                            Padding="8,5">
                                                                         <ContentPresenter />
                                                                     </Border>
                                                                     <ControlTemplate.Triggers>
@@ -1778,57 +1778,74 @@
                                                         <DockPanel LastChildFill="True">
                                                             <!-- Avatar Circle -->
                                                             <Border DockPanel.Dock="Left"
-                                                                    Width="38" Height="38"
-                                                                    CornerRadius="19"
+                                                                    Width="32" Height="32"
+                                                                    CornerRadius="16"
                                                                     Background="#FF2E93"
                                                                     Margin="0,0,10,0"
                                                                     VerticalAlignment="Center">
                                                                 <TextBlock Text="{Binding InitialLetter}"
                                                                            Foreground="#FFFFFF"
-                                                                           FontSize="15"
+                                                                           FontSize="13"
                                                                            FontWeight="ExtraBold"
                                                                            HorizontalAlignment="Center"
                                                                            VerticalAlignment="Center" />
                                                             </Border>
 
-                                                            <!-- Right Badges: AlpLingo, AlpNet, AlpFinans, AlphaGravity, WARP -->
-                                                            <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center" MaxWidth="160" HorizontalAlignment="Right" Margin="6,0,0,0">
-                                                                <Border Background="#251235" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
-                                                                    <TextBlock Text="{Binding AlpLingoSummary}" Foreground="#FF85C0" FontSize="8.5" FontWeight="Bold" />
-                                                                </Border>
-                                                                <Border Background="#122530" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
-                                                                    <TextBlock Text="{Binding AlpNetSummary}" Foreground="#00E5FF" FontSize="8.5" FontWeight="Bold" />
-                                                                </Border>
-                                                                <Border Background="#2A1B10" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
-                                                                    <TextBlock Text="{Binding AlpFinansSummary}" Foreground="#FFB74D" FontSize="8.5" FontWeight="Bold" />
-                                                                </Border>
-                                                                <Border Background="#24102C" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
-                                                                    <TextBlock Text="{Binding AlphaGravitySummary}" Foreground="#BA68C8" FontSize="8.5" FontWeight="Bold" />
-                                                                </Border>
-                                                                <Border Background="#2D1412" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
-                                                                    <TextBlock Text="{Binding AlpRustSummary}" Foreground="#FF7043" FontSize="8.5" FontWeight="Bold" />
-                                                                </Border>
-                                                                <Border Background="#122030" BorderBrush="{Binding WarpStatusBadgeColorHex}" BorderThickness="0.8" CornerRadius="4" Padding="5,2" Margin="0,0,3,3">
-                                                                    <TextBlock Text="{Binding WarpStatusBadge}" Foreground="{Binding WarpStatusBadgeColorHex}" FontSize="8.5" FontWeight="Bold" />
-                                                                </Border>
-                                                            </WrapPanel>
+                                                            <!-- Right: WARP Status Badge (Only WARP status visible on unselected card) -->
+                                                            <Border DockPanel.Dock="Right"
+                                                                    Background="#122030"
+                                                                    BorderBrush="{Binding WarpStatusBadgeColorHex}"
+                                                                    BorderThickness="0.9"
+                                                                    CornerRadius="6"
+                                                                    Padding="7,3"
+                                                                    Margin="6,0,2,0"
+                                                                    VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding WarpStatusBadge}"
+                                                                           Foreground="{Binding WarpStatusBadgeColorHex}"
+                                                                           FontSize="9"
+                                                                           FontWeight="Bold" />
+                                                            </Border>
 
-                                                            <!-- Center User Info -->
+                                                            <!-- Center User Info: Name, Status Dot, Admin Crown, Presence & Last Seen -->
                                                             <StackPanel VerticalAlignment="Center">
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Ellipse Width="8" Height="8" Fill="{Binding PresenceDotColorHex}" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip="{Binding PresenceStatusText}" />
-                                                                    <TextBlock Text="{Binding DisplayName}" Foreground="#FFFFFF" FontSize="13" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxWidth="140" />
-                                                                    <Border Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVis}}" Background="#FFD700" CornerRadius="4" Padding="4,1" Margin="6,0,0,0" VerticalAlignment="Center">
-                                                                        <TextBlock Text="👑 ADMİN" Foreground="#12071C" FontSize="8.5" FontWeight="ExtraBold" />
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <Ellipse Width="8" Height="8"
+                                                                             Fill="{Binding PresenceDotColorHex}"
+                                                                             Margin="0,0,6,0"
+                                                                             VerticalAlignment="Center"
+                                                                             ToolTip="{Binding PresenceStatusText}" />
+                                                                    <TextBlock Text="{Binding DisplayName}"
+                                                                               Foreground="#FFFFFF"
+                                                                               FontSize="12.5"
+                                                                               FontWeight="Bold"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               MaxWidth="150" />
+                                                                    <Border Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVis}}"
+                                                                            Background="#FFD700"
+                                                                            CornerRadius="4"
+                                                                            Padding="4,1"
+                                                                            Margin="6,0,0,0"
+                                                                            VerticalAlignment="Center">
+                                                                        <TextBlock Text="👑 ADMİN"
+                                                                                   Foreground="#12071C"
+                                                                                   FontSize="8"
+                                                                                   FontWeight="ExtraBold" />
                                                                     </Border>
                                                                 </StackPanel>
-                                                                <TextBlock Text="{Binding ActivityDisplayText}" Foreground="#00E5FF" FontSize="9.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
-                                                                <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                                                    <TextBlock Text="🕒 " Foreground="#A97E9C" FontSize="10" />
-                                                                    <TextBlock Text="{Binding LastSeenDisplay}" Foreground="#00E676" FontSize="10" FontWeight="SemiBold" Margin="0,0,8,0" />
-                                                                    <TextBlock Text="{Binding WarpStatusBadge}" Foreground="{Binding WarpStatusBadgeColorHex}" FontSize="9.5" FontWeight="Bold" />
+                                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0" VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding PresenceStatusText}"
+                                                                               Foreground="{Binding PresenceDotColorHex}"
+                                                                               FontSize="9.5"
+                                                                               FontWeight="SemiBold"
+                                                                               Margin="0,0,8,0" />
+                                                                    <TextBlock Text="🕒 "
+                                                                               Foreground="#A97E9C"
+                                                                               FontSize="9.5" />
+                                                                    <TextBlock Text="{Binding LastSeenDisplay}"
+                                                                               Foreground="#D9B6CD"
+                                                                               FontSize="9.5"
+                                                                               FontWeight="Medium" />
                                                                 </StackPanel>
-                                                                <TextBlock Text="{Binding Hwid}" Foreground="#7E5676" FontSize="9.5" FontFamily="Consolas" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
                                                             </StackPanel>
                                                         </DockPanel>
                                                     </DataTemplate>

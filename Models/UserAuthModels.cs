@@ -200,14 +200,26 @@ namespace AlpTogether.Models
         [JsonPropertyName("warpActive")]
         public bool WarpActive { get; set; }
 
+        [JsonPropertyName("warp_active")]
+        public bool WarpActiveSnake { set => WarpActive = value; }
+
         [JsonPropertyName("warpStartedAt")]
         public string WarpStartedAt { get; set; } = string.Empty;
+
+        [JsonPropertyName("warp_started_at")]
+        public string WarpStartedAtSnake { set => WarpStartedAt = value; }
 
         [JsonPropertyName("warpStoppedAt")]
         public string WarpStoppedAt { get; set; } = string.Empty;
 
+        [JsonPropertyName("warp_stopped_at")]
+        public string WarpStoppedAtSnake { set => WarpStoppedAt = value; }
+
         [JsonPropertyName("warpTotalHoursToday")]
         public double WarpTotalHoursToday { get; set; }
+
+        [JsonPropertyName("warp_total_hours_today")]
+        public double WarpTotalHoursTodaySnake { set => WarpTotalHoursToday = value; }
 
         [JsonPropertyName("appPermissions")]
         public Dictionary<string, UserAppPermission> AppPermissions { get; set; } = new(StringComparer.OrdinalIgnoreCase);

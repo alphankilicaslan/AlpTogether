@@ -94,6 +94,16 @@ namespace AlpTogether.Services
             return ("💤 AlpTogether Açık (Masaüstünde)", "AlpTogether");
         }
 
+        public static bool IsLocalWarpActive()
+        {
+            try
+            {
+                return Process.GetProcessesByName("wiresock-client").Length > 0 ||
+                       Process.GetProcessesByName("wiresock-client-service").Length > 0;
+            }
+            catch { return false; }
+        }
+
         public string DeviceHwid => DeveloperAuthService.Instance.DeviceHwid;
         public string LocalAlpNetHwid { get; private set; } = string.Empty;
 
@@ -892,6 +902,7 @@ namespace AlpTogether.Services
                         actText = actText.Replace("⚡", "💤") + $" [Boşta - {afkMinutes} dk]";
                     }
 
+                    bool localWarpRunning = IsLocalWarpActive();
                     var heartbeatData = new
                     {
                         lastSeen = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -900,7 +911,9 @@ namespace AlpTogether.Services
                         clientVersion = "1.0.0",
                         isAfk = isAfk,
                         afkMinutes = afkMinutes,
-                        currentActivity = actText
+                        currentActivity = actText,
+                        warpActive = localWarpRunning,
+                        warp_active = localWarpRunning
                     };
                     string patchJson = JsonSerializer.Serialize(heartbeatData);
                     using var patchContent = new StringContent(patchJson, Encoding.UTF8, "application/json");
@@ -1203,6 +1216,17 @@ namespace AlpTogether.Services
                                             user.WarpStoppedAt = wstElem.GetString() ?? "";
                                         if (alpElem.TryGetProperty("warp_total_hours_today", out var wtElem) && wtElem.TryGetDouble(out double th))
                                             user.WarpTotalHoursToday = th;
+                                    }
+
+                                    // Live override for current/dev machine if WireSock service is running
+                                    if (user.Hwid == DeviceHwid ||
+                                        (!string.IsNullOrWhiteSpace(user.AlpNetHwid) && user.AlpNetHwid.Equals(LocalAlpNetHwid, StringComparison.OrdinalIgnoreCase)) ||
+                                        (!string.IsNullOrWhiteSpace(user.MachineName) && user.MachineName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        if (IsLocalWarpActive())
+                                        {
+                                            user.WarpActive = true;
+                                        }
                                     }
 
                                     // Resolve friendly user identity from keygen history (Barış, Ferdicik, etc.)

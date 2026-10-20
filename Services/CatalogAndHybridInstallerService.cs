@@ -1388,7 +1388,7 @@ namespace AlpTogether.Services
                         Description = "AlpNet Pulse; düşük gecikmeli Cloudflare WARP tünel yönetimi, DNSCrypt/DoH şifreleme, paket analizi ve gerçek zamanlı yapay zeka sesli çeviri motorunu (translator.exe) tek çatı altında sunan amiral gemisi ağ ve iletişim aracıdır.",
                         AccentColorHex = "#1E88E5",
                         IconPackUri = "pack://application:,,,/Assets/AppIcons/alpnet_official.png",
-                        LatestVersion = "2.2.5",
+                        LatestVersion = "2.2.6",
                         ReleaseDate = "18 Ekim 2026",
                         DownloadSizeText = "81.4 MB",
                         SizeBytes = 81400000,
@@ -1421,7 +1421,7 @@ namespace AlpTogether.Services
                         {
                             new PatchNoteEntry
                             {
-                                Version = "2.2.5",
+                                Version = "2.2.6",
                                 ReleaseDate = "18 Ekim 2026",
                                 Title = "AlpTogether Bulut Whitelist & Merkezi Yetkilendirme Entegrasyonu",
                                 Tag = "YENİLİK & EKOSİSTEM",
