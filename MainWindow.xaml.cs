@@ -361,29 +361,18 @@ namespace AlpTogether
 
             // Top Bar & Announcement Ribbon Visibility
             bool isStore = ReferenceEquals(targetView, ViewStoreLibrary);
-            if (RowTopBar != null) RowTopBar.Height = isStore ? new GridLength(64) : new GridLength(42);
+            if (RowTopBar != null) RowTopBar.Height = isStore ? new GridLength(64) : new GridLength(30);
+            if (BrdTopWindowBar != null)
+            {
+                BrdTopWindowBar.Background = isStore
+                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#13091F"))
+                    : Brushes.Transparent;
+                BrdTopWindowBar.BorderThickness = isStore ? new Thickness(0, 0, 0, 1) : new Thickness(0);
+            }
             if (PnlTopStoreNavTools != null) PnlTopStoreNavTools.Visibility = isStore ? Visibility.Visible : Visibility.Collapsed;
-            if (PnlTopCompactHeader != null) PnlTopCompactHeader.Visibility = isStore ? Visibility.Collapsed : Visibility.Visible;
+            if (PnlTopCompactHeader != null) PnlTopCompactHeader.Visibility = Visibility.Collapsed;
             if (RowAnnouncementRibbon != null) RowAnnouncementRibbon.Height = isStore ? GridLength.Auto : new GridLength(0);
             if (PnlAnnouncementRibbon != null) PnlAnnouncementRibbon.Visibility = isStore ? Visibility.Visible : Visibility.Collapsed;
-
-            if (!isStore && TxtCompactHeaderTitle != null)
-            {
-                if (ReferenceEquals(targetView, ViewPublisherAndSettings))
-                    TxtCompactHeaderTitle.Text = "🛠 Geliştirici Stüdyosu & Yönetici Masası";
-                else if (ReferenceEquals(targetView, ViewDownloads))
-                    TxtCompactHeaderTitle.Text = "📥 İndirmeler & Güncellemeler";
-                else if (ReferenceEquals(targetView, ViewChangelog))
-                    TxtCompactHeaderTitle.Text = "📜 Sürüm Günlüğü & Yama Notları";
-                else if (ReferenceEquals(targetView, ViewRepairAndPaths))
-                    TxtCompactHeaderTitle.Text = "🛠 Onarım & Dosya Yolu";
-                else if (ReferenceEquals(targetView, ViewCustomLogs))
-                    TxtCompactHeaderTitle.Text = "▤ Özel Boşluk & Canlı Log";
-                else if (ReferenceEquals(targetView, ViewHelpAndFeedback))
-                    TxtCompactHeaderTitle.Text = "💬 Yardım & Sorun Bildir";
-                else
-                    TxtCompactHeaderTitle.Text = "AlpTogether";
-            }
 
             // Sidebar Collapse: Collapse to mini mode (72px) when entering Dev Studio (ViewPublisherAndSettings)
             UpdateSidebarMode(ReferenceEquals(targetView, ViewPublisherAndSettings));
@@ -431,6 +420,8 @@ namespace AlpTogether
             if (isMini)
             {
                 SidebarColumn.Width = new GridLength(72);
+                if (PnlBrandLogoContainer != null) PnlBrandLogoContainer.Padding = new Thickness(12, 18, 12, 14);
+                if (PnlNavMenuSection != null) PnlNavMenuSection.Margin = new Thickness(8, 4, 8, 8);
                 if (PnlBrandText != null) PnlBrandText.Visibility = Visibility.Collapsed;
                 if (TxtNavHeaderMenu != null) TxtNavHeaderMenu.Visibility = Visibility.Collapsed;
                 if (TxtNavStore != null) TxtNavStore.Visibility = Visibility.Collapsed;
@@ -447,6 +438,8 @@ namespace AlpTogether
             else
             {
                 SidebarColumn.Width = new GridLength(265);
+                if (PnlBrandLogoContainer != null) PnlBrandLogoContainer.Padding = new Thickness(18, 18, 18, 14);
+                if (PnlNavMenuSection != null) PnlNavMenuSection.Margin = new Thickness(12, 4, 12, 8);
                 if (PnlBrandText != null) PnlBrandText.Visibility = Visibility.Visible;
                 if (TxtNavHeaderMenu != null) TxtNavHeaderMenu.Visibility = Visibility.Visible;
                 if (TxtNavStore != null) TxtNavStore.Visibility = Visibility.Visible;
@@ -1399,6 +1392,9 @@ namespace AlpTogether
                 }
             }
 
+            var existingApp = CatalogAndHybridInstallerService.Instance.Apps?.FirstOrDefault(a => string.Equals(a.Id, appId, StringComparison.OrdinalIgnoreCase));
+            string appIcon = !string.IsNullOrWhiteSpace(existingApp?.IconPackUri) ? existingApp.IconPackUri : "pack://application:,,,/Assets/alptogether_logo_pink.png";
+
             var newApp = new AlpAppItem
             {
                 Id = appId,
@@ -1407,7 +1403,7 @@ namespace AlpTogether
                 Category = TxtPubCategory.Text.Trim(),
                 Developer = "Alphan Kılıçaslan",
                 Description = TxtPubDescription.Text.Trim(),
-                IconPackUri = "pack://application:,,,/Assets/alptogether_logo_pink.png",
+                IconPackUri = appIcon,
                 LatestVersion = string.IsNullOrWhiteSpace(version) ? "1.0.0" : version,
                 ReleaseDate = DateTime.Now.ToString("dd MMMM yyyy"),
                 DownloadSizeText = TxtPubSizeText.Text.Trim(),
@@ -1583,6 +1579,7 @@ namespace AlpTogether
                     {
                         _selectedAdminUser = updated;
                         UpdateSelectedUserUi(updated);
+                        LstAdminUsers.SelectedItem = updated;
                     }
                 }
             }
@@ -1679,7 +1676,7 @@ namespace AlpTogether
                 }
                 else
                 {
-                    BtnDevToggleAdminRole.Content = "👑 Yönetici (Admin) Ata";
+                    BtnDevToggleAdminRole.Content = "👑 Yönetici (Admin) Yap";
                     BtnDevToggleAdminRole.Style = (Style)FindResource("PinkPrimaryButtonStyle");
                 }
             }
@@ -1747,14 +1744,14 @@ namespace AlpTogether
             _userWhitelistApps.Clear();
             if (user == null) return;
 
-            // List of known core ecosystem apps
+            // List of known core ecosystem apps with official icons
             var coreAppDefs = new List<(string Id, string Name, string Subtitle, string Icon, string Color)>
             {
-                ("alpnet-pulse", "AlpNet Pulse", "Ağ & WARP & Sesli Çeviri", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#00E5FF"),
-                ("alplingo", "AlpLingo", "AI Oyun İçi Çeviri & OCR", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#FF2E93"),
-                ("alphagravity", "AlphaGravity", "Çoklu Model AI Asistanı", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#BA68C8"),
-                ("alpfinans", "AlpFinans", "Borsa, Kripto & Portföy", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#FFB74D"),
-                ("alprust-plus", "AlpRust+", "Rust+ Cihaz, Kamera & Raid Alarmı", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#FF7043")
+                ("alpnet-pulse", "AlpNet Pulse", "Ağ & WARP & Sesli Çeviri", "pack://application:,,,/Assets/AppIcons/alpnet_official.png", "#00E5FF"),
+                ("alplingo", "AlpLingo", "AI Oyun İçi Çeviri & OCR", "pack://application:,,,/Assets/AppIcons/alplingo_official.png", "#FF2E93"),
+                ("alphagravity", "AlphaGravity", "Çoklu Model AI Asistanı", "pack://application:,,,/Assets/AppIcons/alphagravity_official.png", "#BA68C8"),
+                ("alpfinans", "AlpFinans", "Borsa, Kripto & Portföy", "pack://application:,,,/Assets/AppIcons/alpfinans_official.png", "#FFB74D"),
+                ("alprust-plus", "AlpRust+", "Rust+ Cihaz, Kamera & Raid Alarmı", "pack://application:,,,/Assets/AppIcons/alprust_official.png", "#FF7043")
             };
 
             var addedAppIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1849,6 +1846,20 @@ namespace AlpTogether
 
                 if (ok)
                 {
+                    DateTime now = DateTime.Now;
+                    string exp = days >= 9999 ? "9999-12-31 23:59:59" : now.AddDays(days).ToString("yyyy-MM-dd HH:mm:ss");
+                    var newPerm = new UserAppPermission
+                    {
+                        HasAccess = true,
+                        DurationDays = days,
+                        GrantedAt = now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        ExpiresAt = exp,
+                        GrantedBy = "Alphan (Admin)"
+                    };
+                    _selectedAdminUser.AppPermissions[item.AppId] = newPerm;
+                    if (item.AppId == "alprust-plus") _selectedAdminUser.AppPermissions["alprust"] = newPerm;
+                    ApplyUserPermissionToItem(item, newPerm);
+
                     MessageBox.Show($"'{_selectedAdminUser.DisplayName}' kullanıcısına '{item.AppName}' yetkisi başarıyla tanımlandı ({durationText})!",
                         "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
                     await RefreshAdminUsersAsync();
@@ -1886,6 +1897,16 @@ namespace AlpTogether
 
                 if (ok)
                 {
+                    if (_selectedAdminUser.AppPermissions.TryGetValue(item.AppId, out var existing))
+                    {
+                        existing.HasAccess = false;
+                    }
+                    if (_selectedAdminUser.AppPermissions.TryGetValue("alprust", out var existingRust))
+                    {
+                        existingRust.HasAccess = false;
+                    }
+                    ApplyUserPermissionToItem(item, existing ?? new UserAppPermission { HasAccess = false });
+
                     MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için '{item.AppName}' yetkisi kaldırıldı.",
                         "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
                     await RefreshAdminUsersAsync();
@@ -1919,10 +1940,21 @@ namespace AlpTogether
                 if (!appIds.Contains("alprust-plus")) appIds.Add("alprust-plus");
                 if (!appIds.Contains("alprust")) appIds.Add("alprust");
 
+                DateTime now = DateTime.Now;
                 foreach (var appId in appIds)
                 {
                     await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, appId, 99999);
+                    _selectedAdminUser.AppPermissions[appId] = new UserAppPermission
+                    {
+                        HasAccess = true,
+                        DurationDays = 99999,
+                        GrantedAt = now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        ExpiresAt = "9999-12-31 23:59:59",
+                        GrantedBy = "Alphan (Admin)"
+                    };
                 }
+
+                PopulateUserWhitelist(_selectedAdminUser);
 
                 MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için tüm uygulamalara süresiz yetki başarıyla verildi!",
                     "Toplu Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -1956,7 +1988,13 @@ namespace AlpTogether
                 foreach (var appId in appIds)
                 {
                     await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, appId);
+                    if (_selectedAdminUser.AppPermissions.TryGetValue(appId, out var p))
+                    {
+                        p.HasAccess = false;
+                    }
                 }
+
+                PopulateUserWhitelist(_selectedAdminUser);
 
                 MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için tüm uygulama yetkileri kaldırıldı.",
                     "Yetkiler Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -1983,6 +2021,46 @@ namespace AlpTogether
             if (ok)
             {
                 _selectedAdminUser.IsAdmin = newAdminState;
+
+                var allApps = new List<string> { "alpnet-pulse", "alplingo", "alpfinans", "alphagravity", "alprust-plus", "alprust" };
+                try
+                {
+                    var catalogApps = CatalogAndHybridInstallerService.Instance.Apps;
+                    if (catalogApps != null)
+                    {
+                        foreach (var a in catalogApps)
+                        {
+                            if (!allApps.Contains(a.Id, StringComparer.OrdinalIgnoreCase))
+                                allApps.Add(a.Id);
+                        }
+                    }
+                }
+                catch { }
+
+                DateTime now = DateTime.Now;
+                foreach (var appId in allApps)
+                {
+                    if (newAdminState)
+                    {
+                        _selectedAdminUser.AppPermissions[appId] = new UserAppPermission
+                        {
+                            HasAccess = true,
+                            DurationDays = 99999,
+                            GrantedAt = now.ToString("yyyy-MM-dd HH:mm:ss"),
+                            ExpiresAt = "9999-12-31 23:59:59",
+                            GrantedBy = "Alphan (Admin)",
+                            Notes = "👑 Yönetici (Admin) Süresiz Tam Yetki"
+                        };
+                    }
+                    else
+                    {
+                        if (_selectedAdminUser.AppPermissions.TryGetValue(appId, out var p))
+                        {
+                            p.HasAccess = false;
+                        }
+                    }
+                }
+
                 UpdateSelectedUserUi(_selectedAdminUser);
                 MessageBox.Show($"Kullanıcı rolü güncellendi: {(newAdminState ? "👑 Admin" : "Standart Kullanıcı")}", "Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
                 await RefreshAdminUsersAsync();

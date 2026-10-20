@@ -105,7 +105,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- Brand Header with Pink Logo -->
-                        <Border Grid.Row="0" Padding="18,18,18,14" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                        <Border x:Name="PnlBrandLogoContainer" Grid.Row="0" Padding="18,18,18,14" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -143,45 +143,63 @@
                         </Border>
 
                         <!-- Main Navigation Menu -->
-                        <StackPanel Grid.Row="1" Margin="12,4,12,8">
+                        <StackPanel x:Name="PnlNavMenuSection" Grid.Row="1" Margin="12,4,12,8">
                             <TextBlock x:Name="TxtNavHeaderMenu" Text="ANA MENÜ" Foreground="#8E6384" FontSize="10.5" FontWeight="Bold" Margin="10,4,0,6" />
 
-                            <Button x:Name="BtnNavStore" Style="{StaticResource NavTabButtonStyle}" Click="BtnNavStore_Click">
+                            <Button x:Name="BtnNavStore"
+                                    Style="{StaticResource NavTabButtonStyle}"
+                                    ToolTip="❖ Kütüphane &amp; Keşfet"
+                                    Click="BtnNavStore_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="❖" Foreground="#FF2E93" FontSize="15" Width="24" VerticalAlignment="Center" />
                                     <TextBlock x:Name="TxtNavStore" Text="Kütüphane &amp; Keşfet" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="BtnNavDownloads" Style="{StaticResource NavTabButtonStyle}" Click="BtnNavDownloads_Click">
+                            <Button x:Name="BtnNavDownloads"
+                                    Style="{StaticResource NavTabButtonStyle}"
+                                    ToolTip="⬇ İndirmeler &amp; Güncellemeler"
+                                    Click="BtnNavDownloads_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="⬇" Foreground="#FF5CAA" FontSize="15" Width="24" VerticalAlignment="Center" />
                                     <TextBlock x:Name="TxtNavDownloads" Text="İndirme" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="BtnNavChangelog" Style="{StaticResource NavTabButtonStyle}" Click="BtnNavChangelog_Click">
+                            <Button x:Name="BtnNavChangelog"
+                                    Style="{StaticResource NavTabButtonStyle}"
+                                    ToolTip="✦ Son Yenilikler (Yama Notu)"
+                                    Click="BtnNavChangelog_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="✦" Foreground="#FF85C0" FontSize="15" Width="24" VerticalAlignment="Center" />
                                     <TextBlock x:Name="TxtNavChangelog" Text="Son Yenilikler (Yama Notu)" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="BtnNavRepair" Style="{StaticResource NavTabButtonStyle}" Click="BtnNavRepair_Click">
+                            <Button x:Name="BtnNavRepair"
+                                    Style="{StaticResource NavTabButtonStyle}"
+                                    ToolTip="🛠 Onarım &amp; Dosya Yolu"
+                                    Click="BtnNavRepair_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="🛠" Foreground="#FF4081" FontSize="14" Width="24" VerticalAlignment="Center" />
                                     <TextBlock x:Name="TxtNavRepair" Text="Onarım &amp; Dosya Yolu" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="BtnNavCustomLogs" Style="{StaticResource NavTabButtonStyle}" Click="BtnNavCustomLogs_Click">
+                            <Button x:Name="BtnNavCustomLogs"
+                                    Style="{StaticResource NavTabButtonStyle}"
+                                    ToolTip="▤ Özel Boşluk &amp; Canlı Log"
+                                    Click="BtnNavCustomLogs_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="▤" Foreground="#FF66B2" FontSize="15" Width="24" VerticalAlignment="Center" />
                                     <TextBlock x:Name="TxtNavCustomLogs" Text="Özel Boşluk &amp; Canlı Log" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="BtnNavHelp" Style="{StaticResource NavTabButtonStyle}" Click="BtnNavHelp_Click">
+                            <Button x:Name="BtnNavHelp"
+                                    Style="{StaticResource NavTabButtonStyle}"
+                                    ToolTip="💬 Yardım &amp; Sorun Bildir"
+                                    Click="BtnNavHelp_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="💬" Foreground="#FF2E93" FontSize="14" Width="24" VerticalAlignment="Center" />
                                     <TextBlock x:Name="TxtNavHelp" Text="Yardım &amp; Sorun Bildir" VerticalAlignment="Center" />
@@ -191,6 +209,7 @@
                             <Button x:Name="BtnNavDevStudio"
                                     Visibility="Collapsed"
                                     Style="{StaticResource NavTabButtonStyle}"
+                                    ToolTip="⚡ Geliştirici Stüdyosu &amp; Whitelist Masası"
                                     Click="BtnNavDevStudio_Click">
                                 <DockPanel LastChildFill="True">
                                     <Border x:Name="BrdNavDevStudioBadge" DockPanel.Dock="Right" Background="#FF2E93" CornerRadius="4" Padding="5,2" Margin="6,0,0,0" VerticalAlignment="Center">
@@ -321,7 +340,8 @@
                     </Grid.RowDefinitions>
 
                     <!-- 1. TOP WINDOW BAR -->
-                    <Border Grid.Row="0"
+                    <Border x:Name="BrdTopWindowBar"
+                            Grid.Row="0"
                             Background="#13091F"
                             BorderBrush="#2F163E"
                             BorderThickness="0,0,0,1"
@@ -427,7 +447,13 @@
                         </Grid.RenderTransform>
 
                         <!-- ==================== VIEW 1: STORE & LIBRARY (STEAM / RIOT HYBRID) ==================== -->
-                        <ScrollViewer x:Name="ViewStoreLibrary" VerticalScrollBarVisibility="Auto" Padding="22,18,22,22">
+                        <ScrollViewer x:Name="ViewStoreLibrary"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Padding="22,18,22,22"
+                                      UseLayoutRounding="True"
+                                      SnapsToDevicePixels="True"
+                                      TextOptions.TextFormattingMode="Display"
+                                      RenderOptions.BitmapScalingMode="HighQuality">
                             <StackPanel>
 
                                 <!-- ARABALAR 1 (CARS 2006) 1080P DUAL CINEMA VIDEO PLAYER -->
@@ -682,7 +708,11 @@
                                 </DockPanel>
 
                                 <!-- APPLICATION CARDS ITEMSCONTROL -->
-                                <ItemsControl x:Name="IcAppCards">
+                                <ItemsControl x:Name="IcAppCards"
+                                              UseLayoutRounding="True"
+                                              SnapsToDevicePixels="True"
+                                              TextOptions.TextFormattingMode="Display"
+                                              RenderOptions.BitmapScalingMode="HighQuality">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <UniformGrid Columns="3" />
@@ -1071,8 +1101,7 @@
                                                         </ItemsControl>
                                                     </StackPanel>
 
-                                                    <!-- Right: Animated Dancing Chibi Mascot -->
-                                                                                                        <!-- Patch Note Image (Opsiyonel / Admin Yüklemesi) -->
+                                                    <!-- Patch Note Image (Opsiyonel / Admin Yüklemesi) -->
                                                     <Border Grid.Column="1"
                                                             Margin="16,0,0,0"
                                                             VerticalAlignment="Center"
@@ -1834,7 +1863,7 @@
                                                             </Border>
                                                             <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center">
                                                                 <Button x:Name="BtnDevToggleAdminRole"
-                                                                        Content="👑 Yönetici (Admin) Ata"
+                                                                        Content="👑 Yönetici (Admin) Yap"
                                                                         Style="{StaticResource PinkPrimaryButtonStyle}"
                                                                         Padding="14,6"
                                                                         FontSize="11.5"
@@ -2365,7 +2394,7 @@
                                         <TextBlock Text="Son Yenilikler / Yama Notları (Her satır bir madde olarak görünür):" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
                                         <TextBox x:Name="TxtPubPatchNotes" Style="{StaticResource PinkTextBoxStyle}" Height="72" TextWrapping="Wrap" AcceptsReturn="True" Text="İlk kararlı sürüm yayınlandı.&#x0a;Hibrit güncelleme ve otomatik onarım desteği eklendi." Margin="0,0,0,10" />
 
-                                        <TextBlock Text="Yama Notu Kapak Görseli (Opsiyonel):" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
+                                        <TextBlock Text="🖼️ Yama / Güncelleme Görseli Yükle (İsteğe Bağlı):" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" />
                                         <Grid Margin="0,0,0,10">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />

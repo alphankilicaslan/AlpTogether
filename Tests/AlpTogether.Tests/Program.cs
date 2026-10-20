@@ -1087,6 +1087,81 @@ namespace AlpTogether.Tests
                 failures++;
             }
 
+            // TEST 14: Universal Whitelist, Admin Role Notification & Asset Integrity
+            Console.WriteLine("\n[TEST 14] Testing Universal Whitelist Desk, Admin Role Notify & Asset Purge...");
+            try
+            {
+                // 1. Duration mappings
+                var whitelistItem = new UserAppWhitelistItem { AppId = "alplingo", AppName = "AlpLingo" };
+                int[] expectedDays = { 1, 7, 30, 90, 365, 99999 };
+                for (int i = 0; i < expectedDays.Length; i++)
+                {
+                    whitelistItem.SelectedDurationIndex = i;
+                    if (whitelistItem.GetDurationDays() != expectedDays[i])
+                    {
+                        Console.WriteLine($" FAIL: Whitelist duration mismatch for index {i}: expected {expectedDays[i]}, got {whitelistItem.GetDurationDays()}!");
+                        failures++;
+                    }
+                }
+                Console.WriteLine(" -> Whitelist duration options verified: 1G, 7G (1H), 30G (1A), 90G (3A), 365G (1Y), Süresiz (99999G).");
+
+                // 2. IsAdmin PropertyChanged Notification
+                var testUser = new AlpTogetherUserRecord { Hwid = "AT-TEST-ADMIN-0001", Username = "TestAdminUser" };
+                bool adminPropertyChanged = false;
+                testUser.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(AlpTogetherUserRecord.IsAdmin))
+                        adminPropertyChanged = true;
+                };
+                testUser.IsAdmin = true;
+                if (!adminPropertyChanged)
+                {
+                    Console.WriteLine(" FAIL: AlpTogetherUserRecord.IsAdmin did NOT fire PropertyChanged!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> AlpTogetherUserRecord.IsAdmin INotifyPropertyChanged verified successfully.");
+                }
+
+                // 3. Official App Icons Verification
+                string rootDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", ".."));
+                string appIconsDir = Path.Combine(rootDir, "Assets", "AppIcons");
+                string[] expectedIcons = { "alpnet_official.png", "alplingo_official.png", "alphagravity_official.png", "alpfinans_official.png", "alprust_official.png" };
+                bool allIconsExist = true;
+                foreach (var icon in expectedIcons)
+                {
+                    string p = Path.Combine(appIconsDir, icon);
+                    if (!File.Exists(p))
+                    {
+                        Console.WriteLine($" FAIL: Expected official icon not found: {p}");
+                        allIconsExist = false;
+                        failures++;
+                    }
+                }
+                if (allIconsExist)
+                {
+                    Console.WriteLine(" -> All 5 core official app icons verified in Assets/AppIcons/.");
+                }
+
+                // 4. Anime Purge Verification
+                string animeDir = Path.Combine(rootDir, "Assets", "Anime");
+                if (Directory.Exists(animeDir) && Directory.GetFiles(animeDir).Length > 0)
+                {
+                    Console.WriteLine(" FAIL: Assets/Anime directory still contains anime images!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Anime purge verified: 0 anime files present in Assets.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 14 exception: {ex.Message}\n{ex.StackTrace}");
+                failures++;
+            }
+
             Console.WriteLine("\n==================================================");
             if (failures == 0)
             {

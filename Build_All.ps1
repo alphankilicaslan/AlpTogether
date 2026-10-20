@@ -11,6 +11,8 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+Stop-Process -Name AlpTogether -Force -ErrorAction SilentlyContinue
+Start-Sleep -Milliseconds 200
 Copy-Item -Path "bin\Release\net9.0-windows\win-x64\publish\AlpTogether.exe" -Destination ".\AlpTogether.exe" -Force
 Write-Host " -> AlpTogether.exe ana dizine kopyalandi." -ForegroundColor Green
 
@@ -22,6 +24,8 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+Stop-Process -Name AlpTogether.Setup -Force -ErrorAction SilentlyContinue
+Start-Sleep -Milliseconds 200
 Copy-Item -Path "AlpTogetherWebSetup\bin\Release\net9.0-windows\win-x64\publish\AlpTogether.Setup.exe" -Destination ".\AlpTogether.Setup.exe" -Force
 Write-Host " -> AlpTogether.Setup.exe ana dizine kopyalandi." -ForegroundColor Green
 

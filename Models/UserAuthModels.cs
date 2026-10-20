@@ -144,8 +144,20 @@ namespace AlpTogether.Models
         [JsonPropertyName("pcUser")]
         public string PcUser { get; set; } = string.Empty;
 
+        private bool _isAdmin;
         [JsonPropertyName("isAdmin")]
-        public bool IsAdmin { get; set; }
+        public bool IsAdmin
+        {
+            get => _isAdmin;
+            set
+            {
+                if (_isAdmin != value)
+                {
+                    _isAdmin = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         [JsonPropertyName("registeredAt")]
         public string RegisteredAt { get; set; } = string.Empty;
