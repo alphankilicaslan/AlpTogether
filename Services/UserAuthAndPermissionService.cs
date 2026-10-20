@@ -192,11 +192,17 @@ namespace AlpTogether.Services
 
         #region Local AlpNet HWID & License Matcher
         /// <summary>
+        private static string? _cachedDetectedLocalAlpNetHwid;
+
+        /// <summary>
         /// Bilgisayarda kurulu AlpNet Pulse varsa yerel lisans dosyasındaki gerçek DeviceId'yi çeker.
         /// Bulunamazsa MD5 HWID algoritmasıyla AlpNet Pulse ile %100 birebir aynı değeri hesaplar.
         /// </summary>
         public static string DetectLocalAlpNetHwid()
         {
+            if (!string.IsNullOrEmpty(_cachedDetectedLocalAlpNetHwid))
+                return _cachedDetectedLocalAlpNetHwid;
+
             try
             {
                 string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -209,13 +215,17 @@ namespace AlpTogether.Services
                     {
                         string? devId = dElem.GetString();
                         if (!string.IsNullOrWhiteSpace(devId))
-                            return devId.Trim().ToUpperInvariant();
+                        {
+                            _cachedDetectedLocalAlpNetHwid = devId.Trim().ToUpperInvariant();
+                            return _cachedDetectedLocalAlpNetHwid;
+                        }
                     }
                 }
             }
             catch { }
 
-            return ComputeLocalAlpNetHwid();
+            _cachedDetectedLocalAlpNetHwid = ComputeLocalAlpNetHwid();
+            return _cachedDetectedLocalAlpNetHwid;
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -33,8 +34,11 @@ namespace AlpTogether
         private string _devEventFilter = "ALL";
         private List<AlpTogetherUserRecord> _allAdminUsers = new();
         private AlpTogetherUserRecord? _selectedAdminUser;
-        private KeygenLicenseItem? _itemToBan;
-        private KeygenLicenseItem? _itemToRename;
+        private readonly ObservableCollection<UserAppWhitelistItem> _userWhitelistApps = new();
+        private bool _isRefreshingApps = false;
+        private string? _currentHeroAppId;
+        private Action? _onPermissionsChangedHandler;
+        private Action<bool, string>? _onNetworkStatusChangedHandler;
 
         public MainWindow()
         {
@@ -55,6 +59,9 @@ namespace AlpTogether
         {
             TxtDeviceIdFooter.Text = $"Cihaz ID: {SettingsService.Instance.DeviceId}";
 
+            // Bind user whitelist items collection
+            IcUserWhitelistApps.ItemsSource = _userWhitelistApps;
+
             // Bind live log collection
             LstLiveLogs.ItemsSource = AppLoggerService.Instance.Entries;
             AppLoggerService.Instance.OnNewLog += Instance_OnNewLog;
@@ -68,7 +75,6 @@ namespace AlpTogether
             UpdateAdminVisibility(DeveloperAuthService.Instance.IsAdminMode);
 
             // Populate device HWID in dev tools
-            TxtDevThisHwid.Text = DeveloperAuthService.Instance.DeviceHwid;
             TxtModalDeviceHwid.Text = DeveloperAuthService.Instance.DeviceHwid;
 
             // Load settings into UI
@@ -111,7 +117,7 @@ namespace AlpTogether
             }
 
             // Listen to live permission changes (grant / revoke)
-            UserAuthAndPermissionService.Instance.OnPermissionsChanged += () =>
+            _onPermissionsChangedHandler = () =>
             {
                 Dispatcher.Invoke(() =>
                 {
@@ -119,9 +125,10 @@ namespace AlpTogether
                     RefreshFilteredAppCards();
                 });
             };
+            UserAuthAndPermissionService.Instance.OnPermissionsChanged += _onPermissionsChangedHandler;
 
             // Listen to network status & offline mode transitions
-            UserAuthAndPermissionService.Instance.OnNetworkStatusChanged += (isOffline, statusText) =>
+            _onNetworkStatusChangedHandler = (isOffline, statusText) =>
             {
                 Dispatcher.Invoke(() =>
                 {
@@ -130,6 +137,7 @@ namespace AlpTogether
                     RefreshFilteredAppCards();
                 });
             };
+            UserAuthAndPermissionService.Instance.OnNetworkStatusChanged += _onNetworkStatusChangedHandler;
 
             // Kullanıcı Kayıt Kontrolü (1 HWID = 1 Benzersiz Takma İsim)
             if (!UserAuthAndPermissionService.Instance.IsRegistered)
@@ -150,14 +158,24 @@ namespace AlpTogether
             AlpDestekService.Instance.StartClientSessionListener();
         }
 
-        private void ProcessMonitorTimer_Tick(object? sender, EventArgs e)
+        private async void ProcessMonitorTimer_Tick(object? sender, EventArgs e)
         {
-            CatalogAndHybridInstallerService.Instance.RefreshAllAppsState();
-            if (_selectedApp != null && !_selectedApp.IsBusy)
+            if (_isRefreshingApps) return;
+            _isRefreshingApps = true;
+            try
             {
-                UpdateHeroPanel(_selectedApp);
+                await Task.Run(() => CatalogAndHybridInstallerService.Instance.RefreshAllAppsState());
+                if (_selectedApp != null && !_selectedApp.IsBusy)
+                {
+                    UpdateHeroPanel(_selectedApp);
+                }
+                UpdateInstalledSummaryText();
             }
-            UpdateInstalledSummaryText();
+            catch { }
+            finally
+            {
+                _isRefreshingApps = false;
+            }
         }
 
         private void Instance_OnNewLog(LogEntryItem entry)
@@ -253,13 +271,12 @@ namespace AlpTogether
 
         private void UpdateHeroPanel(AlpAppItem app)
         {
-            try
+            if (_currentHeroAppId != app.Id || ImgHeroAppIcon.Source == null)
             {
-                ImgHeroAppIcon.Source = new BitmapImage(new Uri(app.IconPackUri, UriKind.RelativeOrAbsolute));
-            }
-            catch
-            {
-                ImgHeroAppIcon.Source = new BitmapImage(new Uri("pack://application:,,,/Assets/alptogether_logo_pink.png", UriKind.RelativeOrAbsolute));
+                _currentHeroAppId = app.Id;
+                var frozen = BitmapCacheHelper.GetFrozenBitmap(app.IconPackUri)
+                          ?? BitmapCacheHelper.GetFrozenBitmap("pack://application:,,,/Assets/alptogether_logo_pink.png");
+                ImgHeroAppIcon.Source = frozen;
             }
 
             TxtHeroAppName.Text = app.Name;
@@ -337,6 +354,40 @@ namespace AlpTogether
         // ==================== SMOOTH PAGE TRANSITION ANIMATION ====================
         private void SwitchToView(UIElement targetView)
         {
+            if (!ReferenceEquals(targetView, ViewStoreLibrary))
+            {
+                CarsPlayer?.PausePlayback();
+            }
+
+            // Top Bar & Announcement Ribbon Visibility
+            bool isStore = ReferenceEquals(targetView, ViewStoreLibrary);
+            if (RowTopBar != null) RowTopBar.Height = isStore ? new GridLength(64) : new GridLength(42);
+            if (PnlTopStoreNavTools != null) PnlTopStoreNavTools.Visibility = isStore ? Visibility.Visible : Visibility.Collapsed;
+            if (PnlTopCompactHeader != null) PnlTopCompactHeader.Visibility = isStore ? Visibility.Collapsed : Visibility.Visible;
+            if (RowAnnouncementRibbon != null) RowAnnouncementRibbon.Height = isStore ? GridLength.Auto : new GridLength(0);
+            if (PnlAnnouncementRibbon != null) PnlAnnouncementRibbon.Visibility = isStore ? Visibility.Visible : Visibility.Collapsed;
+
+            if (!isStore && TxtCompactHeaderTitle != null)
+            {
+                if (ReferenceEquals(targetView, ViewPublisherAndSettings))
+                    TxtCompactHeaderTitle.Text = "🛠 Geliştirici Stüdyosu & Yönetici Masası";
+                else if (ReferenceEquals(targetView, ViewDownloads))
+                    TxtCompactHeaderTitle.Text = "📥 İndirmeler & Güncellemeler";
+                else if (ReferenceEquals(targetView, ViewChangelog))
+                    TxtCompactHeaderTitle.Text = "📜 Sürüm Günlüğü & Yama Notları";
+                else if (ReferenceEquals(targetView, ViewRepairAndPaths))
+                    TxtCompactHeaderTitle.Text = "🛠 Onarım & Dosya Yolu";
+                else if (ReferenceEquals(targetView, ViewCustomLogs))
+                    TxtCompactHeaderTitle.Text = "▤ Özel Boşluk & Canlı Log";
+                else if (ReferenceEquals(targetView, ViewHelpAndFeedback))
+                    TxtCompactHeaderTitle.Text = "💬 Yardım & Sorun Bildir";
+                else
+                    TxtCompactHeaderTitle.Text = "AlpTogether";
+            }
+
+            // Sidebar Collapse: Collapse to mini mode (72px) when entering Dev Studio (ViewPublisherAndSettings)
+            UpdateSidebarMode(ReferenceEquals(targetView, ViewPublisherAndSettings));
+
             UIElement[] allViews =
             {
                 ViewStoreLibrary,
@@ -371,6 +422,44 @@ namespace AlpTogether
 
             ViewportSlideTransform.BeginAnimation(TranslateTransform.YProperty, slideAnim);
             ViewportContainer.BeginAnimation(OpacityProperty, fadeAnim);
+        }
+
+        private void UpdateSidebarMode(bool isMini)
+        {
+            if (SidebarColumn == null) return;
+
+            if (isMini)
+            {
+                SidebarColumn.Width = new GridLength(72);
+                if (PnlBrandText != null) PnlBrandText.Visibility = Visibility.Collapsed;
+                if (TxtNavHeaderMenu != null) TxtNavHeaderMenu.Visibility = Visibility.Collapsed;
+                if (TxtNavStore != null) TxtNavStore.Visibility = Visibility.Collapsed;
+                if (TxtNavDownloads != null) TxtNavDownloads.Visibility = Visibility.Collapsed;
+                if (TxtNavChangelog != null) TxtNavChangelog.Visibility = Visibility.Collapsed;
+                if (TxtNavRepair != null) TxtNavRepair.Visibility = Visibility.Collapsed;
+                if (TxtNavCustomLogs != null) TxtNavCustomLogs.Visibility = Visibility.Collapsed;
+                if (TxtNavHelp != null) TxtNavHelp.Visibility = Visibility.Collapsed;
+                if (TxtNavDevStudio != null) TxtNavDevStudio.Visibility = Visibility.Collapsed;
+                if (BrdNavDevStudioBadge != null) BrdNavDevStudioBadge.Visibility = Visibility.Collapsed;
+                if (PnlQuickAppsSection != null) PnlQuickAppsSection.Visibility = Visibility.Collapsed;
+                if (PnlSidebarFooter != null) PnlSidebarFooter.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                SidebarColumn.Width = new GridLength(265);
+                if (PnlBrandText != null) PnlBrandText.Visibility = Visibility.Visible;
+                if (TxtNavHeaderMenu != null) TxtNavHeaderMenu.Visibility = Visibility.Visible;
+                if (TxtNavStore != null) TxtNavStore.Visibility = Visibility.Visible;
+                if (TxtNavDownloads != null) TxtNavDownloads.Visibility = Visibility.Visible;
+                if (TxtNavChangelog != null) TxtNavChangelog.Visibility = Visibility.Visible;
+                if (TxtNavRepair != null) TxtNavRepair.Visibility = Visibility.Visible;
+                if (TxtNavCustomLogs != null) TxtNavCustomLogs.Visibility = Visibility.Visible;
+                if (TxtNavHelp != null) TxtNavHelp.Visibility = Visibility.Visible;
+                if (TxtNavDevStudio != null) TxtNavDevStudio.Visibility = Visibility.Visible;
+                if (BrdNavDevStudioBadge != null) BrdNavDevStudioBadge.Visibility = Visibility.Visible;
+                if (PnlQuickAppsSection != null) PnlQuickAppsSection.Visibility = Visibility.Visible;
+                if (PnlSidebarFooter != null) PnlSidebarFooter.Visibility = Visibility.Visible;
+            }
         }
 
         private void BtnNavStore_Click(object sender, RoutedEventArgs e) => SwitchToView(ViewStoreLibrary);
@@ -439,6 +528,11 @@ namespace AlpTogether
 
         private void Window_StateChanged(object? sender, EventArgs e)
         {
+            if (WindowState == WindowState.Minimized)
+            {
+                CarsPlayer?.PausePlayback();
+            }
+
             if (WindowState == WindowState.Maximized)
             {
                 OuterWindowBorder.CornerRadius = new CornerRadius(0);
@@ -451,7 +545,59 @@ namespace AlpTogether
             }
         }
 
-        private void BtnClose_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
+        private void BtnClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            _processMonitorTimer.Stop();
+            CarsPlayer?.ReleaseResources();
+
+            // Unhook window events
+            Loaded -= MainWindow_Loaded;
+            SourceInitialized -= MainWindow_SourceInitialized;
+            StateChanged -= Window_StateChanged;
+
+            // Unhook Win32 message hook
+            try
+            {
+                IntPtr handle = new WindowInteropHelper(this).Handle;
+                if (handle != IntPtr.Zero)
+                    HwndSource.FromHwnd(handle)?.RemoveHook(WindowProc);
+            }
+            catch { }
+
+            // Unhook selected app
+            if (_selectedApp != null)
+            {
+                _selectedApp.PropertyChanged -= SelectedApp_PropertyChanged;
+                _selectedApp = null;
+            }
+
+            // Unhook static singleton events to prevent memory leaks
+            AppLoggerService.Instance.OnNewLog -= Instance_OnNewLog;
+            CatalogAndHybridInstallerService.Instance.OnGlobalBandwidthTick -= Instance_OnGlobalBandwidthTick;
+            CatalogAndHybridInstallerService.Instance.OnCatalogUpdated -= Instance_OnCatalogUpdated;
+            DeveloperAuthService.Instance.OnAdminModeChanged -= Instance_OnAdminModeChanged;
+
+            if (_onPermissionsChangedHandler != null)
+            {
+                UserAuthAndPermissionService.Instance.OnPermissionsChanged -= _onPermissionsChangedHandler;
+                _onPermissionsChangedHandler = null;
+            }
+            if (_onNetworkStatusChangedHandler != null)
+            {
+                UserAuthAndPermissionService.Instance.OnNetworkStatusChanged -= _onNetworkStatusChangedHandler;
+                _onNetworkStatusChangedHandler = null;
+            }
+
+            AlpDestekService.Instance.StopClientSessionListener();
+            BitmapCacheHelper.Clear();
+
+            base.OnClosed(e);
+        }
 
         #region Win32 Non-Client / Work Area Maximization Fix
         private void MainWindow_SourceInitialized(object? sender, EventArgs e)
@@ -812,25 +958,32 @@ namespace AlpTogether
 
         private void DrawSpeedChart()
         {
-            if (CanvasSpeedGraph == null || PolylineSpeedStroke == null) return;
+            if (CanvasSpeedGraph == null || PolylineSpeedStroke == null || !CanvasSpeedGraph.IsVisible) return;
             double w = CanvasSpeedGraph.ActualWidth;
             double h = CanvasSpeedGraph.ActualHeight;
             if (w <= 10 || h <= 10) return;
 
-            var samples = CatalogAndHybridInstallerService.Instance.SpeedHistoryMbps.ToList();
-            if (samples.Count == 0) return;
+            var samples = CatalogAndHybridInstallerService.Instance.SpeedHistoryMbps;
+            int count = samples.Count;
+            if (count == 0) return;
 
-            double maxVal = Math.Max(60.0, samples.Max() * 1.2);
-            var pts = new PointCollection();
-            double stepX = w / Math.Max(1, samples.Count - 1);
+            double maxVal = 60.0;
+            for (int i = 0; i < count; i++)
+            {
+                if (samples[i] * 1.2 > maxVal) maxVal = samples[i] * 1.2;
+            }
 
-            for (int i = 0; i < samples.Count; i++)
+            var pts = new PointCollection(count);
+            double stepX = w / Math.Max(1, count - 1);
+
+            for (int i = 0; i < count; i++)
             {
                 double x = i * stepX;
                 double normalized = Math.Clamp(samples[i] / maxVal, 0.0, 1.0);
                 double y = h - (normalized * (h - 16)) - 6;
                 pts.Add(new Point(x, y));
             }
+            pts.Freeze();
             PolylineSpeedStroke.Points = pts;
         }
 
@@ -1096,6 +1249,8 @@ namespace AlpTogether
                     TxtPubInstallerUrl.Text = "";
                     TxtPubDescription.Text = "";
                     TxtPubPatchNotes.Text = "İlk sürüm yayınlandı.";
+                    TxtPubPatchImage.Text = "";
+                    UpdatePatchImagePreview(null);
                     return;
                 }
 
@@ -1110,6 +1265,55 @@ namespace AlpTogether
                 TxtPubInstallerUrl.Text = preset.InstallerUrl;
                 TxtPubDescription.Text = preset.Description;
                 TxtPubPatchNotes.Text = preset.PatchNotes;
+                TxtPubPatchImage.Text = preset.PatchImagePath ?? "";
+                UpdatePatchImagePreview(preset.PatchImagePath);
+            }
+        }
+
+        private void BtnPickPatchImage_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "Yama Notu Kapak Görseli Seçin",
+                Filter = "Resim Dosyaları (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp|Tüm Dosyalar (*.*)|*.*"
+            };
+            if (dlg.ShowDialog(this) == true && File.Exists(dlg.FileName))
+            {
+                TxtPubPatchImage.Text = dlg.FileName;
+                UpdatePatchImagePreview(dlg.FileName);
+            }
+        }
+
+        private void BtnClearPatchImage_Click(object sender, RoutedEventArgs e)
+        {
+            TxtPubPatchImage.Text = "";
+            UpdatePatchImagePreview(null);
+        }
+
+        private void UpdatePatchImagePreview(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                BrdPatchImagePreview.Visibility = Visibility.Collapsed;
+                ImgPatchPreview.Source = null;
+                return;
+            }
+
+            try
+            {
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.UriSource = new Uri(path, UriKind.Absolute);
+                bmp.EndInit();
+                bmp.Freeze();
+                ImgPatchPreview.Source = bmp;
+                BrdPatchImagePreview.Visibility = Visibility.Visible;
+            }
+            catch
+            {
+                BrdPatchImagePreview.Visibility = Visibility.Collapsed;
+                ImgPatchPreview.Source = null;
             }
         }
 
@@ -1171,6 +1375,30 @@ namespace AlpTogether
             if (notesLines.Count == 0)
                 notesLines.Add($"{appName} v{version} sürümü AlpTogether kataloğunda yayınlandı.");
 
+            string? patchImgUrl = null;
+            string patchImgLocal = TxtPubPatchImage.Text.Trim();
+            if (!string.IsNullOrWhiteSpace(patchImgLocal) && File.Exists(patchImgLocal))
+            {
+                try
+                {
+                    string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    string patchImgDir = Path.Combine(appData, "AlpTogether", "patch_images");
+                    if (!Directory.Exists(patchImgDir))
+                    {
+                        Directory.CreateDirectory(patchImgDir);
+                    }
+                    string ext = Path.GetExtension(patchImgLocal);
+                    string safeFileName = $"{appId}_{version.Replace('.', '_')}_{Path.GetFileNameWithoutExtension(patchImgLocal)}{ext}";
+                    string destPath = Path.Combine(patchImgDir, safeFileName);
+                    File.Copy(patchImgLocal, destPath, true);
+                    patchImgUrl = destPath;
+                }
+                catch
+                {
+                    patchImgUrl = patchImgLocal;
+                }
+            }
+
             var newApp = new AlpAppItem
             {
                 Id = appId,
@@ -1200,7 +1428,8 @@ namespace AlpTogether
                         ReleaseDate = DateTime.Now.ToString("dd MMMM yyyy"),
                         Title = $"{appName} v{version} Güncellemesi",
                         Tag = "YENİ YAYIN",
-                        Changes = notesLines
+                        Changes = notesLines,
+                        ImageUrl = patchImgUrl
                     }
                 }
             };
@@ -1227,6 +1456,7 @@ namespace AlpTogether
                         InstallerUrl = TxtPubInstallerUrl.Text.Trim(),
                         Description = TxtPubDescription.Text.Trim(),
                         PatchNotes = TxtPubPatchNotes.Text.Trim(),
+                        PatchImagePath = TxtPubPatchImage.Text.Trim(),
                         LastPublishedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
                     };
                     PublisherPresetService.Instance.SavePreset(p);
@@ -1271,13 +1501,11 @@ namespace AlpTogether
             DevSubViewUsers.Visibility = ReferenceEquals(DevSubViewUsers, targetView) ? Visibility.Visible : Visibility.Collapsed;
             DevSubViewTelemetry.Visibility = ReferenceEquals(DevSubViewTelemetry, targetView) ? Visibility.Visible : Visibility.Collapsed;
             DevSubViewPublisher.Visibility = ReferenceEquals(DevSubViewPublisher, targetView) ? Visibility.Visible : Visibility.Collapsed;
-            DevSubViewKeygen.Visibility = ReferenceEquals(DevSubViewKeygen, targetView) ? Visibility.Visible : Visibility.Collapsed;
             DevSubViewSettings.Visibility = ReferenceEquals(DevSubViewSettings, targetView) ? Visibility.Visible : Visibility.Collapsed;
 
             BtnDevSubTabUsers.Style = (Style)FindResource("PinkSecondaryButtonStyle");
             BtnDevSubTabTelemetry.Style = (Style)FindResource("PinkSecondaryButtonStyle");
             BtnDevSubTabPublisher.Style = (Style)FindResource("PinkSecondaryButtonStyle");
-            BtnDevSubTabKeygen.Style = (Style)FindResource("PinkSecondaryButtonStyle");
             BtnDevSubTabSettings.Style = (Style)FindResource("PinkSecondaryButtonStyle");
 
             if (activeTabBtn != null)
@@ -1438,85 +1666,8 @@ namespace AlpTogether
             TxtDevUserHwid.Text = $"HWID: {user.Hwid}" + (string.IsNullOrWhiteSpace(user.AlpNetHwid) ? "" : $" | AlpNet: {user.AlpNetHwid}");
             TxtDevUserAliasInput.Text = user.AdminAlias;
 
-            // AlpLingo Status
-            if (user.AppPermissions.TryGetValue("alplingo", out var lingoPerm) && lingoPerm.HasAccess && !lingoPerm.IsExpired)
-            {
-                TxtAlpLingoStatusBadge.Text = lingoPerm.StatusBadge;
-                TxtAlpLingoStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(lingoPerm.StatusColorHex));
-                BrdAlpLingoStatus.BorderBrush = TxtAlpLingoStatusBadge.Foreground;
-                TxtAlpLingoStatusDesc.Text = lingoPerm.StatusDescription;
-            }
-            else
-            {
-                TxtAlpLingoStatusBadge.Text = "⛔ Yetkisiz";
-                TxtAlpLingoStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
-                BrdAlpLingoStatus.BorderBrush = TxtAlpLingoStatusBadge.Foreground;
-                TxtAlpLingoStatusDesc.Text = "AlpLingo için henüz yetki verilmemiş veya süresi dolmuş.";
-            }
-
-            // AlpNet Pulse Status
-            if (user.AppPermissions.TryGetValue("alpnet-pulse", out var pulsePerm) && pulsePerm.HasAccess && !pulsePerm.IsExpired)
-            {
-                TxtAlpNetStatusBadge.Text = pulsePerm.StatusBadge;
-                TxtAlpNetStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(pulsePerm.StatusColorHex));
-                BrdAlpNetStatus.BorderBrush = TxtAlpNetStatusBadge.Foreground;
-                TxtAlpNetStatusDesc.Text = pulsePerm.StatusDescription;
-            }
-            else
-            {
-                TxtAlpNetStatusBadge.Text = "⛔ Yetkisiz";
-                TxtAlpNetStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
-                BrdAlpNetStatus.BorderBrush = TxtAlpNetStatusBadge.Foreground;
-                TxtAlpNetStatusDesc.Text = "AlpNet Pulse için henüz yetki verilmemiş veya süresi dolmuş.";
-            }
-
-            // AlpFinans Status
-            if (user.AppPermissions.TryGetValue("alpfinans", out var finansPerm) && finansPerm.HasAccess && !finansPerm.IsExpired)
-            {
-                TxtAlpFinansStatusBadge.Text = finansPerm.StatusBadge;
-                TxtAlpFinansStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(finansPerm.StatusColorHex));
-                BrdAlpFinansStatus.BorderBrush = TxtAlpFinansStatusBadge.Foreground;
-                TxtAlpFinansStatusDesc.Text = finansPerm.StatusDescription;
-            }
-            else
-            {
-                TxtAlpFinansStatusBadge.Text = "⛔ Yetkisiz";
-                TxtAlpFinansStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
-                BrdAlpFinansStatus.BorderBrush = TxtAlpFinansStatusBadge.Foreground;
-                TxtAlpFinansStatusDesc.Text = "AlpFinans için henüz yetki verilmemiş veya süresi dolmuş.";
-            }
-
-            // AlphaGravity Status
-            if (user.AppPermissions.TryGetValue("alphagravity", out var gravPerm) && gravPerm.HasAccess && !gravPerm.IsExpired)
-            {
-                TxtAlphaGravityStatusBadge.Text = gravPerm.StatusBadge;
-                TxtAlphaGravityStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(gravPerm.StatusColorHex));
-                BrdAlphaGravityStatus.BorderBrush = TxtAlphaGravityStatusBadge.Foreground;
-                TxtAlphaGravityStatusDesc.Text = gravPerm.StatusDescription;
-            }
-            else
-            {
-                TxtAlphaGravityStatusBadge.Text = "⛔ Yetkisiz";
-                TxtAlphaGravityStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
-                BrdAlphaGravityStatus.BorderBrush = TxtAlphaGravityStatusBadge.Foreground;
-                TxtAlphaGravityStatusDesc.Text = "AlphaGravity için henüz yetki verilmemiş veya süresi dolmuş.";
-            }
-
-            // AlpRust+ Status
-            if ((user.AppPermissions.TryGetValue("alprust-plus", out var rustPerm) || user.AppPermissions.TryGetValue("alprust", out rustPerm)) && rustPerm.HasAccess && !rustPerm.IsExpired)
-            {
-                TxtAlpRustStatusBadge.Text = rustPerm.StatusBadge;
-                TxtAlpRustStatusBadge.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(rustPerm.StatusColorHex));
-                BrdAlpRustStatus.BorderBrush = TxtAlpRustStatusBadge.Foreground;
-                TxtAlpRustStatusDesc.Text = rustPerm.StatusDescription;
-            }
-            else
-            {
-                TxtAlpRustStatusBadge.Text = "⛔ Yetkisiz";
-                TxtAlpRustStatusBadge.Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150));
-                BrdAlpRustStatus.BorderBrush = TxtAlpRustStatusBadge.Foreground;
-                TxtAlpRustStatusDesc.Text = "AlpRust+ için henüz yetki verilmemiş veya süresi dolmuş.";
-            }
+            // Dynamic Universal Whitelist Population
+            PopulateUserWhitelist(user);
 
             // Update Admin Role button state
             if (BtnDevToggleAdminRole != null)
@@ -1591,124 +1742,233 @@ namespace AlpTogether
             BtnSaveUserAlias.Content = "💾 Kaydet";
         }
 
-        private int GetDurationDaysFromCombo(ComboBox cmb)
+        private void PopulateUserWhitelist(AlpTogetherUserRecord? user)
         {
-            if (cmb.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out int days))
+            _userWhitelistApps.Clear();
+            if (user == null) return;
+
+            // List of known core ecosystem apps
+            var coreAppDefs = new List<(string Id, string Name, string Subtitle, string Icon, string Color)>
             {
-                return days;
+                ("alpnet-pulse", "AlpNet Pulse", "Ağ & WARP & Sesli Çeviri", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#00E5FF"),
+                ("alplingo", "AlpLingo", "AI Oyun İçi Çeviri & OCR", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#FF2E93"),
+                ("alphagravity", "AlphaGravity", "Çoklu Model AI Asistanı", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#BA68C8"),
+                ("alpfinans", "AlpFinans", "Borsa, Kripto & Portföy", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#FFB74D"),
+                ("alprust-plus", "AlpRust+", "Rust+ Cihaz, Kamera & Raid Alarmı", "pack://application:,,,/Assets/alptogether_logo_pink.png", "#FF7043")
+            };
+
+            var addedAppIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var def in coreAppDefs)
+            {
+                addedAppIds.Add(def.Id);
+                var item = new UserAppWhitelistItem
+                {
+                    AppId = def.Id,
+                    AppName = def.Name,
+                    Subtitle = def.Subtitle,
+                    IconPackUri = def.Icon,
+                    AccentColorHex = def.Color,
+                    SelectedDurationIndex = 2
+                };
+
+                UserAppPermission? perm = null;
+                if (!user.AppPermissions.TryGetValue(def.Id, out perm) && def.Id == "alprust-plus")
+                {
+                    user.AppPermissions.TryGetValue("alprust", out perm);
+                }
+
+                ApplyUserPermissionToItem(item, perm);
+                _userWhitelistApps.Add(item);
             }
-            return 30;
+
+            // Also dynamically append any catalog apps that are not in core list
+            try
+            {
+                var catalogApps = CatalogAndHybridInstallerService.Instance.Apps;
+                if (catalogApps != null)
+                {
+                    foreach (var catApp in catalogApps)
+                    {
+                        if (addedAppIds.Contains(catApp.Id)) continue;
+                        addedAppIds.Add(catApp.Id);
+
+                        var item = new UserAppWhitelistItem
+                        {
+                            AppId = catApp.Id,
+                            AppName = catApp.Name,
+                            Subtitle = catApp.Category,
+                            IconPackUri = !string.IsNullOrWhiteSpace(catApp.IconPackUri) ? catApp.IconPackUri : "pack://application:,,,/Assets/alptogether_logo_pink.png",
+                            AccentColorHex = "#FF2E93",
+                            SelectedDurationIndex = 2
+                        };
+
+                        user.AppPermissions.TryGetValue(catApp.Id, out var perm);
+                        ApplyUserPermissionToItem(item, perm);
+                        _userWhitelistApps.Add(item);
+                    }
+                }
+            }
+            catch { }
         }
 
-        private async void BtnGrantAlpLingo_Click(object sender, RoutedEventArgs e)
+        private void ApplyUserPermissionToItem(UserAppWhitelistItem item, UserAppPermission? perm)
         {
-            if (_selectedAdminUser == null) return;
-
-            int days = GetDurationDaysFromCombo(CmbDurationAlpLingo);
-            BtnGrantAlpLingo.IsEnabled = false;
-            BtnGrantAlpLingo.Content = "Yetki Veriliyor...";
-
-            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alplingo", days);
-            if (ok)
+            if (perm != null && perm.HasAccess && !perm.IsExpired)
             {
-                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpLingo yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
-                await RefreshAdminUsersAsync();
+                item.HasAccess = true;
+                item.StatusBadge = perm.StatusBadge;
+                item.StatusDescription = perm.StatusDescription;
+                item.StatusColorHex = perm.StatusColorHex;
             }
             else
             {
-                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                item.HasAccess = false;
+                item.StatusBadge = "⛔ Yetkisiz";
+                item.StatusDescription = "Kullanım yetkisi verilmemiş veya süresi dolmuş.";
+                item.StatusColorHex = "#757575";
             }
-
-            BtnGrantAlpLingo.IsEnabled = true;
-            BtnGrantAlpLingo.Content = "⚡ Yetki Ver / Uzat";
         }
 
-        private async void BtnRevokeAlpLingo_Click(object sender, RoutedEventArgs e)
+        private async void BtnWhitelistItemGrant_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+            if (sender is not FrameworkElement fe || fe.Tag is not UserAppWhitelistItem item) return;
+
+            int days = item.GetDurationDays();
+            string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
+
+            fe.IsEnabled = false;
+            try
+            {
+                bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, item.AppId, days);
+                if (item.AppId == "alprust-plus")
+                {
+                    await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alprust", days);
+                }
+
+                if (ok)
+                {
+                    MessageBox.Show($"'{_selectedAdminUser.DisplayName}' kullanıcısına '{item.AppName}' yetkisi başarıyla tanımlandı ({durationText})!",
+                        "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
+                    await RefreshAdminUsersAsync();
+                }
+                else
+                {
+                    MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            finally
+            {
+                fe.IsEnabled = true;
+            }
+        }
+
+        private async void BtnWhitelistItemRevoke_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedAdminUser == null) return;
+            if (sender is not FrameworkElement fe || fe.Tag is not UserAppWhitelistItem item) return;
+
+            var res = MessageBox.Show(
+                $"'{_selectedAdminUser.DisplayName}' kullanıcısının '{item.AppName}' yetkisini kaldırmak istiyor musunuz?\n\n(ÖNEMLİ: Kullanıcı silinmez, sadece bu uygulamaya erişimi kapatılır.)",
+                "Yetkiyi Kaldır", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (res != MessageBoxResult.Yes) return;
+
+            fe.IsEnabled = false;
+            try
+            {
+                bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, item.AppId);
+                if (item.AppId == "alprust-plus")
+                {
+                    await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alprust");
+                }
+
+                if (ok)
+                {
+                    MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için '{item.AppName}' yetkisi kaldırıldı.",
+                        "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+                    await RefreshAdminUsersAsync();
+                }
+                else
+                {
+                    MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            finally
+            {
+                fe.IsEnabled = true;
+            }
+        }
+
+        private async void BtnGrantAllApps_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedAdminUser == null) return;
 
             var res = MessageBox.Show(
-                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlpLingo yetkisini kaldırmak istiyor musunuz?\n\n(ÖNEMLİ: Kullanıcı veritabanından silinmeyecektir, sadece AlpLingo erişimi kapatılacaktır.)",
-                "Yetkiyi Kaldır",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+                $"'{_selectedAdminUser.DisplayName}' kullanıcısına listedeki TÜM uygulamalar için SÜRESİZ yetki tanımlamak istediğinize emin misiniz?",
+                "Tümüne Yetki Ver (Süresiz)", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             if (res != MessageBoxResult.Yes) return;
 
-            BtnRevokeAlpLingo.IsEnabled = false;
-            BtnRevokeAlpLingo.Content = "Kaldırılıyor...";
-
-            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alplingo");
-            if (ok)
+            BtnGrantAllApps.IsEnabled = false;
+            BtnGrantAllApps.Content = "Tanımlanıyor...";
+            try
             {
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpLingo yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+                var appIds = _userWhitelistApps.Select(a => a.AppId).Distinct().ToList();
+                if (!appIds.Contains("alprust-plus")) appIds.Add("alprust-plus");
+                if (!appIds.Contains("alprust")) appIds.Add("alprust");
+
+                foreach (var appId in appIds)
+                {
+                    await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, appId, 99999);
+                }
+
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için tüm uygulamalara süresiz yetki başarıyla verildi!",
+                    "Toplu Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
                 await RefreshAdminUsersAsync();
             }
-            else
+            finally
             {
-                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                BtnGrantAllApps.IsEnabled = true;
+                BtnGrantAllApps.Content = "⚡ Tümüne Yetki Ver (Süresiz)";
             }
-
-            BtnRevokeAlpLingo.IsEnabled = true;
-            BtnRevokeAlpLingo.Content = "⛔ Yetkiyi Kaldır";
         }
 
-        private async void BtnGrantAlpNet_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedAdminUser == null) return;
-
-            int days = GetDurationDaysFromCombo(CmbDurationAlpNet);
-            BtnGrantAlpNet.IsEnabled = false;
-            BtnGrantAlpNet.Content = "Yetki Veriliyor...";
-
-            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alpnet-pulse", days);
-            if (ok)
-            {
-                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpNet Pulse yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
-                await RefreshAdminUsersAsync();
-            }
-            else
-            {
-                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            BtnGrantAlpNet.IsEnabled = true;
-            BtnGrantAlpNet.Content = "⚡ Yetki Ver / Uzat";
-        }
-
-        private async void BtnRevokeAlpNet_Click(object sender, RoutedEventArgs e)
+        private async void BtnRevokeAllApps_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedAdminUser == null) return;
 
             var res = MessageBox.Show(
-                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlpNet Pulse yetkisini kaldırmak istiyor musunuz?\n\n(ÖNEMLİ: Kullanıcı veritabanından silinmeyecektir, sadece AlpNet Pulse erişimi kapatılacaktır.)",
-                "Yetkiyi Kaldır",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+                $"'{_selectedAdminUser.DisplayName}' kullanıcısının TÜM uygulama yetkilerini kaldırmak istediğinize emin misiniz?\n\n(Kullanıcı hesabı silinmeyecektir, sadece tüm uygulamalara erişimi sonlandırılacaktır.)",
+                "Tüm Yetkileri Kaldır", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (res != MessageBoxResult.Yes) return;
 
-            BtnRevokeAlpNet.IsEnabled = false;
-            BtnRevokeAlpNet.Content = "Kaldırılıyor...";
-
-            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alpnet-pulse");
-            if (ok)
+            BtnRevokeAllApps.IsEnabled = false;
+            BtnRevokeAllApps.Content = "Kaldırılıyor...";
+            try
             {
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpNet Pulse yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
+                var appIds = _userWhitelistApps.Select(a => a.AppId).Distinct().ToList();
+                if (!appIds.Contains("alprust-plus")) appIds.Add("alprust-plus");
+                if (!appIds.Contains("alprust")) appIds.Add("alprust");
+
+                foreach (var appId in appIds)
+                {
+                    await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, appId);
+                }
+
+                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için tüm uygulama yetkileri kaldırıldı.",
+                    "Yetkiler Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
                 await RefreshAdminUsersAsync();
             }
-            else
+            finally
             {
-                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                BtnRevokeAllApps.IsEnabled = true;
+                BtnRevokeAllApps.Content = "⛔ Tüm Yetkileri Kaldır";
             }
-
-            BtnRevokeAlpNet.IsEnabled = true;
-            BtnRevokeAlpNet.Content = "⛔ Yetkiyi Kaldır";
         }
 
-        #region AlpFinans & AlphaGravity & Admin Role Handlers
         private async void BtnDevToggleAdminRole_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedAdminUser == null) return;
@@ -1733,149 +1993,6 @@ namespace AlpTogether
             }
             BtnDevToggleAdminRole.IsEnabled = true;
         }
-
-        private async void BtnGrantAlpFinans_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedAdminUser == null) return;
-            int days = GetDurationDaysFromCombo(CmbDurationAlpFinans);
-            BtnGrantAlpFinans.IsEnabled = false;
-            BtnGrantAlpFinans.Content = "Yetki Veriliyor...";
-
-            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alpfinans", days);
-            if (ok)
-            {
-                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpFinans yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
-                await RefreshAdminUsersAsync();
-            }
-            else
-            {
-                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            BtnGrantAlpFinans.IsEnabled = true;
-            BtnGrantAlpFinans.Content = "⚡ Yetki Ver / Uzat";
-        }
-
-        private async void BtnRevokeAlpFinans_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedAdminUser == null) return;
-            var res = MessageBox.Show(
-                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlpFinans yetkisini kaldırmak istiyor musunuz?",
-                "Yetkiyi Kaldır", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (res != MessageBoxResult.Yes) return;
-
-            BtnRevokeAlpFinans.IsEnabled = false;
-            BtnRevokeAlpFinans.Content = "Kaldırılıyor...";
-            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alpfinans");
-            if (ok)
-            {
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpFinans yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
-                await RefreshAdminUsersAsync();
-            }
-            else
-            {
-                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            BtnRevokeAlpFinans.IsEnabled = true;
-            BtnRevokeAlpFinans.Content = "⛔ Yetkiyi Kaldır";
-        }
-
-        private async void BtnGrantAlphaGravity_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedAdminUser == null) return;
-            int days = GetDurationDaysFromCombo(CmbDurationAlphaGravity);
-            BtnGrantAlphaGravity.IsEnabled = false;
-            BtnGrantAlphaGravity.Content = "Yetki Veriliyor...";
-
-            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alphagravity", days);
-            if (ok)
-            {
-                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlphaGravity yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
-                await RefreshAdminUsersAsync();
-            }
-            else
-            {
-                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            BtnGrantAlphaGravity.IsEnabled = true;
-            BtnGrantAlphaGravity.Content = "⚡ Yetki Ver / Uzat";
-        }
-
-        private async void BtnRevokeAlphaGravity_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedAdminUser == null) return;
-            var res = MessageBox.Show(
-                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlphaGravity yetkisini kaldırmak istiyor musunuz?",
-                "Yetkiyi Kaldır", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (res != MessageBoxResult.Yes) return;
-
-            BtnRevokeAlphaGravity.IsEnabled = false;
-            BtnRevokeAlphaGravity.Content = "Kaldırılıyor...";
-            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alphagravity");
-            if (ok)
-            {
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlphaGravity yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
-                await RefreshAdminUsersAsync();
-            }
-            else
-            {
-                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            BtnRevokeAlphaGravity.IsEnabled = true;
-            BtnRevokeAlphaGravity.Content = "⛔ Yetkiyi Kaldır";
-        }
-
-        private async void BtnGrantAlpRust_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedAdminUser == null) return;
-            int days = GetDurationDaysFromCombo(CmbDurationAlpRust);
-            BtnGrantAlpRust.IsEnabled = false;
-            BtnGrantAlpRust.Content = "Yetki Veriliyor...";
-
-            bool ok = await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alprust-plus", days);
-            await UserAuthAndPermissionService.Instance.GrantAppPermissionAsync(_selectedAdminUser.Hwid, "alprust", days);
-
-            if (ok)
-            {
-                string durationText = days >= 9999 ? "Süresiz" : $"{days} Gün";
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpRust+ yetkisi başarıyla tanımlandı ({durationText})!", "Yetki Tanımlandı", MessageBoxButton.OK, MessageBoxImage.Information);
-                await RefreshAdminUsersAsync();
-            }
-            else
-            {
-                MessageBox.Show("Yetki tanımlanırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            BtnGrantAlpRust.IsEnabled = true;
-            BtnGrantAlpRust.Content = "⚡ Yetki Ver / Uzat";
-        }
-
-        private async void BtnRevokeAlpRust_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedAdminUser == null) return;
-            var res = MessageBox.Show(
-                $"'{_selectedAdminUser.DisplayName}' kullanıcısının AlpRust+ yetkisini kaldırmak istiyor musunuz?",
-                "Yetkiyi Kaldır", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (res != MessageBoxResult.Yes) return;
-
-            BtnRevokeAlpRust.IsEnabled = false;
-            BtnRevokeAlpRust.Content = "Kaldırılıyor...";
-            bool ok = await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alprust-plus");
-            await UserAuthAndPermissionService.Instance.RevokeAppPermissionAsync(_selectedAdminUser.Hwid, "alprust");
-
-            if (ok)
-            {
-                MessageBox.Show($"'{_selectedAdminUser.DisplayName}' için AlpRust+ yetkisi kaldırıldı.", "Yetki Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
-                await RefreshAdminUsersAsync();
-            }
-            else
-            {
-                MessageBox.Show("Yetki kaldırılırken hata oluştu.", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            BtnRevokeAlpRust.IsEnabled = true;
-            BtnRevokeAlpRust.Content = "⛔ Yetkiyi Kaldır";
-        }
-        #endregion
 
         private async void BtnDeleteUserRecord_Click(object sender, RoutedEventArgs e)
         {
@@ -1932,341 +2049,6 @@ namespace AlpTogether
             {
                 MessageBox.Show("Canlı destek penceresi açılamadı: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        // ==================== ALPNET LİSANS & KEYGEN MASASI ====================
-        private void BtnDevSubTabKeygen_Click(object sender, RoutedEventArgs e)
-        {
-            SwitchDevSubView(DevSubViewKeygen, BtnDevSubTabKeygen);
-            TxtDevThisHwid.Text = DeveloperAuthService.Instance.DeviceHwid;
-            RefreshKeygenUi();
-        }
-
-        private void RefreshKeygenUi()
-        {
-            TxtAlpNetTotalRevenue.Text = $"₺{AlpNetKeygenService.Instance.TotalRevenue:0.00}";
-            TxtAlpNetActiveSubs.Text = AlpNetKeygenService.Instance.ActiveSubs.ToString();
-            TxtAlpNetTotalLicenses.Text = AlpNetKeygenService.Instance.TotalLicenses.ToString();
-
-            LstAlpNetHistory.ItemsSource = null;
-            LstAlpNetHistory.ItemsSource = AlpNetKeygenService.Instance.History;
-
-            LstAlpNetBlacklist.ItemsSource = null;
-            LstAlpNetBlacklist.ItemsSource = AlpNetKeygenService.Instance.BannedHistory;
-        }
-
-        private void SwitchKeygenSubTab(FrameworkElement activePanel, Button activeBtn)
-        {
-            PnlKeygenGenerator.Visibility = ReferenceEquals(PnlKeygenGenerator, activePanel) ? Visibility.Visible : Visibility.Collapsed;
-            PnlKeygenHistory.Visibility = ReferenceEquals(PnlKeygenHistory, activePanel) ? Visibility.Visible : Visibility.Collapsed;
-            PnlKeygenBlacklist.Visibility = ReferenceEquals(PnlKeygenBlacklist, activePanel) ? Visibility.Visible : Visibility.Collapsed;
-            PnlKeygenLive.Visibility = ReferenceEquals(PnlKeygenLive, activePanel) ? Visibility.Visible : Visibility.Collapsed;
-            PnlKeygenAppState.Visibility = ReferenceEquals(PnlKeygenAppState, activePanel) ? Visibility.Visible : Visibility.Collapsed;
-
-            BtnKeygenTabGenerator.Style = (Style)FindResource("PinkSecondaryButtonStyle");
-            BtnKeygenTabHistory.Style = (Style)FindResource("PinkSecondaryButtonStyle");
-            BtnKeygenTabBlacklist.Style = (Style)FindResource("PinkSecondaryButtonStyle");
-            BtnKeygenTabLive.Style = (Style)FindResource("PinkSecondaryButtonStyle");
-            BtnKeygenTabAppState.Style = (Style)FindResource("PinkSecondaryButtonStyle");
-
-            activeBtn.Style = (Style)FindResource("PinkPrimaryButtonStyle");
-        }
-
-        private void BtnKeygenTabGenerator_Click(object sender, RoutedEventArgs e)
-        {
-            SwitchKeygenSubTab(PnlKeygenGenerator, BtnKeygenTabGenerator);
-        }
-
-        private void BtnKeygenTabHistory_Click(object sender, RoutedEventArgs e)
-        {
-            SwitchKeygenSubTab(PnlKeygenHistory, BtnKeygenTabHistory);
-            RefreshKeygenUi();
-        }
-
-        private void BtnKeygenTabBlacklist_Click(object sender, RoutedEventArgs e)
-        {
-            SwitchKeygenSubTab(PnlKeygenBlacklist, BtnKeygenTabBlacklist);
-            RefreshKeygenUi();
-        }
-
-        private async void BtnKeygenTabLive_Click(object sender, RoutedEventArgs e)
-        {
-            SwitchKeygenSubTab(PnlKeygenLive, BtnKeygenTabLive);
-            await RefreshLiveDevicesAsync();
-        }
-
-        private async void BtnKeygenTabAppState_Click(object sender, RoutedEventArgs e)
-        {
-            SwitchKeygenSubTab(PnlKeygenAppState, BtnKeygenTabAppState);
-            await RefreshAppStateAsync();
-        }
-
-        private void BtnAlpNetGenerate_Click(object sender, RoutedEventArgs e)
-        {
-            string hwid = TxtAlpNetHwid.Text.Trim();
-            if (string.IsNullOrWhiteSpace(hwid))
-            {
-                MessageBox.Show("Lütfen hedef Donanım Kimliğini (HWID) girin.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            int hours = CmbAlpNetDuration.SelectedIndex switch
-            {
-                0 => 1,
-                1 => 6,
-                2 => 12,
-                3 => 24,
-                4 => 24 * 7,
-                5 => 24 * 30,
-                6 => 24 * 365,
-                7 => 24 * 36500,
-                _ => 24 * 30
-            };
-
-            string durationStr = (CmbAlpNetDuration.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Aylık (30 Gün)";
-            decimal price = decimal.TryParse(TxtAlpNetPrice.Text.Trim(), out var p) ? p : 0;
-            string note = TxtAlpNetNote.Text.Trim();
-
-            try
-            {
-                string key = AlpNetKeygenService.Instance.GenerateLicense(hwid, hours, durationStr, note, price);
-                TxtAlpNetOutputKey.Text = key;
-                TxtAlpNetGenStatus.Text = "Lisans başarıyla üretildi ve buluta gönderildi!";
-                RefreshKeygenUi();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lisans üretilemedi: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void BtnAlpNetCopyKey_Click(object sender, RoutedEventArgs e)
-        {
-            if (!string.IsNullOrWhiteSpace(TxtAlpNetOutputKey.Text))
-            {
-                Clipboard.SetText(TxtAlpNetOutputKey.Text);
-                TxtAlpNetGenStatus.Text = "Lisans panoya kopyalandı!";
-            }
-        }
-
-        private void BtnAlpNetDeleteExpired_Click(object sender, RoutedEventArgs e)
-        {
-            var res = MessageBox.Show("Süresi dolmuş tüm lisansları veritabanından kalıcı olarak silmek istiyor musunuz?", "Onay", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (res == MessageBoxResult.Yes)
-            {
-                int removed = AlpNetKeygenService.Instance.DeleteExpiredLicenses();
-                RefreshKeygenUi();
-                MessageBox.Show($"{removed} adet süresi dolmuş lisans temizlendi.", "Temizlendi", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        private void BtnHistoryItemCopy_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
-            {
-                Clipboard.SetText(item.KeyString);
-                MessageBox.Show("Lisans anahtarı panoya kopyalandı!", "Kopyalandı", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        private void BtnHistoryItemRename_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
-            {
-                _itemToRename = item;
-                TxtAlpNetRenameInput.Text = item.Note;
-                AlpNetRenameOverlay.Visibility = Visibility.Visible;
-                TxtAlpNetRenameInput.Focus();
-                TxtAlpNetRenameInput.SelectAll();
-            }
-        }
-
-        private void BtnAlpNetRenameSave_Click(object sender, RoutedEventArgs e)
-        {
-            if (_itemToRename != null)
-            {
-                AlpNetKeygenService.Instance.UpdateNote(_itemToRename, TxtAlpNetRenameInput.Text);
-                RefreshKeygenUi();
-            }
-            AlpNetRenameOverlay.Visibility = Visibility.Collapsed;
-            _itemToRename = null;
-        }
-
-        private void BtnAlpNetRenameCancel_Click(object sender, RoutedEventArgs e)
-        {
-            AlpNetRenameOverlay.Visibility = Visibility.Collapsed;
-            _itemToRename = null;
-        }
-
-        private void BtnHistoryItemDelete_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
-            {
-                var res = MessageBox.Show("Bu lisansı geçmişten tamamen silmek istediğinize emin misiniz?", "Onay", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                if (res == MessageBoxResult.Yes)
-                {
-                    AlpNetKeygenService.Instance.DeleteLicense(item);
-                    RefreshKeygenUi();
-                }
-            }
-        }
-
-        private void BtnHistoryItemBan_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
-            {
-                _itemToBan = item;
-                AlpNetBanOverlay.Visibility = Visibility.Visible;
-            }
-        }
-
-        private async void BtnAlpNetBanKey_Click(object sender, RoutedEventArgs e)
-        {
-            AlpNetBanOverlay.Visibility = Visibility.Collapsed;
-            if (_itemToBan == null) return;
-            await AlpNetKeygenService.Instance.ProcessBanAsync(_itemToBan, _itemToBan.KeyString, "SİLİNDİ (ANAHTAR)");
-            RefreshKeygenUi();
-            _itemToBan = null;
-        }
-
-        private async void BtnAlpNetBanHwid_Click(object sender, RoutedEventArgs e)
-        {
-            AlpNetBanOverlay.Visibility = Visibility.Collapsed;
-            if (_itemToBan == null) return;
-
-            string hwid = "";
-            try
-            {
-                string rawKey = _itemToBan.KeyString.Replace("-", "").Replace("ALPNETPULSE", "");
-                byte[] decodedBytes = Convert.FromBase64String(rawKey);
-                string fullKeyData = Encoding.UTF8.GetString(decodedBytes);
-                string[] parts = fullKeyData.Split('|');
-                if (parts.Length > 0) hwid = parts[0];
-            }
-            catch { }
-
-            if (string.IsNullOrEmpty(hwid)) hwid = _itemToBan.KeyString;
-            await AlpNetKeygenService.Instance.ProcessBanAsync(_itemToBan, hwid, "YASAKLI (HWID)");
-            RefreshKeygenUi();
-            _itemToBan = null;
-        }
-
-        private void BtnAlpNetBanCancel_Click(object sender, RoutedEventArgs e)
-        {
-            AlpNetBanOverlay.Visibility = Visibility.Collapsed;
-            _itemToBan = null;
-        }
-
-        private async void BtnBlacklistItemUnban_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is KeygenLicenseItem item)
-            {
-                await AlpNetKeygenService.Instance.RemoveFromBlacklistAsync(item);
-                RefreshKeygenUi();
-                MessageBox.Show("Yasak başarıyla kaldırıldı ve lisans tekrar aktif edildi!", "Yasak Kaldırıldı", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        private async Task RefreshLiveDevicesAsync()
-        {
-            BtnAlpNetRefreshLive.IsEnabled = false;
-            var list = await AlpNetKeygenService.Instance.FetchLiveDevicesAsync();
-            LstAlpNetLiveDevices.ItemsSource = null;
-            LstAlpNetLiveDevices.ItemsSource = list;
-            BtnAlpNetRefreshLive.IsEnabled = true;
-        }
-
-        private async void BtnAlpNetRefreshLive_Click(object sender, RoutedEventArgs e)
-        {
-            await RefreshLiveDevicesAsync();
-        }
-
-        private void BtnLiveItemCopyHwid_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is KeygenActiveDevice dev)
-            {
-                Clipboard.SetText(dev.Hwid);
-                TxtAlpNetDirectMsgStatus.Text = "HWID panoya kopyalandı!";
-            }
-        }
-
-        private void BtnLiveItemBan_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is KeygenActiveDevice dev)
-            {
-                _itemToBan = new KeygenLicenseItem
-                {
-                    KeyString = dev.LicenseKey,
-                    Note = "CANLI CİHAZ (HWID: " + dev.Hwid + ")"
-                };
-                AlpNetBanOverlay.Visibility = Visibility.Visible;
-            }
-        }
-
-        private async void BtnAlpNetSendDirectMsg_Click(object sender, RoutedEventArgs e)
-        {
-            if (LstAlpNetLiveDevices.SelectedItem is KeygenActiveDevice dev)
-            {
-                string msg = TxtAlpNetDirectMsg.Text.Trim();
-                if (string.IsNullOrWhiteSpace(msg)) return;
-
-                bool ok = await AlpNetKeygenService.Instance.SendDirectMessageAsync(dev.Hwid, msg);
-                TxtAlpNetDirectMsgStatus.Text = ok ? "Mesaj Gönderildi!" : "Gönderilemedi.";
-                TxtAlpNetDirectMsg.Text = "";
-            }
-            else
-            {
-                MessageBox.Show("Lütfen mesaj göndermek için listeden bir cihaz seçin.", "Cihaz Seçilmedi", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        private async Task RefreshAppStateAsync()
-        {
-            var state = await AlpNetKeygenService.Instance.FetchAppStateAsync();
-            ChkAlpNetMaintenance.IsChecked = state.maintenance;
-            TxtAlpNetMaintenanceMsg.Text = state.maintenanceMsg;
-            TxtAlpNetBroadcastMsg.Text = state.broadcastMsg;
-            TxtAlpNetVersion.Text = state.version;
-            TxtAlpNetUpdateUrl.Text = state.updateUrl;
-        }
-
-        private async void BtnAlpNetSaveMaintenance_Click(object sender, RoutedEventArgs e)
-        {
-            TxtAlpNetSettingsStatus.Text = "Kaydediliyor...";
-            bool ok = await AlpNetKeygenService.Instance.PatchAppStateAsync(new
-            {
-                maintenance = ChkAlpNetMaintenance.IsChecked == true,
-                maintenanceMsg = TxtAlpNetMaintenanceMsg.Text.Trim()
-            });
-            TxtAlpNetSettingsStatus.Text = ok ? "✔ Bakım modu güncellendi!" : "⚠ Kaydedilemedi.";
-        }
-
-        private async void BtnAlpNetSaveBroadcast_Click(object sender, RoutedEventArgs e)
-        {
-            TxtAlpNetSettingsStatus.Text = "Duyuru yayınlanıyor...";
-            bool ok = await AlpNetKeygenService.Instance.PatchAppStateAsync(new
-            {
-                broadcastMsg = TxtAlpNetBroadcastMsg.Text.Trim()
-            });
-            TxtAlpNetSettingsStatus.Text = ok ? "✔ Duyuru anında yayınlandı!" : "⚠ Yayınlanamadı.";
-        }
-
-        private async void BtnAlpNetClearBroadcast_Click(object sender, RoutedEventArgs e)
-        {
-            TxtAlpNetBroadcastMsg.Text = "";
-            bool ok = await AlpNetKeygenService.Instance.PatchAppStateAsync(new { broadcastMsg = "" });
-            TxtAlpNetSettingsStatus.Text = ok ? "✔ Duyuru yayından kaldırıldı." : "⚠ Kaldırılamadı.";
-        }
-
-        private async void BtnAlpNetSaveUpdate_Click(object sender, RoutedEventArgs e)
-        {
-            TxtAlpNetSettingsStatus.Text = "Sürüm bilgisi kaydediliyor...";
-            bool ok = await AlpNetKeygenService.Instance.PatchAppStateAsync(new
-            {
-                version = TxtAlpNetVersion.Text.Trim(),
-                updateUrl = TxtAlpNetUpdateUrl.Text.Trim()
-            });
-            TxtAlpNetSettingsStatus.Text = ok ? "✔ Yeni sürüm ve indirme linki yayınlandı!" : "⚠ Kaydedilemedi.";
         }
 
         private void BtnDevSubTabSettings_Click(object sender, RoutedEventArgs e)
@@ -2495,51 +2277,7 @@ namespace AlpTogether
                 MessageBox.Show("Bu cihaz başarıyla süresiz Admin olarak etkinleştirildi!", "Admin Aktif", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-
-        private void BtnDevGenerateAdminKey_Click(object sender, RoutedEventArgs e)
-        {
-            string target = TxtDevTargetHwid.Text.Trim();
-            DateTime exp = CmbDevKeyExpiry.SelectedIndex switch
-            {
-                0 => DateTime.UtcNow.AddDays(30),
-                1 => DateTime.UtcNow.AddDays(90),
-                2 => DateTime.UtcNow.AddDays(365),
-                _ => new DateTime(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc)
-            };
-
-            string key = DeveloperAuthService.GenerateAdminKey(target, exp);
-            TxtDevGeneratedKeyResult.Text = key;
-            TxtDevKeygenStatus.Text = $"✔ Lisans üretildi! (Bitiş: {exp.ToLocalTime():dd.MM.yyyy})";
-        }
-
-        private void BtnDevCopyGeneratedKey_Click(object sender, RoutedEventArgs e)
-        {
-            if (!string.IsNullOrWhiteSpace(TxtDevGeneratedKeyResult.Text))
-            {
-                Clipboard.SetText(TxtDevGeneratedKeyResult.Text);
-                MessageBox.Show("Üretilen admin anahtarı panoya kopyalandı!", "Kopyalandı", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        private async void BtnDevPushKeyToFirebase_Click(object sender, RoutedEventArgs e)
-        {
-            string targetHwid = TxtDevTargetHwid.Text.Trim();
-            string key = TxtDevGeneratedKeyResult.Text.Trim();
-
-            if (string.IsNullOrWhiteSpace(targetHwid) || string.IsNullOrWhiteSpace(key))
-            {
-                MessageBox.Show("Lütfen önce hedef HWID girip anahtar üretin.", "Eksik Bilgi", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            TxtDevKeygenStatus.Text = "Buluta gönderiliyor...";
-            bool ok = await DeveloperAuthService.Instance.PushAdminLicenseToFirebaseAsync(targetHwid, key);
-            TxtDevKeygenStatus.Text = ok
-                ? "✔ Lisans Firebase bulutuna kaydedildi! Hedef cihaz otomatik yetkilendirilecek."
-                : "⚠ Buluta kaydedilemedi. Firebase bağlantısını kontrol edin.";
-        }
-
-        // ==================== GİZLİ TETİKLEYİCİLER & GİRİŞ MODAL ====================
+// ==================== GİZLİ TETİKLEYİCİLER & GİRİŞ MODAL ====================
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.D && (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) == (ModifierKeys.Control | ModifierKeys.Shift))
@@ -2551,12 +2289,6 @@ namespace AlpTogether
 
         private void BrandLogo_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if ((DateTime.Now - _lastLogoClickTime).TotalSeconds > 3)
-            {
-                _logoClickCount = 0;
-            }
-
-            _lastLogoClickTime = DateTime.Now;
             _logoClickCount++;
 
             if (_logoClickCount >= 5)

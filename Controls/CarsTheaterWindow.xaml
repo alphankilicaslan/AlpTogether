@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterScreen"
         KeyDown="Window_KeyDown"
         MouseMove="Window_MouseMove"
-        Icon="pack://application:,,,/Assets/app_icon.ico">
+        Icon="pack://application:,,,/AlpTogether;component/Assets/app_icon.ico">
 
     <Grid Background="#050209" x:Name="RootFullscreenGrid">
         <!-- Main Fullscreen Video Viewport -->

@@ -28,6 +28,18 @@ namespace AlpTogether.Controls
 
         public CarsTheaterWindow(CarsVideoSourceInfo sourceInfo, TimeSpan startPosition, double volume, bool isMuted, bool isLoopEnabled)
         {
+            _progressTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(200)
+            };
+            _progressTimer.Tick += ProgressTimer_Tick;
+
+            _autoHideTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(3)
+            };
+            _autoHideTimer.Tick += AutoHideTimer_Tick;
+
             InitializeComponent();
 
             _isLoopEnabled = isLoopEnabled;
@@ -55,18 +67,6 @@ namespace AlpTogether.Controls
             TheaterMedia.Source = sourceInfo.SourceUri;
             TheaterMedia.Position = startPosition;
 
-            _progressTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(200)
-            };
-            _progressTimer.Tick += ProgressTimer_Tick;
-
-            _autoHideTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(3)
-            };
-            _autoHideTimer.Tick += AutoHideTimer_Tick;
-
             Loaded += (s, e) =>
             {
                 RenderOptions.SetBitmapScalingMode(TheaterMedia, BitmapScalingMode.Linear);
@@ -78,6 +78,38 @@ namespace AlpTogether.Controls
                 _autoHideTimer.Start();
                 UpdatePlayPauseButton();
             };
+
+            StateChanged += TheaterWindow_StateChanged;
+        }
+
+        private bool _wasPlayingBeforeMinimized = false;
+
+        private void TheaterWindow_StateChanged(object? sender, EventArgs e)
+        {
+            if (WindowState == WindowState.Minimized)
+            {
+                if (_isPlaying)
+                {
+                    _wasPlayingBeforeMinimized = true;
+                    TheaterMedia.Pause();
+                    _isPlaying = false;
+                    _progressTimer.Stop();
+                    _autoHideTimer.Stop();
+                    UpdatePlayPauseButton();
+                }
+            }
+            else
+            {
+                if (_wasPlayingBeforeMinimized)
+                {
+                    _wasPlayingBeforeMinimized = false;
+                    TheaterMedia.Play();
+                    _isPlaying = true;
+                    _progressTimer.Start();
+                    _autoHideTimer.Start();
+                    UpdatePlayPauseButton();
+                }
+            }
         }
 
         private void ProgressTimer_Tick(object? sender, EventArgs e)
@@ -120,6 +152,9 @@ namespace AlpTogether.Controls
 
         private void ResetAutoHideTimer()
         {
+            if (TopHeaderBar == null || BottomControlBar == null || _autoHideTimer == null)
+                return;
+
             if (TopHeaderBar.Opacity < 1.0)
             {
                 var fadeIn = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(200));
@@ -378,11 +413,13 @@ namespace AlpTogether.Controls
 
         protected override void OnClosed(EventArgs e)
         {
+            StateChanged -= TheaterWindow_StateChanged;
             _progressTimer.Stop();
             _autoHideTimer.Stop();
             TheaterMedia.Stop();
             TheaterMedia.Close();
             TheaterMedia.Source = null;
+            _isPlaying = false;
             base.OnClosed(e);
         }
 

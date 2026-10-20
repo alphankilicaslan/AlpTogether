@@ -107,7 +107,9 @@ namespace AlpTogether.Controls
                 {
                     _wasPlayingBeforeMinimized = true;
                     CarsMedia.Pause();
+                    _isPlaying = false;
                     _progressTimer.Stop();
+                    UpdatePlayPauseButton();
                 }
             }
             else
@@ -118,6 +120,7 @@ namespace AlpTogether.Controls
                     CarsMedia.Play();
                     _isPlaying = true;
                     _progressTimer.Start();
+                    UpdatePlayPauseButton();
                 }
             }
         }

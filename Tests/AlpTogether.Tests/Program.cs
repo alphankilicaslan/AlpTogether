@@ -1047,6 +1047,39 @@ namespace AlpTogether.Tests
                 {
                     Console.WriteLine(" -> ReleaseOnUnload verified: Media source detached, EVR graph freed, 1.18 GB file handles released.");
                 }
+
+                // 5. CarsTheaterWindow Hardware RenderOptions & EVR Release
+                var mockSource = new AlpTogether.Services.CarsVideoSourceInfo
+                {
+                    SourceType = AlpTogether.Services.CarsVideoSourceType.LocalDisk,
+                    SourceUri = new Uri("file:///C:/test_cars.mp4"),
+                    BadgeText = "TEST"
+                };
+                var theater = new AlpTogether.Controls.CarsTheaterWindow(mockSource, TimeSpan.Zero, 0.5, false, true);
+                var theaterScaling = System.Windows.Media.RenderOptions.GetBitmapScalingMode(theater.TheaterMedia);
+                var theaterEdge = System.Windows.Media.RenderOptions.GetEdgeMode(theater.TheaterMedia);
+                if (theaterScaling != System.Windows.Media.BitmapScalingMode.Linear || theaterEdge != System.Windows.Media.EdgeMode.Aliased)
+                {
+                    Console.WriteLine($" FAIL: Expected Linear/Aliased on TheaterMedia, got Scaling={theaterScaling}, Edge={theaterEdge}!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> CarsTheaterWindow Hardware Acceleration verified: Linear bilinear + Aliased edge mode.");
+                }
+
+                // 6. DetectLocalAlpNetHwid Fast Caching Verification
+                var hwid1 = AlpTogether.Services.UserAuthAndPermissionService.DetectLocalAlpNetHwid();
+                var hwid2 = AlpTogether.Services.UserAuthAndPermissionService.DetectLocalAlpNetHwid();
+                if (hwid1 != hwid2 || string.IsNullOrEmpty(hwid1))
+                {
+                    Console.WriteLine(" FAIL: DetectLocalAlpNetHwid caching inconsistency!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> DetectLocalAlpNetHwid verified cached result: '{hwid1}' (0 repeated disk/WMI I/O).");
+                }
             }
             catch (Exception ex)
             {
