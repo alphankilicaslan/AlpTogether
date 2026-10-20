@@ -53,10 +53,33 @@ namespace AlpTogether
             Loaded += MainWindow_Loaded;
             SourceInitialized += MainWindow_SourceInitialized;
             StateChanged += Window_StateChanged;
+            SizeChanged += MainWindow_SizeChanged;
+        }
+
+        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (WindowState == WindowState.Normal && ActualWidth >= MinWidth && ActualHeight >= MinHeight)
+            {
+                try
+                {
+                    SettingsService.Instance.Current.WindowWidth = ActualWidth;
+                    SettingsService.Instance.Current.WindowHeight = ActualHeight;
+                    SettingsService.Instance.Save();
+                }
+                catch { }
+            }
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                var s = SettingsService.Instance.Current;
+                if (s.WindowWidth >= MinWidth && s.WindowWidth <= 3840) Width = s.WindowWidth;
+                if (s.WindowHeight >= MinHeight && s.WindowHeight <= 2160) Height = s.WindowHeight;
+            }
+            catch { }
+
             TxtDeviceIdFooter.Text = $"Cihaz ID: {SettingsService.Instance.DeviceId}";
 
             // Bind user whitelist items collection

@@ -406,6 +406,8 @@ namespace AlpTogether.Models
         public bool CarsVideoBannerCollapsed { get; set; } = false;
         public double CarsVideoLastPositionSeconds { get; set; } = 33.0;
         public bool CarsVideoIsExpandedTheater { get; set; } = true;
+        public double WindowWidth { get; set; } = 1340;
+        public double WindowHeight { get; set; } = 860;
         public List<CustomWorkspaceSlotItem> CustomSlotItems { get; set; } = new();
     }
 

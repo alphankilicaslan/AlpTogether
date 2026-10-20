@@ -10,7 +10,7 @@
              IsVisibleChanged="UserControl_IsVisibleChanged">
 
     <Grid>
-        <!-- ==================== 1. FULL EXPANDED VIDEO PLAYER BANNER ==================== -->
+        <!-- ==================== 1. FULL EXPANDED VIDEO PLAYER BANNER (CINEMA MODE ONLY) ==================== -->
         <Border x:Name="ExpandedPlayerCard"
                 Background="#13071F"
                 BorderBrush="#FF2E93"
@@ -29,22 +29,23 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- ROW 0: VIDEO VIEWPORT (Cinema Mode by default) -->
+                <!-- ROW 0: VIDEO VIEWPORT (CinemaScope 2.39:1 - Dynamic Aspect Ratio, Zero Black Screen) -->
                 <Grid Grid.Row="0"
                       x:Name="VideoViewportContainer"
-                      Height="480"
+                      Height="430"
                       Background="#07020E"
                       ClipToBounds="True"
                       RenderOptions.BitmapScalingMode="Linear"
                       RenderOptions.EdgeMode="Aliased"
+                      SizeChanged="VideoViewportContainer_SizeChanged"
                       MouseLeftButtonDown="VideoViewport_MouseLeftButtonDown">
 
-                    <!-- Hardware Accelerated MediaElement (EVR / Direct3D Bilinear) -->
+                    <!-- Hardware Accelerated MediaElement (UniformToFill: Edge-to-Edge, No Black Bars) -->
                     <MediaElement x:Name="CarsMedia"
                                   LoadedBehavior="Manual"
                                   UnloadedBehavior="Close"
                                   ScrubbingEnabled="True"
-                                  Stretch="Uniform"
+                                  Stretch="UniformToFill"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
                                   RenderOptions.BitmapScalingMode="Linear"
@@ -67,7 +68,7 @@
                             </Canvas>
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="⚡ 95" Foreground="#FF2E93" FontSize="42" FontWeight="Black" HorizontalAlignment="Center" />
-                                <TextBlock Text="PIXAR ARABALAR 1 // KACHOW!" Foreground="#FF85C0" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                <TextBlock Text="PIXAR ARABALAR 1 // SİNEMA MODU" Foreground="#FF85C0" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0" />
                                 <TextBlock Text="Oynatmak veya duraklatmak için tıklayın" Foreground="#A97E9C" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" />
                             </StackPanel>
                         </Grid>
@@ -101,26 +102,33 @@
                             Visibility="Collapsed">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="⏳" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" />
-                            <TextBlock x:Name="TxtBufferingMessage" Text="Video Yükleniyor / Arabelleğe Alınıyor..." Foreground="#FF85C0" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TxtBufferingMessage" Text="Video Yükleniyor..." Foreground="#FF85C0" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
 
-                    <!-- Cloud Download Progress Overlay -->
+                    <!-- Cloud Download Progress Overlay (Background Downloader) -->
                     <Border x:Name="CloudDownloadOverlay"
-                            Background="#E60D041A"
+                            Background="#F0090314"
                             BorderBrush="#FF2E93"
                             BorderThickness="1.5"
-                            CornerRadius="12"
-                            Padding="20,16"
+                            CornerRadius="14"
+                            Padding="32,24"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Visibility="Collapsed"
-                            MaxWidth="450">
-                        <StackPanel>
-                            <TextBlock Text="☁️ BULUT MEDYASI İNDİRİLİYOR" Foreground="#FF85C0" FontSize="13" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8" />
-                            <TextBlock x:Name="TxtDownloadStatus" Text="Cars.2006.UBluray.1080p.DUAL.mp4 arka planda önbelleğe alınıyor..." Foreground="#FCE4EC" FontSize="11" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,0,0,10" />
-                            <ProgressBar x:Name="PrgDownload" Height="6" Minimum="0" Maximum="100" Value="0" Background="#260C3B" Foreground="#FF2E93" BorderThickness="0" Margin="0,0,0,10" />
-                            <TextBlock x:Name="TxtDownloadProgressDetail" Text="0 MB / 1.18 GB (%0)" Foreground="#A57A98" FontSize="11" HorizontalAlignment="Center" />
+                            MaxWidth="520">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#FF2E93" BlurRadius="28" ShadowDepth="0" Opacity="0.5" />
+                        </Border.Effect>
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="🎬 ARABALAR 1 (CARS 2006) 1080P DUAL" Foreground="#FF85C0" FontSize="13" FontWeight="Black" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                            <TextBlock Text="☁️ Film Arka Planda İndiriliyor..." Foreground="#FFFFFF" FontSize="16" FontWeight="ExtraBold" HorizontalAlignment="Center" Margin="0,0,0,10" />
+                            <TextBlock x:Name="TxtDownloadStatus" Text="Canlı akış takılmalarını önlemek için film arka planda yerel diskinize indiriliyor. Tamamlandığında sinema modunda 33. saniyeden otomatik olarak başlayacaktır." Foreground="#D1B8CB" FontSize="11.5" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,14" />
+                            <ProgressBar x:Name="PrgDownload" Height="8" Minimum="0" Maximum="100" Value="0" Background="#260C3B" Foreground="#FF2E93" BorderThickness="0" Margin="0,0,0,10" />
+                            <DockPanel LastChildFill="False">
+                                <TextBlock x:Name="TxtDownloadSpeed" Text="Bağlantı kuruluyor..." Foreground="#00E676" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                                <TextBlock x:Name="TxtDownloadProgressDetail" DockPanel.Dock="Right" Text="0 MB / 1.18 GB (%0)" Foreground="#FF85C0" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center" />
+                            </DockPanel>
                         </StackPanel>
                     </Border>
 
@@ -139,7 +147,7 @@
                             <TextBlock x:Name="TxtErrorMessage" Text="Yerel diskte belirtilen Cars MP4 dosyası bulunamadı." Foreground="#FCE4EC" FontSize="11" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,0,0,10" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Content="📁 Yerel MP4 Seç" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,5" FontSize="11" Margin="0,0,8,0" Click="MenuSourceBrowse_Click" />
-                                <Button Content="☁️ Buluttan Yeniden Dene" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="12,5" FontSize="11" Click="MenuSourceCloud_Click" />
+                                <Button Content="☁️ Buluttan Yeniden İndir" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="12,5" FontSize="11" Click="MenuSourceCloud_Click" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -212,7 +220,7 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,14,0" />
 
-                                <!-- Source Selector Button (Moved from top to bottom bar) -->
+                                <!-- Source Selector Button -->
                                 <Button x:Name="BtnChangeSource"
                                         Content="📁 Kaynak"
                                         Style="{StaticResource PinkSecondaryButtonStyle}"
@@ -220,18 +228,18 @@
                                         FontSize="11"
                                         VerticalAlignment="Center"
                                         Click="BtnChangeSource_Click"
-                                        ToolTip="Video Kaynağı ve Akış Seçenekleri">
+                                        ToolTip="Video Kaynağı ve İndirme Seçenekleri">
                                     <Button.ContextMenu>
                                         <ContextMenu Background="#1A0A2B" BorderBrush="#FF2E93" BorderThickness="1.2">
                                             <MenuItem Header="⚡ Otomatik Algıla (Yerel Disk Öncelikli)" Click="MenuSourceAuto_Click" Foreground="#FFFFFF" />
-                                            <MenuItem Header="☁️ GitHub Release Bulut Akışı (CDN)" Click="MenuSourceCloud_Click" Foreground="#FFFFFF" />
+                                            <MenuItem Header="☁️ Buluttan Arka Planda Yeniden İndir" Click="MenuSourceCloud_Click" Foreground="#FFFFFF" />
                                             <MenuItem Header="📁 Bilgisayardan Özel .mp4 Seç..." Click="MenuSourceBrowse_Click" Foreground="#FFFFFF" />
                                         </ContextMenu>
                                     </Button.ContextMenu>
                                 </Button>
                             </StackPanel>
 
-                            <!-- Right Controls: Loop, Mute/Volume, Theater Size, Fullscreen (Far Right) -->
+                            <!-- Right Controls: Loop, Mute/Volume, Fullscreen (Far Right) -->
                             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                                 <Button x:Name="BtnLoop"
                                         Content="🔁 Döngü: Açık"
@@ -268,23 +276,13 @@
                                            FontWeight="Bold"
                                            Width="38"
                                            VerticalAlignment="Center"
-                                           Margin="0,0,10,0" />
-
-                                <!-- Theater Toggle Button -->
-                                <Button x:Name="BtnToggleTheater"
-                                        Content="📐 Standart"
-                                        Style="{StaticResource PinkSecondaryButtonStyle}"
-                                        Padding="10,5"
-                                        FontSize="11"
-                                        Margin="0,0,8,0"
-                                        Click="BtnToggleTheater_Click"
-                                        ToolTip="Sinema / Standart Boyut Değiştir" />
+                                           Margin="0,0,12,0" />
 
                                 <!-- Fullscreen Button (Far Right of Bottom Bar) -->
                                 <Button x:Name="BtnFullscreen"
                                         Content="🖥️ Tam Ekran"
                                         Style="{StaticResource PinkPrimaryButtonStyle}"
-                                        Padding="12,5"
+                                        Padding="13,5"
                                         FontSize="11.5"
                                         FontWeight="Bold"
                                         Click="BtnFullscreen_Click"
@@ -306,7 +304,7 @@
                 Visibility="Collapsed">
             <DockPanel LastChildFill="False">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="🏎️ Arabalar 1 (Cars 2006) Oynatıcı Simge Durumunda"
+                    <TextBlock Text="🏎️ Arabalar 1 (Cars 2006) Sinema Oynatıcısı Simge Durumunda"
                                Foreground="#FF85C0"
                                FontSize="12"
                                FontWeight="Bold"
@@ -327,7 +325,7 @@
                             Margin="0,0,8,0"
                             Click="BtnPlayPause_Click" />
 
-                    <Button Content="▲ Oynatıcıyı Göster"
+                    <Button Content="▲ Sinemayı Göster"
                             Style="{StaticResource PinkPrimaryButtonStyle}"
                             Padding="12,4"
                             FontSize="11"

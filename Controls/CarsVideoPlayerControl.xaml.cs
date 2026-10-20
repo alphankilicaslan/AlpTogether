@@ -22,7 +22,6 @@ namespace AlpTogether.Controls
         private bool _isUserSeeking = false;
         private bool _isPlaying = false;
         private bool _isLoopEnabled = true;
-        private bool _isExpandedTheater = true; // Sinema modunda başlasın
         private bool _wasPlayingBeforeHidden = false;
         private bool _wasPlayingBeforeMinimized = false;
         private bool _isInitializing = false;
@@ -59,7 +58,6 @@ namespace AlpTogether.Controls
             {
                 var settings = SettingsService.Instance.Current;
                 _isLoopEnabled = settings.CarsVideoIsLoopEnabled;
-                _isExpandedTheater = settings.CarsVideoIsExpandedTheater;
                 VolumeSlider.Value = settings.CarsVideoVolume > 0 ? settings.CarsVideoVolume : 0.50;
                 CarsMedia.Volume = VolumeSlider.Value;
                 CarsMedia.IsMuted = settings.CarsVideoIsMuted;
@@ -72,7 +70,6 @@ namespace AlpTogether.Controls
             }
             catch
             {
-                _isExpandedTheater = true;
                 VolumeSlider.Value = 0.50;
                 CarsMedia.Volume = 0.50;
                 CarsMedia.IsMuted = true;
@@ -92,12 +89,28 @@ namespace AlpTogether.Controls
             RenderOptions.SetBitmapScalingMode(CarsMedia, BitmapScalingMode.Linear);
             RenderOptions.SetEdgeMode(CarsMedia, EdgeMode.Aliased);
 
-            ApplyTheaterHeight();
             BtnLoop.Content = _isLoopEnabled ? "🔁 Döngü: Açık" : "🔁 Döngü: Kapalı";
             UpdateVolumeDisplay();
 
             // Hibrit video kaynağını çözümle ve başlat
             InitializeVideoSource();
+        }
+
+        private void VideoViewportContainer_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (e.WidthChanged && e.NewSize.Width > 100)
+            {
+                // 2.3875 : 1 CinemaScope En-Boy Oranı (1146 x 480)
+                // Siyah ekran / siyah şerit kalmadan kartın içine tam oturmasını sağlar!
+                double targetHeight = Math.Round(e.NewSize.Width * (480.0 / 1146.0));
+                if (targetHeight < 360) targetHeight = 360;
+                if (targetHeight > 620) targetHeight = 620;
+
+                if (Math.Abs(VideoViewportContainer.Height - targetHeight) > 1)
+                {
+                    VideoViewportContainer.Height = targetHeight;
+                }
+            }
         }
 
         private void ParentWindow_StateChanged(object? sender, EventArgs e)
@@ -128,33 +141,102 @@ namespace AlpTogether.Controls
             }
         }
 
-        public void InitializeVideoSource(string? overridePathOrUrl = null, bool forceCloud = false)
+        public void InitializeVideoSource(string? overridePathOrUrl = null, bool forceDownload = false)
         {
             try
             {
-                _currentSource = CarsVideoService.Instance.ResolveSource(overridePathOrUrl, forceCloud);
+                _currentSource = CarsVideoService.Instance.ResolveSource(overridePathOrUrl);
                 ApplySourceInfo(_currentSource);
 
-                CarsMedia.Source = _currentSource.SourceUri;
-                if (IsVisible && ExpandedPlayerCard.Visibility == Visibility.Visible)
+                // Kullanıcı kuralı: Yerel dosya varsa doğrudan 33. saniyeden aç
+                // Dosya yoksa veya forceDownload ise CANLI AKIŞ YAPMA, arka planda indir ve öyle aç!
+                if (_currentSource.IsLocal && !forceDownload)
                 {
-                    CarsMedia.Play();
-                    _isPlaying = true;
-                    _progressTimer.Start();
+                    CloudDownloadOverlay.Visibility = Visibility.Collapsed;
+                    CarsMedia.Visibility = Visibility.Visible;
+                    CarsMedia.Source = _currentSource.SourceUri;
+
+                    if (IsVisible && ExpandedPlayerCard.Visibility == Visibility.Visible)
+                    {
+                        CarsMedia.Play();
+                        _isPlaying = true;
+                        _progressTimer.Start();
+                    }
+                    else
+                    {
+                        CarsMedia.Pause();
+                        _isPlaying = false;
+                        _progressTimer.Stop();
+                    }
+                    UpdatePlayPauseButton();
+
+                    ShowToast("⚡ Yerel Diskten Oynatılıyor");
                 }
                 else
                 {
+                    // Canlı akış yapılmayacak, arka planda indirilip öyle açılacak
                     CarsMedia.Pause();
+                    CarsMedia.Source = null;
+                    CarsMedia.Visibility = Visibility.Collapsed;
                     _isPlaying = false;
                     _progressTimer.Stop();
-                }
-                UpdatePlayPauseButton();
+                    UpdatePlayPauseButton();
 
-                ShowToast(_currentSource.IsLocal ? "⚡ Yerel Diskten Oynatılıyor" : "☁️ GitHub CDN Bulut Akışına Bağlandı");
+                    StartBackgroundDownloadAndPlay();
+                }
             }
             catch (Exception ex)
             {
                 ShowError($"Kaynak yükleme hatası: {ex.Message}");
+            }
+        }
+
+        public async void StartBackgroundDownloadAndPlay()
+        {
+            try
+            {
+                CloudDownloadOverlay.Visibility = Visibility.Visible;
+                ErrorFallbackPanel.Visibility = Visibility.Collapsed;
+                PosterBackdrop.Visibility = Visibility.Collapsed;
+                CarsMedia.Visibility = Visibility.Collapsed;
+                PrgDownload.Value = 0;
+                TxtDownloadSpeed.Text = "Bağlantı kuruluyor...";
+                TxtDownloadProgressDetail.Text = "0 MB / 1.18 GB (%0)";
+
+                _downloadCts?.Cancel();
+                _downloadCts = new CancellationTokenSource();
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                long lastBytes = 0;
+
+                var progress = new Progress<(long bytesRead, long totalBytes, double percent)>(p =>
+                {
+                    PrgDownload.Value = p.percent;
+                    double mbRead = p.bytesRead / (1024.0 * 1024.0);
+                    double mbTotal = p.totalBytes / (1024.0 * 1024.0);
+                    TxtDownloadProgressDetail.Text = $"{mbRead:F1} MB / {mbTotal:F1} MB (%{p.percent:F0})";
+
+                    if (sw.ElapsedMilliseconds >= 1000)
+                    {
+                        double speedMBs = (p.bytesRead - lastBytes) / (1024.0 * 1024.0) / (sw.ElapsedMilliseconds / 1000.0);
+                        TxtDownloadSpeed.Text = $"⚡ {speedMBs:F1} MB/s";
+                        lastBytes = p.bytesRead;
+                        sw.Restart();
+                    }
+                });
+
+                string cachedPath = await CarsVideoService.Instance.DownloadCloudMediaAsync(progress, _downloadCts.Token);
+
+                CloudDownloadOverlay.Visibility = Visibility.Collapsed;
+                CarsMedia.Visibility = Visibility.Visible;
+                ShowToast("✅ Film başarıyla indirildi, sinema modunda başlatılıyor...");
+
+                // İndirilen yerel dosyadan başlat
+                InitializeVideoSource(cachedPath);
+            }
+            catch (Exception ex)
+            {
+                CloudDownloadOverlay.Visibility = Visibility.Collapsed;
+                ShowError($"Film indirme hatası: {ex.Message}\nİnternet bağlantınızı kontrol edin veya '📁 Kaynak' menüsünden yerel dosya seçin.");
             }
         }
 
@@ -167,7 +249,6 @@ namespace AlpTogether.Controls
             }
 
             ErrorFallbackPanel.Visibility = Visibility.Collapsed;
-            CloudDownloadOverlay.Visibility = Visibility.Collapsed;
             PosterBackdrop.Visibility = Visibility.Collapsed;
         }
 
@@ -255,42 +336,12 @@ namespace AlpTogether.Controls
 
             if (_currentSource.IsLocal)
             {
-                ShowToast("⚠️ Yerel dosya okunamadı, bulut akışına geçiliyor...");
-                InitializeVideoSource(forceCloud: true);
+                ShowToast("⚠️ Yerel dosya okunamadı, buluttan indirme başlatılıyor...");
+                InitializeVideoSource(forceDownload: true);
             }
             else
             {
-                ShowError($"Bulut akışı açılamadı: {msg}\nNot: İsterseniz filmi arka planda yerel diskinize indirip kesintisiz izleyebilirsiniz.");
-            }
-        }
-
-        public async void StartCloudDownload()
-        {
-            try
-            {
-                CloudDownloadOverlay.Visibility = Visibility.Visible;
-                ErrorFallbackPanel.Visibility = Visibility.Collapsed;
-                PrgDownload.Value = 0;
-                TxtDownloadStatus.Text = "Film GitHub CDN üzerinden arka planda önbelleğe alınıyor...";
-
-                _downloadCts = new CancellationTokenSource();
-                var progress = new Progress<(long bytesRead, long totalBytes, double percent)>(p =>
-                {
-                    PrgDownload.Value = p.percent;
-                    double mbRead = p.bytesRead / (1024.0 * 1024.0);
-                    double mbTotal = p.totalBytes / (1024.0 * 1024.0);
-                    TxtDownloadProgressDetail.Text = $"{mbRead:F1} MB / {mbTotal:F1} MB (%{p.percent:F1})";
-                });
-
-                string cachedPath = await CarsVideoService.Instance.DownloadCloudMediaAsync(progress, _downloadCts.Token);
-                CloudDownloadOverlay.Visibility = Visibility.Collapsed;
-                ShowToast("✅ Film başarıyla indirildi, yerel diskten başlatılıyor...");
-                InitializeVideoSource(cachedPath);
-            }
-            catch (Exception ex)
-            {
-                CloudDownloadOverlay.Visibility = Visibility.Collapsed;
-                ShowError($"İndirme hatası: {ex.Message}");
+                ShowError($"Video açılamadı: {msg}\nNot: İsterseniz filmi arka planda yerel diskinize indirip kesintisiz izleyebilirsiniz.");
             }
         }
 
@@ -474,26 +525,6 @@ namespace AlpTogether.Controls
             }
         }
 
-        private void BtnToggleTheater_Click(object sender, RoutedEventArgs e)
-        {
-            _isExpandedTheater = !_isExpandedTheater;
-            ApplyTheaterHeight();
-            ShowToast(_isExpandedTheater ? "📐 Sinema Genişletilmiş Boyut" : "📐 Standart Kompakt Boyut");
-
-            try
-            {
-                SettingsService.Instance.Current.CarsVideoIsExpandedTheater = _isExpandedTheater;
-                SettingsService.Instance.Save();
-            }
-            catch { }
-        }
-
-        private void ApplyTheaterHeight()
-        {
-            VideoViewportContainer.Height = _isExpandedTheater ? 480 : 280;
-            BtnToggleTheater.Content = _isExpandedTheater ? "📐 Normal" : "📐 Sinema";
-        }
-
         private void BtnFullscreen_Click(object sender, RoutedEventArgs e)
         {
             bool wasPlaying = _isPlaying;
@@ -558,7 +589,7 @@ namespace AlpTogether.Controls
 
         private void MenuSourceCloud_Click(object sender, RoutedEventArgs e)
         {
-            InitializeVideoSource(forceCloud: true);
+            InitializeVideoSource(forceDownload: true);
         }
 
         private void MenuSourceBrowse_Click(object sender, RoutedEventArgs e)
