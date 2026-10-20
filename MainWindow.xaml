@@ -1052,46 +1052,24 @@
                                                     </StackPanel>
 
                                                     <!-- Right: Animated Dancing Chibi Mascot -->
+                                                                                                        <!-- Patch Note Image (Opsiyonel / Admin Yüklemesi) -->
                                                     <Border Grid.Column="1"
                                                             Margin="16,0,0,0"
                                                             VerticalAlignment="Center"
                                                             HorizontalAlignment="Right"
-                                                            Width="84" Height="92"
-                                                            CornerRadius="14"
+                                                            Width="110" Height="82"
+                                                            CornerRadius="12"
                                                             Background="#180722"
                                                             BorderBrush="#5E1E50"
                                                             BorderThickness="1.5"
-                                                            ClipToBounds="True">
+                                                            ClipToBounds="True"
+                                                            Visibility="{Binding HasImage, Converter={StaticResource BoolToVis}}">
                                                         <Border.Effect>
-                                                            <DropShadowEffect Color="#FF2E93" BlurRadius="12" ShadowDepth="0" Opacity="0.4" />
+                                                            <DropShadowEffect Color="#FF2E93" BlurRadius="12" ShadowDepth="0" Opacity="0.3" />
                                                         </Border.Effect>
-                                                        <Image Source="pack://application:,,,/Assets/Anime/anime_chibi_dancer.jpg"
+                                                        <Image Source="{Binding ImageUrl}"
                                                                Stretch="UniformToFill"
-                                                               RenderOptions.BitmapScalingMode="HighQuality">
-                                                            <Image.RenderTransform>
-                                                                <TransformGroup>
-                                                                    <ScaleTransform CenterX="42" CenterY="46" ScaleX="1.0" ScaleY="1.0" />
-                                                                    <RotateTransform CenterX="42" CenterY="46" Angle="0" />
-                                                                    <TranslateTransform Y="0" />
-                                                                </TransformGroup>
-                                                            </Image.RenderTransform>
-                                                            <Image.Triggers>
-                                                                <EventTrigger RoutedEvent="Image.Loaded">
-                                                                    <BeginStoryboard>
-                                                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[0].ScaleX"
-                                                                                             From="0.94" To="1.06" Duration="0:0:0.6" />
-                                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[0].ScaleY"
-                                                                                             From="1.05" To="0.95" Duration="0:0:0.6" />
-                                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[1].Angle"
-                                                                                             From="-4" To="4" Duration="0:0:0.8" />
-                                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[2].Y"
-                                                                                             From="-3" To="3" Duration="0:0:0.5" />
-                                                                        </Storyboard>
-                                                                    </BeginStoryboard>
-                                                                </EventTrigger>
-                                                            </Image.Triggers>
-                                                        </Image>
+                                                               RenderOptions.BitmapScalingMode="HighQuality" />
                                                     </Border>
                                                 </Grid>
                                             </Border>

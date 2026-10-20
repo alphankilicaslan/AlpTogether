@@ -14,7 +14,7 @@ namespace AlpTogether.Services
     {
         public static AlpNetKeygenService Instance { get; } = new();
 
-        private const string SecretKey = "AlpNetSecret2026!PulseCore";
+        public const string SecretKey = "AlpNetSecret2026!PulseCore";
         private const string FirebaseBaseUrl = "https://alpnet-d0bc4-default-rtdb.europe-west1.firebasedatabase.app";
         private const string FirebaseAuth = "ExNWZwF2CkByKFILhfQ2BbTpuxYFlFAUO8quWwfc";
 

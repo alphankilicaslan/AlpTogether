@@ -427,6 +427,9 @@ namespace AlpTogether.Controls
 
         private void UpdateVolumeDisplay()
         {
+            if (CarsMedia == null || BtnMute == null || TxtVolumePercent == null)
+                return;
+
             if (CarsMedia.IsMuted || CarsMedia.Volume == 0)
             {
                 BtnMute.Content = "🔇";

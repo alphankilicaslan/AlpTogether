@@ -236,9 +236,14 @@ namespace AlpTogether.Models
                 if (IsBusy) return $"İŞLENİYOR... %{ProgressPercent:0}";
                 if (IsRunning) return "ÇALIŞIYOR (DURDUR)";
 
-                bool hasAccess = AlpTogether.Services.UserAuthAndPermissionService.Instance.HasAppAccess(Id, out _, out _);
+                var auth = AlpTogether.Services.UserAuthAndPermissionService.Instance;
+                bool hasAccess = auth.HasAppAccess(Id, out _, out _);
                 if (!hasAccess)
                 {
+                    if (auth.IsOfflineMode && !auth.IsOfflineGracePeriodValid)
+                    {
+                        return IsInstalled ? "⛔ BAŞLAT (SÜRE DOLDU)" : "⛔ YÜKLE (SÜRE DOLDU)";
+                    }
                     return IsInstalled ? "⛔ BAŞLAT (YETKİ GEREKLİ)" : "⛔ YÜKLE (YETKİ GEREKLİ)";
                 }
 
@@ -255,11 +260,18 @@ namespace AlpTogether.Models
                 if (IsBusy) return "İNDİRİLİYOR / ONARILIYOR";
                 if (IsRunning) return "AKTİF ÇALIŞIYOR";
 
-                bool hasAccess = AlpTogether.Services.UserAuthAndPermissionService.Instance.HasAppAccess(Id, out _, out _);
-                if (!hasAccess) return "⛔ YETKİSİZ (WHITELIST GEREKLİ)";
+                var auth = AlpTogether.Services.UserAuthAndPermissionService.Instance;
+                bool hasAccess = auth.HasAppAccess(Id, out _, out _);
+                if (!hasAccess)
+                {
+                    if (auth.IsOfflineMode && !auth.IsOfflineGracePeriodValid)
+                    {
+                        return "⛔ ÇEVRİMDİŞİ (SÜRE DOLDU)";
+                    }
+                    return "⛔ YETKİSİZ (WHITELIST GEREKLİ)";
+                }
 
-                if (AlpTogether.Services.UserAuthAndPermissionService.Instance.IsOfflineMode &&
-                    AlpTogether.Services.UserAuthAndPermissionService.Instance.IsOfflineGracePeriodValid)
+                if (auth.IsOfflineMode && auth.IsOfflineGracePeriodValid)
                 {
                     if (IsInstalled) return "KURULU (ÇEVRİMDİŞİ MOD)";
                     return "BULUTTA (ÇEVRİMDİŞİ)";

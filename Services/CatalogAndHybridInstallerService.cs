@@ -255,15 +255,49 @@ namespace AlpTogether.Services
             }
         }
 
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime LastWrite, string Version)> _fileVersionCache = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Çalışan işlem adlarını tek bir işletim sistemi çağrısıyla alır ve tüm Process nesnelerini
+        /// anında Dispose ederek Windows tanıtıcı (handle) sızıntısını sıfırlar.
+        /// </summary>
+        public static HashSet<string> GetRunningProcessNamesSnapshot()
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            Process[] procs = Array.Empty<Process>();
+            try
+            {
+                procs = Process.GetProcesses();
+                for (int i = 0; i < procs.Length; i++)
+                {
+                    try
+                    {
+                        set.Add(procs[i].ProcessName);
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            finally
+            {
+                for (int i = 0; i < procs.Length; i++)
+                {
+                    try { procs[i].Dispose(); } catch { }
+                }
+            }
+            return set;
+        }
+
         public void RefreshAllAppsState()
         {
+            var runningNames = GetRunningProcessNamesSnapshot();
             foreach (var app in Apps)
             {
-                RefreshSingleAppState(app);
+                RefreshSingleAppState(app, runningNames);
             }
         }
 
-        public void RefreshSingleAppState(AlpAppItem app)
+        public void RefreshSingleAppState(AlpAppItem app, HashSet<string>? runningNames = null)
         {
             try
             {
@@ -306,16 +340,25 @@ namespace AlpTogether.Services
                     string detectedVer = app.LatestVersion;
                     try
                     {
-                        var fvi = FileVersionInfo.GetVersionInfo(exePath);
-                        if (!string.IsNullOrWhiteSpace(fvi.FileVersion))
+                        var lastWrite = File.GetLastWriteTimeUtc(exePath);
+                        if (_fileVersionCache.TryGetValue(exePath, out var cached) && cached.LastWrite == lastWrite)
                         {
-                            var parts = fvi.FileVersion.Split('.');
-                            string parsedVer = parts.Length >= 3
-                                ? $"{parts[0].Trim()}.{parts[1].Trim()}.{parts[2].Trim()}"
-                                : fvi.FileVersion.Trim();
+                            detectedVer = cached.Version;
+                        }
+                        else
+                        {
+                            var fvi = FileVersionInfo.GetVersionInfo(exePath);
+                            if (!string.IsNullOrWhiteSpace(fvi.FileVersion))
+                            {
+                                var parts = fvi.FileVersion.Split('.');
+                                string parsedVer = parts.Length >= 3
+                                    ? $"{parts[0].Trim()}.{parts[1].Trim()}.{parts[2].Trim()}"
+                                    : fvi.FileVersion.Trim();
 
-                            if (parsedVer != "0.0.0")
-                                detectedVer = parsedVer;
+                                if (parsedVer != "0.0.0")
+                                    detectedVer = parsedVer;
+                            }
+                            _fileVersionCache[exePath] = (lastWrite, detectedVer);
                         }
                     }
                     catch { }
@@ -359,24 +402,25 @@ namespace AlpTogether.Services
                     app.HealthStatus = "Kurulu Değil";
                 }
 
+                if (runningNames == null)
+                    runningNames = GetRunningProcessNamesSnapshot();
+
                 bool running = false;
                 string exeBaseName = Path.GetFileNameWithoutExtension(app.ExecutableName);
-                var namesToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { exeBaseName };
-                foreach (var p in app.ProcessNamesToKill)
-                    namesToCheck.Add(p);
-
-                foreach (var procName in namesToCheck)
+                if (!string.IsNullOrWhiteSpace(exeBaseName) && runningNames.Contains(exeBaseName))
                 {
-                    if (string.IsNullOrWhiteSpace(procName)) continue;
-                    try
+                    running = true;
+                }
+                else
+                {
+                    foreach (var p in app.ProcessNamesToKill)
                     {
-                        if (Process.GetProcessesByName(procName).Length > 0)
+                        if (!string.IsNullOrWhiteSpace(p) && runningNames.Contains(p))
                         {
                             running = true;
                             break;
                         }
                     }
-                    catch { }
                 }
                 app.IsRunning = running;
             }
@@ -775,6 +819,9 @@ namespace AlpTogether.Services
 
         public async Task<(bool Success, string Summary)> RepairAppAsync(AlpAppItem app)
         {
+            if (!UserAuthAndPermissionService.Instance.HasAppAccess(app.Id, out string accessReason, out _))
+                return (false, $"⛔ {app.Name} uygulamasını onarma yetkiniz bulunmuyor.\n\n{accessReason}");
+
             if (app.IsBusy)
                 return (false, "Uygulama şu anda başka bir işlem yürütüyor.");
 
@@ -881,6 +928,9 @@ namespace AlpTogether.Services
 
         public async Task<(bool Success, string Message)> ChangeAppInstallPathAsync(AlpAppItem app, string newFolderPath, bool moveExistingFiles = true)
         {
+            if (!UserAuthAndPermissionService.Instance.HasAppAccess(app.Id, out string accessReason, out _))
+                return (false, $"⛔ {app.Name} kurulum konumunu değiştirme yetkiniz bulunmuyor.\n\n{accessReason}");
+
             if (string.IsNullOrWhiteSpace(newFolderPath))
                 return (false, "Geçersiz klasör yolu.");
 

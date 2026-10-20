@@ -12,6 +12,9 @@ namespace AlpTogether
         {
             base.OnStartup(e);
 
+            // Donanım Hızlandırma & EVR / Direct3D video işleme optimizasyonu (GPU Hardware Decode)
+            System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;
+
             // Global Unhandled Exception Hooks -> Anlık Hata Telemetrisi
             DispatcherUnhandledException += App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;

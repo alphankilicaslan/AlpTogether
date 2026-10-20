@@ -32,6 +32,22 @@ namespace AlpTogether.Services
                 }
                 catch
                 {
+                    if (uri.StartsWith("pack://application:,,,/Assets/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            string altUri = uri.Replace("pack://application:,,,/Assets/", "pack://application:,,,/AlpTogether;component/Assets/");
+                            var bmp = new BitmapImage();
+                            bmp.BeginInit();
+                            bmp.UriSource = new Uri(altUri, UriKind.RelativeOrAbsolute);
+                            bmp.CacheOption = BitmapCacheOption.OnLoad;
+                            bmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                            bmp.EndInit();
+                            bmp.Freeze();
+                            return bmp;
+                        }
+                        catch { }
+                    }
                     return null!;
                 }
             });

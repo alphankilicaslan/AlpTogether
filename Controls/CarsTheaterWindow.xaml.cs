@@ -13,6 +13,7 @@ namespace AlpTogether.Controls
     {
         private readonly DispatcherTimer _progressTimer;
         private readonly DispatcherTimer _autoHideTimer;
+        private readonly System.Diagnostics.Stopwatch _seekThrottleStopwatch = new();
         private bool _isUserSeeking = false;
         private bool _isPlaying = true;
         private bool _isLoopEnabled = true;
@@ -68,6 +69,9 @@ namespace AlpTogether.Controls
 
             Loaded += (s, e) =>
             {
+                RenderOptions.SetBitmapScalingMode(TheaterMedia, BitmapScalingMode.Linear);
+                RenderOptions.SetEdgeMode(TheaterMedia, EdgeMode.Aliased);
+
                 TheaterMedia.Play();
                 _isPlaying = true;
                 _progressTimer.Start();
@@ -78,6 +82,12 @@ namespace AlpTogether.Controls
 
         private void ProgressTimer_Tick(object? sender, EventArgs e)
         {
+            if (!_isPlaying)
+            {
+                _progressTimer.Stop();
+                return;
+            }
+
             if (!_isUserSeeking && _duration.TotalSeconds > 0)
             {
                 TimelineSlider.Value = TheaterMedia.Position.TotalSeconds;
@@ -88,6 +98,7 @@ namespace AlpTogether.Controls
                 _isUserSeeking = false;
                 TheaterMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
                 _savedPosition = TheaterMedia.Position;
+                _seekThrottleStopwatch.Reset();
             }
             if (!_isUserSeeking)
             {
@@ -179,12 +190,14 @@ namespace AlpTogether.Controls
             {
                 TheaterMedia.Pause();
                 _isPlaying = false;
+                _progressTimer.Stop();
                 ShowCenterFlash("⏸");
             }
             else
             {
                 TheaterMedia.Play();
                 _isPlaying = true;
+                _progressTimer.Start();
                 ShowCenterFlash("▶");
             }
             UpdatePlayPauseButton();
@@ -234,6 +247,7 @@ namespace AlpTogether.Controls
         private void TimelineSlider_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             _isUserSeeking = true;
+            _seekThrottleStopwatch.Restart();
             ResetAutoHideTimer();
         }
 
@@ -242,6 +256,7 @@ namespace AlpTogether.Controls
             _isUserSeeking = false;
             TheaterMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
             _savedPosition = TheaterMedia.Position;
+            _seekThrottleStopwatch.Reset();
             ResetAutoHideTimer();
         }
 
@@ -250,6 +265,12 @@ namespace AlpTogether.Controls
             if (_isUserSeeking)
             {
                 TxtTimeDisplay.Text = $"{FormatTime(TimeSpan.FromSeconds(e.NewValue))} / {FormatTime(_duration)}";
+                if (!_seekThrottleStopwatch.IsRunning || _seekThrottleStopwatch.ElapsedMilliseconds >= 150)
+                {
+                    TheaterMedia.Position = TimeSpan.FromSeconds(e.NewValue);
+                    _savedPosition = TheaterMedia.Position;
+                    _seekThrottleStopwatch.Restart();
+                }
             }
             ResetAutoHideTimer();
         }
@@ -284,6 +305,9 @@ namespace AlpTogether.Controls
 
         private void UpdateVolumeDisplay()
         {
+            if (TheaterMedia == null || BtnMute == null || TxtVolumePercent == null)
+                return;
+
             if (TheaterMedia.IsMuted || TheaterMedia.Volume == 0)
             {
                 BtnMute.Content = "🔇";
@@ -358,6 +382,7 @@ namespace AlpTogether.Controls
             _autoHideTimer.Stop();
             TheaterMedia.Stop();
             TheaterMedia.Close();
+            TheaterMedia.Source = null;
             base.OnClosed(e);
         }
 

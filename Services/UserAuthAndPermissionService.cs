@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -99,7 +100,8 @@ namespace AlpTogether.Services
         public string CurrentUsername => SettingsService.Instance.Current.RegisteredUsername;
         public bool IsRegistered => !string.IsNullOrWhiteSpace(CurrentUsername);
 
-        private readonly Dictionary<string, UserAppPermission> _cachedPermissions = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, UserAppPermission> _cachedPermissions = new(StringComparer.OrdinalIgnoreCase);
+        private readonly SemaphoreSlim _syncSemaphore = new(1, 1);
 
         #region Offline Resiliency & Local Secure Permission Cache
         private static readonly byte[] CacheMagic = Encoding.ASCII.GetBytes("ATPC"); // AlpTogether Permission Cache
@@ -149,7 +151,19 @@ namespace AlpTogether.Services
             LocalAlpNetHwid = DetectLocalAlpNetHwid();
 
             // 1. Yerel güvenli önbelleği anında yükle (uygulama açılır açılmaz izinleri hazır et)
-            LoadSecurePermissionCache();
+            bool cacheLoaded = LoadSecurePermissionCache();
+            if (cacheLoaded)
+            {
+                // Canlı ağ doğrulaması tamamlanana kadar yerel önbellek durumunu aktif çevrimdışı mod olarak işaretle
+                IsOfflineMode = true;
+                NetworkStatusDescription = IsOfflineGracePeriodValid
+                    ? "Çevrimdışı Mod - Yerel Önbellek Aktif"
+                    : "Çevrimdışı - Doğrulama Süresi Doldu";
+            }
+            else
+            {
+                NetworkStatusDescription = "Ağ: Hazır";
+            }
 
             // 2. Ağ arayüzü değişikliklerini dinle (internet geri geldiğinde anında senkronize ol)
             try
@@ -234,6 +248,13 @@ namespace AlpTogether.Services
                 string[] parts = fullKeyData.Split('|');
                 if (parts.Length < 2) return false;
 
+                if (parts.Length >= 3)
+                {
+                    string payload = $"{parts[0]}|{parts[1]}";
+                    string expectedSig = AlpNetKeygenService.ComputeHmacSha256(payload, AlpNetKeygenService.SecretKey);
+                    if (!string.Equals(parts[2].Trim(), expectedSig.Trim(), StringComparison.Ordinal)) return false;
+                }
+
                 targetDeviceId = parts[0].Trim().ToUpperInvariant();
                 if (long.TryParse(parts[1].Trim(), out long ticks))
                 {
@@ -310,6 +331,7 @@ namespace AlpTogether.Services
                 // 3. Lisans anahtarını çözümle
                 if (TryDecodeAlpNetKey(foundKey, out string targetDevId, out DateTime expDate, out bool isIndefinite))
                 {
+                    if (!string.Equals(targetDevId, LocalAlpNetHwid, StringComparison.OrdinalIgnoreCase)) return false;
                     DateTime now = DateTime.UtcNow;
                     bool isActive = isIndefinite || (expDate > now);
 
@@ -529,7 +551,7 @@ namespace AlpTogether.Services
                 catch { }
 
                 // Eğer bu cihazda AlpNet lisansı varsa ve henüz yetki verilmemişse otomatik bağla!
-                if (!record.AppPermissions.TryGetValue("alpnet-pulse", out var pulsePerm) || !pulsePerm.HasAccess)
+                if (!record.AppPermissions.ContainsKey("alpnet-pulse"))
                 {
                     await AutoDetectAndLinkLocalAlpNetLicenseAsync(record);
                 }
@@ -672,13 +694,17 @@ namespace AlpTogether.Services
                     return false;
                 }
 
-                LastSyncUtc = payload.LastSyncUtc;
+                LastSyncUtc = payload.LastSyncUtc.Kind == DateTimeKind.Utc
+                    ? payload.LastSyncUtc
+                    : payload.LastSyncUtc.ToUniversalTime();
+
                 if (!string.IsNullOrWhiteSpace(payload.Username) &&
                     string.IsNullOrWhiteSpace(SettingsService.Instance.Current.RegisteredUsername))
                 {
                     SettingsService.Instance.Current.RegisteredUsername = payload.Username;
                 }
 
+                _cachedPermissions.Clear();
                 if (payload.Permissions != null && payload.Permissions.Count > 0)
                 {
                     foreach (var kvp in payload.Permissions)
@@ -687,7 +713,7 @@ namespace AlpTogether.Services
                     }
                 }
 
-                if (payload.IsAdmin)
+                if (payload.IsAdmin && IsOfflineGracePeriodValid)
                 {
                     DeveloperAuthService.Instance.UnlockDeveloperModeDirectly();
                 }
@@ -735,7 +761,10 @@ namespace AlpTogether.Services
         {
             IsOfflineMode = isOffline;
             if (simulatedLastSyncUtc.HasValue)
-                LastSyncUtc = simulatedLastSyncUtc.Value;
+                LastSyncUtc = simulatedLastSyncUtc.Value.Kind == DateTimeKind.Utc
+                    ? simulatedLastSyncUtc.Value
+                    : simulatedLastSyncUtc.Value.ToUniversalTime();
+
             NetworkStatusDescription = isOffline
                 ? (IsOfflineGracePeriodValid ? "Çevrimdışı Mod - Yerel Önbellek Aktif" : "Çevrimdışı - Doğrulama Süresi Doldu")
                 : "Ağ: Hazır";
@@ -757,7 +786,16 @@ namespace AlpTogether.Services
         #region Presence Heartbeat & Whitelist Verification
         public async Task SyncSelfAndHeartbeatAsync()
         {
+            if (!await _syncSemaphore.WaitAsync(0))
+            {
+                // Halihazırda senkronizasyon çalışıyor, paralel mükerrer çağrıyı atla
+                return;
+            }
+
             bool networkSuccess = false;
+            AlpTogetherUserRecord? userRec = null;
+            bool wasOffline = IsOfflineMode;
+
             try
             {
                 LocalAlpNetHwid = DetectLocalAlpNetHwid();
@@ -766,10 +804,9 @@ namespace AlpTogether.Services
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(6));
                 var resp = await _httpClient.GetAsync(userUrl, cts.Token);
 
-                AlpTogetherUserRecord? userRec = null;
-
                 if (resp.IsSuccessStatusCode)
                 {
+                    networkSuccess = true;
                     string json = await resp.Content.ReadAsStringAsync();
                     if (!string.IsNullOrWhiteSpace(json) && json != "null")
                     {
@@ -808,19 +845,35 @@ namespace AlpTogether.Services
 
                             LastSyncUtc = DateTime.UtcNow;
                             SaveSecurePermissionCache(userRec.IsAdmin);
-                            networkSuccess = true;
                         }
                     }
+                    else
+                    {
+                        // Firebase sunucusu 200 OK yanıt verdi ancak kayıt null (kullanıcı silinmiş veya kayıt açılmamış)
+                        _cachedPermissions.Clear();
+                        try
+                        {
+                            if (File.Exists(SecureCacheFilePath))
+                                File.Delete(SecureCacheFilePath);
+                        }
+                        catch { }
+                    }
+                }
+                else
+                {
+                    // HTTP 5xx veya 4xx -> Ağ veya sunucu yanıt vermiyor
+                    networkSuccess = false;
                 }
 
                 // Otomatik AlpNet Pulse lisansı tespit ve eşleştirme
-                if (!_cachedPermissions.TryGetValue("alpnet-pulse", out var existingPulse) || !existingPulse.HasAccess || existingPulse.IsExpired)
+                if (networkSuccess && userRec != null &&
+                    (!_cachedPermissions.TryGetValue("alpnet-pulse", out var existingPulse) || !existingPulse.HasAccess || existingPulse.IsExpired))
                 {
                     await AutoDetectAndLinkLocalAlpNetLicenseAsync(userRec);
                 }
 
                 // Anlık durum (LastSeen, MachineName, AFK & Aktivite) heartbeat güncellemesi gönder
-                if (IsRegistered && resp.IsSuccessStatusCode)
+                if (networkSuccess && IsRegistered && resp.IsSuccessStatusCode)
                 {
                     var (isAfk, afkMinutes) = GetIdleState();
                     var (actText, actApp) = DetectCurrentActivity();
@@ -849,8 +902,11 @@ namespace AlpTogether.Services
                 networkSuccess = false;
                 AppLoggerService.Instance.Info("AĞ-BİLGİ", "Firebase senkronizasyonu tamamlanamadı (Çevrimdışı tolerans devrede): " + ex.Message, "AlpTogether");
             }
+            finally
+            {
+                _syncSemaphore.Release();
+            }
 
-            bool wasOffline = IsOfflineMode;
             if (networkSuccess)
             {
                 IsOfflineMode = false;
@@ -865,7 +921,7 @@ namespace AlpTogether.Services
             else
             {
                 IsOfflineMode = true;
-                if (_cachedPermissions.Count == 0)
+                if (_cachedPermissions.IsEmpty)
                 {
                     LoadSecurePermissionCache();
                 }
@@ -902,8 +958,8 @@ namespace AlpTogether.Services
                 return false;
             }
 
-            // 2. Birincil geliştirici makinesi veya admin modu denetimi
-            if (DeveloperAuthService.Instance.IsPrimaryDevMachine || DeveloperAuthService.Instance.IsAdminMode)
+            // 2. Geliştirici / Yönetici modu denetimi
+            if (DeveloperAuthService.Instance.IsAdminMode)
             {
                 reason = "Geliştirici / Yönetici tam erişim modu aktif.";
                 daysLeft = 99999;
@@ -1219,7 +1275,7 @@ namespace AlpTogether.Services
                 var allApps = new List<string> { "alpnet-pulse", "alplingo", "alpfinans", "alphagravity", "alprust-plus", "alprust" };
                 try
                 {
-                    var catalogApps = CatalogAndHybridInstallerService.Instance.Catalog?.Apps;
+                    var catalogApps = CatalogAndHybridInstallerService.Instance.Apps;
                     if (catalogApps != null)
                     {
                         foreach (var a in catalogApps)
