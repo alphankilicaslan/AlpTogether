@@ -1,5 +1,8 @@
 using System;
 using System.IO;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using AlpTogether.Models;
 
 namespace AlpTogether.Services
@@ -29,7 +32,12 @@ namespace AlpTogether.Services
         public const string CanonicalLocalPath = @"C:\Users\Alphan.MonsterAlphan\Downloads\Cars 2006 UBluray 1080p DUAL.mp4";
         public const string CanonicalLocalPathDotted = @"C:\Users\Alphan.MonsterAlphan\Downloads\Cars.2006.UBluray.1080p.DUAL.mp4";
         public const string GitHubReleaseAssetUrl = "https://github.com/alphankilicaslan/AlpTogether/releases/download/v1.1.0/Cars.2006.UBluray.1080p.DUAL.mp4";
-        public const string FallbackStreamUrl = "https://raw.githubusercontent.com/alphankilicaslan/AlpTogether/main/Assets/CarsTrailerPreview.mp4";
+
+        public static string AppDataCachePath => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AlpTogether",
+            "Media",
+            "Cars.2006.UBluray.1080p.DUAL.mp4");
 
         private CarsVideoService() { }
 
@@ -38,7 +46,8 @@ namespace AlpTogether.Services
         /// 1. Kullanıcı tarafından seçilen özel yerel dosya varsa onu kullanır.
         /// 2. Canonical indirme yolunda (C:\Users\Alphan.MonsterAlphan\Downloads\...) varsa diskten oynatır.
         /// 3. Kullanıcının genel Downloads klasöründe veya uygulama dizininde varsa onu kullanır.
-        /// 4. Yerel dosya bulunamazsa GitHub Release v1.1.0 CDN akış URL'sine sorunsuz fallback yapar.
+        /// 4. LocalAppData önbelleğinde (daha önce indirilmiş) varsa onu kullanır.
+        /// 5. Yerel dosya bulunamazsa GitHub Release CDN akış/indirme kaynağına bağlanır.
         /// </summary>
         public CarsVideoSourceInfo ResolveSource(string? overridePathOrUrl = null, bool forceCloud = false)
         {
@@ -90,7 +99,13 @@ namespace AlpTogether.Services
                     return CreateLocalSource(dynamicUserDownloadsDotted, "Kullanıcı İndirilenler (Disk)");
                 }
 
-                // 5. Uygulama çalışma dizini kontrolü
+                // 5. LocalAppData önbellek dosyası kontrolü
+                if (File.Exists(AppDataCachePath))
+                {
+                    return CreateLocalSource(AppDataCachePath, "Yerel Önbellek (Disk)");
+                }
+
+                // 6. Uygulama çalışma dizini kontrolü
                 string baseDirCandidate = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Cars 2006 UBluray 1080p DUAL.mp4");
                 string baseDirCandidateDotted = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Cars.2006.UBluray.1080p.DUAL.mp4");
                 if (File.Exists(baseDirCandidate))
@@ -103,7 +118,7 @@ namespace AlpTogether.Services
                 }
             }
 
-            // 6. Bulut Fallback (GitHub Release CDN)
+            // 7. Bulut Fallback (GitHub Release CDN)
             string cloudUrl = !string.IsNullOrWhiteSpace(overridePathOrUrl) && Uri.IsWellFormedUriString(overridePathOrUrl, UriKind.Absolute)
                 ? overridePathOrUrl
                 : GitHubReleaseAssetUrl;
@@ -115,7 +130,7 @@ namespace AlpTogether.Services
                 LocalFilePath = null,
                 DisplayTitle = "Bulut Akışı (GitHub Release v1.1.0)",
                 BadgeText = "☁️ BULUT AKIŞI (CDN)",
-                FileSizeFormatted = "1.18 GB (Akış)"
+                FileSizeFormatted = "1.18 GB (Bulut)"
             };
         }
 
@@ -145,6 +160,46 @@ namespace AlpTogether.Services
                 BadgeText = "⚡ YEREL DİSK (1080p)",
                 FileSizeFormatted = sizeStr
             };
+        }
+
+        public async Task<string> DownloadCloudMediaAsync(IProgress<(long bytesRead, long totalBytes, double percent)>? progress = null, CancellationToken cancellationToken = default)
+        {
+            string destPath = AppDataCachePath;
+            string? dir = Path.GetDirectoryName(destPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            string tmpPath = destPath + ".part";
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromHours(1) };
+            using var response = await httpClient.GetAsync(GitHubReleaseAssetUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            long totalBytes = response.Content.Headers.ContentLength ?? 1271893460L;
+
+            using (var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken))
+            using (var fileStream = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
+            {
+                var buffer = new byte[81920];
+                long totalBytesRead = 0;
+                int bytesRead;
+
+                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
+                {
+                    await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
+                    totalBytesRead += bytesRead;
+                    double percent = totalBytes > 0 ? (double)totalBytesRead / totalBytes * 100.0 : 0.0;
+                    progress?.Report((totalBytesRead, totalBytes, percent));
+                }
+            }
+
+            if (File.Exists(destPath))
+            {
+                File.Delete(destPath);
+            }
+            File.Move(tmpPath, destPath);
+            return destPath;
         }
     }
 }

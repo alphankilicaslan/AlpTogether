@@ -18,7 +18,7 @@ namespace AlpTogether.Controls
         private bool _isPlaying = true;
         private bool _isLoopEnabled = true;
         private TimeSpan _duration = TimeSpan.Zero;
-        private TimeSpan _savedPosition = TimeSpan.Zero;
+        private TimeSpan _savedPosition = TimeSpan.FromSeconds(33.0);
 
         public TimeSpan CurrentPosition => _savedPosition;
         public bool IsPlaying => _isPlaying;
@@ -63,6 +63,7 @@ namespace AlpTogether.Controls
             VolumeSlider.Value = volume;
             UpdateVolumeDisplay();
 
+            if (startPosition.TotalSeconds < 33.0) startPosition = TimeSpan.FromSeconds(33.0);
             _savedPosition = startPosition;
             TheaterMedia.Source = sourceInfo.SourceUri;
             TheaterMedia.Position = startPosition;
@@ -186,10 +187,10 @@ namespace AlpTogether.Controls
             if (_isLoopEnabled)
             {
                 TheaterMedia.Stop();
-                TheaterMedia.Position = TimeSpan.Zero;
+                TheaterMedia.Position = TimeSpan.FromSeconds(33.0);
                 TheaterMedia.Play();
                 _isPlaying = true;
-                _savedPosition = TimeSpan.Zero;
+                _savedPosition = TimeSpan.FromSeconds(33.0);
             }
             else
             {

@@ -404,8 +404,8 @@ namespace AlpTogether.Models
         public bool CarsVideoIsLoopEnabled { get; set; } = true;
         public string CarsVideoCustomPath { get; set; } = string.Empty;
         public bool CarsVideoBannerCollapsed { get; set; } = false;
-        public double CarsVideoLastPositionSeconds { get; set; } = 0;
-        public bool CarsVideoIsExpandedTheater { get; set; } = false;
+        public double CarsVideoLastPositionSeconds { get; set; } = 33.0;
+        public bool CarsVideoIsExpandedTheater { get; set; } = true;
         public List<CustomWorkspaceSlotItem> CustomSlotItems { get; set; } = new();
     }
 

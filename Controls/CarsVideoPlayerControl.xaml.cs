@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,12 +22,13 @@ namespace AlpTogether.Controls
         private bool _isUserSeeking = false;
         private bool _isPlaying = false;
         private bool _isLoopEnabled = true;
-        private bool _isExpandedTheater = false;
+        private bool _isExpandedTheater = true; // Sinema modunda başlasın
         private bool _wasPlayingBeforeHidden = false;
         private bool _wasPlayingBeforeMinimized = false;
         private bool _isInitializing = false;
         private Window? _parentWindow;
         private readonly System.Diagnostics.Stopwatch _seekThrottleStopwatch = new();
+        private CancellationTokenSource? _downloadCts;
 
         public CarsVideoPlayerControl()
         {
@@ -54,7 +57,6 @@ namespace AlpTogether.Controls
             _isInitializing = true;
             try
             {
-                // Ayarları yükle
                 var settings = SettingsService.Instance.Current;
                 _isLoopEnabled = settings.CarsVideoIsLoopEnabled;
                 _isExpandedTheater = settings.CarsVideoIsExpandedTheater;
@@ -70,6 +72,7 @@ namespace AlpTogether.Controls
             }
             catch
             {
+                _isExpandedTheater = true;
                 VolumeSlider.Value = 0.50;
                 CarsMedia.Volume = 0.50;
                 CarsMedia.IsMuted = true;
@@ -147,7 +150,7 @@ namespace AlpTogether.Controls
                 }
                 UpdatePlayPauseButton();
 
-                ShowToast(_currentSource.IsLocal ? "⚡ Yerel NVMe Diskten Oynatılıyor" : "☁️ GitHub CDN Bulut Akışına Bağlandı");
+                ShowToast(_currentSource.IsLocal ? "⚡ Yerel Diskten Oynatılıyor" : "☁️ GitHub CDN Bulut Akışına Bağlandı");
             }
             catch (Exception ex)
             {
@@ -157,22 +160,14 @@ namespace AlpTogether.Controls
 
         private void ApplySourceInfo(CarsVideoSourceInfo source)
         {
-            TxtSourceBadge.Text = source.BadgeText;
-            TxtFileSize.Text = source.FileSizeFormatted;
-
-            if (source.IsLocal)
+            if (BtnChangeSource != null)
             {
-                SourceBadgeBorder.BorderBrush = Brushes.MediumSpringGreen;
-                TxtSourceBadge.Foreground = Brushes.MediumSpringGreen;
-            }
-            else
-            {
-                var hotBrush = TryFindResource("PinkHotBrush") as Brush ?? new SolidColorBrush(Color.FromRgb(0xFF, 0x5C, 0xAA));
-                SourceBadgeBorder.BorderBrush = hotBrush;
-                TxtSourceBadge.Foreground = hotBrush;
+                BtnChangeSource.Content = source.IsLocal ? "⚡ Kaynak" : "☁️ Kaynak";
+                BtnChangeSource.ToolTip = $"Kaynak: {source.BadgeText} ({source.FileSizeFormatted})\n{source.DisplayTitle}\nDeğiştirmek için tıklayın.";
             }
 
             ErrorFallbackPanel.Visibility = Visibility.Collapsed;
+            CloudDownloadOverlay.Visibility = Visibility.Collapsed;
             PosterBackdrop.Visibility = Visibility.Collapsed;
         }
 
@@ -205,6 +200,7 @@ namespace AlpTogether.Controls
         {
             BufferingIndicator.Visibility = Visibility.Collapsed;
             ErrorFallbackPanel.Visibility = Visibility.Collapsed;
+            CloudDownloadOverlay.Visibility = Visibility.Collapsed;
             PosterBackdrop.Visibility = Visibility.Collapsed;
 
             if (CarsMedia.NaturalDuration.HasTimeSpan)
@@ -213,17 +209,20 @@ namespace AlpTogether.Controls
                 TimelineSlider.Maximum = _duration.TotalSeconds;
             }
 
-            // Önceki kayıtlı konuma devam et (varsa)
+            // 33. saniyeden başlasın (intro logoları ve siyah ekranı atlayarak doğrudan aksiyona girer)
+            double startPos = 33.0;
             try
             {
                 double lastPos = SettingsService.Instance.Current.CarsVideoLastPositionSeconds;
-                if (lastPos > 5 && lastPos < _duration.TotalSeconds - 10)
+                if (lastPos > 33.0 && lastPos < _duration.TotalSeconds - 10)
                 {
-                    CarsMedia.Position = TimeSpan.FromSeconds(lastPos);
+                    startPos = lastPos;
                 }
             }
             catch { }
 
+            CarsMedia.Position = TimeSpan.FromSeconds(startPos);
+            TimelineSlider.Value = startPos;
             TxtTimeDisplay.Text = $"{FormatTime(CarsMedia.Position)} / {FormatTime(_duration)}";
         }
 
@@ -232,7 +231,7 @@ namespace AlpTogether.Controls
             if (_isLoopEnabled)
             {
                 CarsMedia.Stop();
-                CarsMedia.Position = TimeSpan.Zero;
+                CarsMedia.Position = TimeSpan.FromSeconds(33.0);
                 CarsMedia.Play();
                 _isPlaying = true;
                 _progressTimer.Start();
@@ -253,13 +252,45 @@ namespace AlpTogether.Controls
             _isPlaying = false;
             UpdatePlayPauseButton();
             string msg = e.ErrorException?.Message ?? "Video akışı açılamadı.";
-            ShowError(msg);
 
-            // Eğer yerel dosya başarısız olduysa otomatik olarak bulut fallback dene
             if (_currentSource.IsLocal)
             {
                 ShowToast("⚠️ Yerel dosya okunamadı, bulut akışına geçiliyor...");
                 InitializeVideoSource(forceCloud: true);
+            }
+            else
+            {
+                ShowError($"Bulut akışı açılamadı: {msg}\nNot: İsterseniz filmi arka planda yerel diskinize indirip kesintisiz izleyebilirsiniz.");
+            }
+        }
+
+        public async void StartCloudDownload()
+        {
+            try
+            {
+                CloudDownloadOverlay.Visibility = Visibility.Visible;
+                ErrorFallbackPanel.Visibility = Visibility.Collapsed;
+                PrgDownload.Value = 0;
+                TxtDownloadStatus.Text = "Film GitHub CDN üzerinden arka planda önbelleğe alınıyor...";
+
+                _downloadCts = new CancellationTokenSource();
+                var progress = new Progress<(long bytesRead, long totalBytes, double percent)>(p =>
+                {
+                    PrgDownload.Value = p.percent;
+                    double mbRead = p.bytesRead / (1024.0 * 1024.0);
+                    double mbTotal = p.totalBytes / (1024.0 * 1024.0);
+                    TxtDownloadProgressDetail.Text = $"{mbRead:F1} MB / {mbTotal:F1} MB (%{p.percent:F1})";
+                });
+
+                string cachedPath = await CarsVideoService.Instance.DownloadCloudMediaAsync(progress, _downloadCts.Token);
+                CloudDownloadOverlay.Visibility = Visibility.Collapsed;
+                ShowToast("✅ Film başarıyla indirildi, yerel diskten başlatılıyor...");
+                InitializeVideoSource(cachedPath);
+            }
+            catch (Exception ex)
+            {
+                CloudDownloadOverlay.Visibility = Visibility.Collapsed;
+                ShowError($"İndirme hatası: {ex.Message}");
             }
         }
 
@@ -363,12 +394,10 @@ namespace AlpTogether.Controls
         {
             if (_isUserSeeking)
             {
-                // UI anlık güncellemesi (kullanıcıya akıcı 60 FPS görsel tepki)
                 string currentTimeStr = FormatTime(TimeSpan.FromSeconds(e.NewValue));
                 string durationStr = FormatTime(_duration);
                 TxtTimeDisplay.Text = $"{currentTimeStr} / {durationStr}";
 
-                // DirectShow / EVR dekoderine aşırı yükleme yapmamak için seek çağrılarını 150ms ile sınırla (UI kilitlenmesini önler)
                 if (!_seekThrottleStopwatch.IsRunning || _seekThrottleStopwatch.ElapsedMilliseconds >= 150)
                 {
                     CarsMedia.Position = TimeSpan.FromSeconds(e.NewValue);
@@ -461,8 +490,8 @@ namespace AlpTogether.Controls
 
         private void ApplyTheaterHeight()
         {
-            VideoViewportContainer.Height = _isExpandedTheater ? 460 : 270;
-            BtnToggleTheater.Content = _isExpandedTheater ? "📐 Normal Boyut" : "📐 Sinema Boyutu";
+            VideoViewportContainer.Height = _isExpandedTheater ? 480 : 280;
+            BtnToggleTheater.Content = _isExpandedTheater ? "📐 Normal" : "📐 Sinema";
         }
 
         private void BtnFullscreen_Click(object sender, RoutedEventArgs e)
@@ -470,9 +499,13 @@ namespace AlpTogether.Controls
             bool wasPlaying = _isPlaying;
             CarsMedia.Pause();
 
+            var startPos = CarsMedia.Position.TotalSeconds < 33.0
+                ? TimeSpan.FromSeconds(33.0)
+                : CarsMedia.Position;
+
             var theater = new CarsTheaterWindow(
                 _currentSource,
-                CarsMedia.Position,
+                startPos,
                 CarsMedia.Volume,
                 CarsMedia.IsMuted,
                 _isLoopEnabled)
@@ -550,26 +583,6 @@ namespace AlpTogether.Controls
             }
         }
 
-        private void BtnCollapseBanner_Click(object sender, RoutedEventArgs e)
-        {
-            ExpandedPlayerCard.Visibility = Visibility.Collapsed;
-            CollapsedMiniStrip.Visibility = Visibility.Visible;
-
-            // Arka planda CPU / GPU harcanmasını engellemek için simge durumuna alındığında duraklat
-            if (_isPlaying)
-            {
-                _wasPlayingBeforeHidden = true;
-                PausePlayback();
-            }
-
-            try
-            {
-                SettingsService.Instance.Current.CarsVideoBannerCollapsed = true;
-                SettingsService.Instance.Save();
-            }
-            catch { }
-        }
-
         private void BtnExpandBanner_Click(object sender, RoutedEventArgs e)
         {
             CollapsedMiniStrip.Visibility = Visibility.Collapsed;
@@ -639,7 +652,7 @@ namespace AlpTogether.Controls
 
             try
             {
-                if (CarsMedia.Position.TotalSeconds > 0)
+                if (CarsMedia.Position.TotalSeconds >= 33)
                 {
                     SettingsService.Instance.Current.CarsVideoLastPositionSeconds = CarsMedia.Position.TotalSeconds;
                     SettingsService.Instance.Save();
@@ -647,7 +660,7 @@ namespace AlpTogether.Controls
             }
             catch { }
 
-            // EVR / DirectShow COM grafiklerini ve 1.18 GB dosya handle'ını bellekten tamamen serbest bırak (ReleaseOnUnload)
+            // EVR / DirectShow COM grafiklerini ve dosya handle'ını serbest bırak
             CarsMedia.Stop();
             CarsMedia.Close();
             CarsMedia.Source = null;
