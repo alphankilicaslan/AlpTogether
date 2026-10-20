@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -27,7 +26,6 @@ namespace AlpTogether.Controls
         private bool _isInitializing = false;
         private Window? _parentWindow;
         private readonly System.Diagnostics.Stopwatch _seekThrottleStopwatch = new();
-        private CancellationTokenSource? _downloadCts;
 
         public CarsVideoPlayerControl()
         {
@@ -92,7 +90,7 @@ namespace AlpTogether.Controls
             BtnLoop.Content = _isLoopEnabled ? "🔁 Döngü: Açık" : "🔁 Döngü: Kapalı";
             UpdateVolumeDisplay();
 
-            // Hibrit video kaynağını çözümle ve başlat
+            // Hibrit video kaynağını çözümle ve doğrudan akışla başlat
             InitializeVideoSource();
         }
 
@@ -141,102 +139,36 @@ namespace AlpTogether.Controls
             }
         }
 
-        public void InitializeVideoSource(string? overridePathOrUrl = null, bool forceDownload = false)
+        public void InitializeVideoSource(string? overridePathOrUrl = null, bool forceCloud = false)
         {
             try
             {
-                _currentSource = CarsVideoService.Instance.ResolveSource(overridePathOrUrl);
+                _currentSource = CarsVideoService.Instance.ResolveSource(overridePathOrUrl, forceCloud);
                 ApplySourceInfo(_currentSource);
 
-                // Kullanıcı kuralı: Yerel dosya varsa doğrudan 33. saniyeden aç
-                // Dosya yoksa veya forceDownload ise CANLI AKIŞ YAPMA, arka planda indir ve öyle aç!
-                if (_currentSource.IsLocal && !forceDownload)
+                CloudDownloadOverlay.Visibility = Visibility.Collapsed;
+                CarsMedia.Visibility = Visibility.Visible;
+                CarsMedia.Source = _currentSource.SourceUri;
+
+                if (IsVisible && ExpandedPlayerCard.Visibility == Visibility.Visible)
                 {
-                    CloudDownloadOverlay.Visibility = Visibility.Collapsed;
-                    CarsMedia.Visibility = Visibility.Visible;
-                    CarsMedia.Source = _currentSource.SourceUri;
-
-                    if (IsVisible && ExpandedPlayerCard.Visibility == Visibility.Visible)
-                    {
-                        CarsMedia.Play();
-                        _isPlaying = true;
-                        _progressTimer.Start();
-                    }
-                    else
-                    {
-                        CarsMedia.Pause();
-                        _isPlaying = false;
-                        _progressTimer.Stop();
-                    }
-                    UpdatePlayPauseButton();
-
-                    ShowToast("⚡ Yerel Diskten Oynatılıyor");
+                    CarsMedia.Play();
+                    _isPlaying = true;
+                    _progressTimer.Start();
                 }
                 else
                 {
-                    // Canlı akış yapılmayacak, arka planda indirilip öyle açılacak
                     CarsMedia.Pause();
-                    CarsMedia.Source = null;
-                    CarsMedia.Visibility = Visibility.Collapsed;
                     _isPlaying = false;
                     _progressTimer.Stop();
-                    UpdatePlayPauseButton();
-
-                    StartBackgroundDownloadAndPlay();
                 }
+                UpdatePlayPauseButton();
+
+                ShowToast(_currentSource.IsLocal ? "⚡ Yerel Diskten Oynatılıyor" : "☁️ GitHub CDN Bulut Akışı (Doğrudan)");
             }
             catch (Exception ex)
             {
                 ShowError($"Kaynak yükleme hatası: {ex.Message}");
-            }
-        }
-
-        public async void StartBackgroundDownloadAndPlay()
-        {
-            try
-            {
-                CloudDownloadOverlay.Visibility = Visibility.Visible;
-                ErrorFallbackPanel.Visibility = Visibility.Collapsed;
-                PosterBackdrop.Visibility = Visibility.Collapsed;
-                CarsMedia.Visibility = Visibility.Collapsed;
-                PrgDownload.Value = 0;
-                TxtDownloadSpeed.Text = "Bağlantı kuruluyor...";
-                TxtDownloadProgressDetail.Text = "0 MB / 1.18 GB (%0)";
-
-                _downloadCts?.Cancel();
-                _downloadCts = new CancellationTokenSource();
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                long lastBytes = 0;
-
-                var progress = new Progress<(long bytesRead, long totalBytes, double percent)>(p =>
-                {
-                    PrgDownload.Value = p.percent;
-                    double mbRead = p.bytesRead / (1024.0 * 1024.0);
-                    double mbTotal = p.totalBytes / (1024.0 * 1024.0);
-                    TxtDownloadProgressDetail.Text = $"{mbRead:F1} MB / {mbTotal:F1} MB (%{p.percent:F0})";
-
-                    if (sw.ElapsedMilliseconds >= 1000)
-                    {
-                        double speedMBs = (p.bytesRead - lastBytes) / (1024.0 * 1024.0) / (sw.ElapsedMilliseconds / 1000.0);
-                        TxtDownloadSpeed.Text = $"⚡ {speedMBs:F1} MB/s";
-                        lastBytes = p.bytesRead;
-                        sw.Restart();
-                    }
-                });
-
-                string cachedPath = await CarsVideoService.Instance.DownloadCloudMediaAsync(progress, _downloadCts.Token);
-
-                CloudDownloadOverlay.Visibility = Visibility.Collapsed;
-                CarsMedia.Visibility = Visibility.Visible;
-                ShowToast("✅ Film başarıyla indirildi, sinema modunda başlatılıyor...");
-
-                // İndirilen yerel dosyadan başlat
-                InitializeVideoSource(cachedPath);
-            }
-            catch (Exception ex)
-            {
-                CloudDownloadOverlay.Visibility = Visibility.Collapsed;
-                ShowError($"Film indirme hatası: {ex.Message}\nİnternet bağlantınızı kontrol edin veya '📁 Kaynak' menüsünden yerel dosya seçin.");
             }
         }
 
@@ -336,12 +268,12 @@ namespace AlpTogether.Controls
 
             if (_currentSource.IsLocal)
             {
-                ShowToast("⚠️ Yerel dosya okunamadı, buluttan indirme başlatılıyor...");
-                InitializeVideoSource(forceDownload: true);
+                ShowToast("⚠️ Yerel dosya okunamadı, bulut akışına geçiliyor...");
+                InitializeVideoSource(forceCloud: true);
             }
             else
             {
-                ShowError($"Video açılamadı: {msg}\nNot: İsterseniz filmi arka planda yerel diskinize indirip kesintisiz izleyebilirsiniz.");
+                ShowError($"Video açılamadı: {msg}\nLütfen internet bağlantınızı kontrol edin veya '📁 Kaynak' menüsünden yerel bir dosya seçin.");
             }
         }
 
@@ -589,7 +521,7 @@ namespace AlpTogether.Controls
 
         private void MenuSourceCloud_Click(object sender, RoutedEventArgs e)
         {
-            InitializeVideoSource(forceDownload: true);
+            InitializeVideoSource(forceCloud: true);
         }
 
         private void MenuSourceBrowse_Click(object sender, RoutedEventArgs e)

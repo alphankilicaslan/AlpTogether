@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:effects="clr-namespace:AlpTogether.Effects"
              mc:Ignorable="d" 
              d:DesignWidth="1100"
              Loaded="UserControl_Loaded"
@@ -10,6 +11,13 @@
              IsVisibleChanged="UserControl_IsVisibleChanged">
 
     <Grid>
+        <!-- Background Glow Shadow (Separated from video card so it doesn't cause alpha color washout) -->
+        <Border Background="#13071F" CornerRadius="16" Margin="0">
+            <Border.Effect>
+                <DropShadowEffect Color="#FF2E93" BlurRadius="24" ShadowDepth="0" Opacity="0.38" />
+            </Border.Effect>
+        </Border>
+
         <!-- ==================== 1. FULL EXPANDED VIDEO PLAYER BANNER (CINEMA MODE ONLY) ==================== -->
         <Border x:Name="ExpandedPlayerCard"
                 Background="#13071F"
@@ -19,9 +27,6 @@
                 ClipToBounds="True"
                 Padding="0"
                 Margin="0">
-            <Border.Effect>
-                <DropShadowEffect Color="#FF2E93" BlurRadius="22" ShadowDepth="0" Opacity="0.38" />
-            </Border.Effect>
 
             <Grid>
                 <Grid.RowDefinitions>
@@ -40,7 +45,7 @@
                       SizeChanged="VideoViewportContainer_SizeChanged"
                       MouseLeftButtonDown="VideoViewport_MouseLeftButtonDown">
 
-                    <!-- Hardware Accelerated MediaElement (UniformToFill: Edge-to-Edge, No Black Bars) -->
+                    <!-- Hardware Accelerated MediaElement (UniformToFill: Edge-to-Edge, Vibrant Color Boost) -->
                     <MediaElement x:Name="CarsMedia"
                                   LoadedBehavior="Manual"
                                   UnloadedBehavior="Close"
@@ -54,7 +59,12 @@
                                   MediaEnded="CarsMedia_MediaEnded"
                                   MediaFailed="CarsMedia_MediaFailed"
                                   BufferingStarted="CarsMedia_BufferingStarted"
-                                  BufferingEnded="CarsMedia_BufferingEnded" />
+                                  BufferingEnded="CarsMedia_BufferingEnded">
+                        <!-- Direct3D GPU Shader: Soluk renkleri canlandırır, kontrastı ve doygunluğu Pixar standartlarına getirir -->
+                        <MediaElement.Effect>
+                            <effects:VideoColorEnhanceEffect Contrast="1.20" Saturation="1.35" Gamma="0.94" Brightness="0.0" />
+                        </MediaElement.Effect>
+                    </MediaElement>
 
                     <!-- Ambient Speed Accent Hologram (When video is stopped or loading) -->
                     <Border x:Name="PosterBackdrop"
@@ -102,11 +112,11 @@
                             Visibility="Collapsed">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="⏳" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" />
-                            <TextBlock x:Name="TxtBufferingMessage" Text="Video Yükleniyor..." Foreground="#FF85C0" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TxtBufferingMessage" Text="Video Akışı Bağlanıyor..." Foreground="#FF85C0" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
 
-                    <!-- Cloud Download Progress Overlay (Background Downloader) -->
+                    <!-- Cloud Download Progress Overlay (Optional / Secondary) -->
                     <Border x:Name="CloudDownloadOverlay"
                             Background="#F0090314"
                             BorderBrush="#FF2E93"
@@ -122,8 +132,8 @@
                         </Border.Effect>
                         <StackPanel HorizontalAlignment="Center">
                             <TextBlock Text="🎬 ARABALAR 1 (CARS 2006) 1080P DUAL" Foreground="#FF85C0" FontSize="13" FontWeight="Black" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                            <TextBlock Text="☁️ Film Arka Planda İndiriliyor..." Foreground="#FFFFFF" FontSize="16" FontWeight="ExtraBold" HorizontalAlignment="Center" Margin="0,0,0,10" />
-                            <TextBlock x:Name="TxtDownloadStatus" Text="Canlı akış takılmalarını önlemek için film arka planda yerel diskinize indiriliyor. Tamamlandığında sinema modunda 33. saniyeden otomatik olarak başlayacaktır." Foreground="#D1B8CB" FontSize="11.5" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,14" />
+                            <TextBlock Text="☁️ Bulut Medyası İndiriliyor..." Foreground="#FFFFFF" FontSize="16" FontWeight="ExtraBold" HorizontalAlignment="Center" Margin="0,0,0,10" />
+                            <TextBlock x:Name="TxtDownloadStatus" Text="İstenirse yerel diskte saklanmak üzere indiriliyor..." Foreground="#D1B8CB" FontSize="11.5" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,14" />
                             <ProgressBar x:Name="PrgDownload" Height="8" Minimum="0" Maximum="100" Value="0" Background="#260C3B" Foreground="#FF2E93" BorderThickness="0" Margin="0,0,0,10" />
                             <DockPanel LastChildFill="False">
                                 <TextBlock x:Name="TxtDownloadSpeed" Text="Bağlantı kuruluyor..." Foreground="#00E676" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
@@ -147,7 +157,7 @@
                             <TextBlock x:Name="TxtErrorMessage" Text="Yerel diskte belirtilen Cars MP4 dosyası bulunamadı." Foreground="#FCE4EC" FontSize="11" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,0,0,10" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Content="📁 Yerel MP4 Seç" Style="{StaticResource PinkSecondaryButtonStyle}" Padding="12,5" FontSize="11" Margin="0,0,8,0" Click="MenuSourceBrowse_Click" />
-                                <Button Content="☁️ Buluttan Yeniden İndir" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="12,5" FontSize="11" Click="MenuSourceCloud_Click" />
+                                <Button Content="☁️ Bulut Akışını Yenile" Style="{StaticResource PinkPrimaryButtonStyle}" Padding="12,5" FontSize="11" Click="MenuSourceCloud_Click" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -228,11 +238,11 @@
                                         FontSize="11"
                                         VerticalAlignment="Center"
                                         Click="BtnChangeSource_Click"
-                                        ToolTip="Video Kaynağı ve İndirme Seçenekleri">
+                                        ToolTip="Video Kaynağı ve Bulut Akış Seçenekleri">
                                     <Button.ContextMenu>
                                         <ContextMenu Background="#1A0A2B" BorderBrush="#FF2E93" BorderThickness="1.2">
                                             <MenuItem Header="⚡ Otomatik Algıla (Yerel Disk Öncelikli)" Click="MenuSourceAuto_Click" Foreground="#FFFFFF" />
-                                            <MenuItem Header="☁️ Buluttan Arka Planda Yeniden İndir" Click="MenuSourceCloud_Click" Foreground="#FFFFFF" />
+                                            <MenuItem Header="☁️ GitHub CDN Doğrudan Bulut Akışı" Click="MenuSourceCloud_Click" Foreground="#FFFFFF" />
                                             <MenuItem Header="📁 Bilgisayardan Özel .mp4 Seç..." Click="MenuSourceBrowse_Click" Foreground="#FFFFFF" />
                                         </ContextMenu>
                                     </Button.ContextMenu>

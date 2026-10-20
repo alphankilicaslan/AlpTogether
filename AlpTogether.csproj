@@ -32,6 +32,7 @@
     <Resource Include="Assets\alptogether_logo_pink.png" />
     <Resource Include="Assets\app_icon.ico" />
     <Resource Include="Assets\AppIcons\*.png" />
+    <Resource Include="Effects\*.ps" />
   </ItemGroup>
 
   <ItemGroup>
