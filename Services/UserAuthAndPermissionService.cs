@@ -101,12 +101,72 @@ namespace AlpTogether.Services
 
         private readonly Dictionary<string, UserAppPermission> _cachedPermissions = new(StringComparer.OrdinalIgnoreCase);
 
+        #region Offline Resiliency & Local Secure Permission Cache
+        private static readonly byte[] CacheMagic = Encoding.ASCII.GetBytes("ATPC"); // AlpTogether Permission Cache
+        private const byte CacheVersion = 1;
+        private const string CacheSecretSalt = "AlpTogether#SecurePermissionCache#Key2026!Salt";
+        private const string CacheHmacSalt = "AlpTogether#HMAC#Integrity2026!Salt";
+
+        public string SecureCacheFilePath { get; } = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AlpTogether",
+            "secure_perm_cache.dat");
+
+        public bool IsOfflineMode { get; private set; }
+        public DateTime? LastSyncUtc { get; private set; }
+        public TimeSpan OfflineGracePeriod { get; set; } = TimeSpan.FromHours(24);
+
+        public bool IsOfflineGracePeriodValid
+        {
+            get
+            {
+                if (!LastSyncUtc.HasValue) return false;
+                // Sistem saati LastSyncUtc'den 15 dakikadan fazla geriye alınmışsa saat manipülasyonu engelle
+                if (DateTime.UtcNow < LastSyncUtc.Value.AddMinutes(-15)) return false;
+                return (DateTime.UtcNow - LastSyncUtc.Value) <= OfflineGracePeriod;
+            }
+        }
+
+        public double RemainingOfflineGraceHours
+        {
+            get
+            {
+                if (!LastSyncUtc.HasValue) return 0;
+                var rem = OfflineGracePeriod - (DateTime.UtcNow - LastSyncUtc.Value);
+                return rem.TotalHours > 0 ? rem.TotalHours : 0;
+            }
+        }
+
+        public string NetworkStatusDescription { get; private set; } = "Ağ: Hazır";
+
         public event Action? OnPermissionsChanged;
         public event Action<string>? OnUsernameRegistered;
+        public event Action<bool, string>? OnNetworkStatusChanged;
+        #endregion
 
         private UserAuthAndPermissionService()
         {
             LocalAlpNetHwid = DetectLocalAlpNetHwid();
+
+            // 1. Yerel güvenli önbelleği anında yükle (uygulama açılır açılmaz izinleri hazır et)
+            LoadSecurePermissionCache();
+
+            // 2. Ağ arayüzü değişikliklerini dinle (internet geri geldiğinde anında senkronize ol)
+            try
+            {
+                NetworkChange.NetworkAvailabilityChanged += (s, e) =>
+                {
+                    if (e.IsAvailable)
+                    {
+                        _ = Task.Run(async () => await SyncSelfAndHeartbeatAsync());
+                    }
+                };
+                NetworkChange.NetworkAddressChanged += (s, e) =>
+                {
+                    _ = Task.Run(async () => await SyncSelfAndHeartbeatAsync());
+                };
+            }
+            catch { }
 
             _heartbeatTimer = new System.Windows.Threading.DispatcherTimer
             {
@@ -501,9 +561,203 @@ namespace AlpTogether.Services
         }
         #endregion
 
+        #region Secure Permission Cache Implementation (AES-256-CBC + HMAC-SHA256)
+        public static byte[] EncryptCachePayload(SecurePermissionCachePayload payload, string hwid)
+        {
+            string json = JsonSerializer.Serialize(payload);
+            byte[] plainBytes = Encoding.UTF8.GetBytes(json);
+
+            string machineSalt = Environment.MachineName.ToUpperInvariant();
+            byte[] aesKey = SHA256.HashData(Encoding.UTF8.GetBytes($"{hwid}|KEY|{machineSalt}|{CacheSecretSalt}"));
+            byte[] hmacKey = SHA256.HashData(Encoding.UTF8.GetBytes($"{hwid}|HMAC|{machineSalt}|{CacheHmacSalt}"));
+
+            byte[] iv = RandomNumberGenerator.GetBytes(16);
+            byte[] cipherBytes;
+
+            using (var aes = Aes.Create())
+            {
+                aes.Key = aesKey;
+                aes.IV = iv;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+                using var encryptor = aes.CreateEncryptor();
+                cipherBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
+            }
+
+            int payloadLen = 4 + 1 + 16 + cipherBytes.Length;
+            byte[] toSign = new byte[payloadLen];
+            Buffer.BlockCopy(CacheMagic, 0, toSign, 0, 4);
+            toSign[4] = CacheVersion;
+            Buffer.BlockCopy(iv, 0, toSign, 5, 16);
+            Buffer.BlockCopy(cipherBytes, 0, toSign, 21, cipherBytes.Length);
+
+            using var hmac = new HMACSHA256(hmacKey);
+            byte[] sig = hmac.ComputeHash(toSign);
+
+            byte[] finalData = new byte[toSign.Length + sig.Length];
+            Buffer.BlockCopy(toSign, 0, finalData, 0, toSign.Length);
+            Buffer.BlockCopy(sig, 0, finalData, toSign.Length, sig.Length);
+
+            return finalData;
+        }
+
+        public static SecurePermissionCachePayload? DecryptCachePayload(byte[] fileData, string hwid)
+        {
+            if (fileData == null || fileData.Length < (4 + 1 + 16 + 16 + 32))
+                return null;
+
+            if (fileData[0] != CacheMagic[0] || fileData[1] != CacheMagic[1] ||
+                fileData[2] != CacheMagic[2] || fileData[3] != CacheMagic[3] ||
+                fileData[4] != CacheVersion)
+            {
+                return null;
+            }
+
+            int sigLen = 32;
+            int payloadLen = fileData.Length - sigLen;
+            string machineSalt = Environment.MachineName.ToUpperInvariant();
+            byte[] hmacKey = SHA256.HashData(Encoding.UTF8.GetBytes($"{hwid}|HMAC|{machineSalt}|{CacheHmacSalt}"));
+
+            using var hmac = new HMACSHA256(hmacKey);
+            byte[] computedSig = hmac.ComputeHash(fileData, 0, payloadLen);
+
+            if (!CryptographicOperations.FixedTimeEquals(computedSig, fileData.AsSpan(payloadLen, sigLen)))
+            {
+                return null;
+            }
+
+            byte[] aesKey = SHA256.HashData(Encoding.UTF8.GetBytes($"{hwid}|KEY|{machineSalt}|{CacheSecretSalt}"));
+            byte[] iv = new byte[16];
+            Buffer.BlockCopy(fileData, 5, iv, 0, 16);
+
+            int cipherLen = payloadLen - 21;
+            byte[] plainBytes;
+
+            using (var aes = Aes.Create())
+            {
+                aes.Key = aesKey;
+                aes.IV = iv;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+                using var decryptor = aes.CreateDecryptor();
+                plainBytes = decryptor.TransformFinalBlock(fileData, 21, cipherLen);
+            }
+
+            string json = Encoding.UTF8.GetString(plainBytes);
+            var payload = JsonSerializer.Deserialize<SecurePermissionCachePayload>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (payload != null && string.Equals(payload.Hwid, hwid, StringComparison.OrdinalIgnoreCase))
+            {
+                return payload;
+            }
+
+            return null;
+        }
+
+        public bool LoadSecurePermissionCache()
+        {
+            try
+            {
+                if (!File.Exists(SecureCacheFilePath))
+                    return false;
+
+                byte[] bytes = File.ReadAllBytes(SecureCacheFilePath);
+                var payload = DecryptCachePayload(bytes, DeviceHwid);
+                if (payload == null)
+                {
+                    AppLoggerService.Instance.Warn("GÜVENLİ-ÖNBELLEK", "Yerel yetki önbelleği doğrulanamadı veya bozulmuş.", "AlpTogether");
+                    return false;
+                }
+
+                LastSyncUtc = payload.LastSyncUtc;
+                if (!string.IsNullOrWhiteSpace(payload.Username) &&
+                    string.IsNullOrWhiteSpace(SettingsService.Instance.Current.RegisteredUsername))
+                {
+                    SettingsService.Instance.Current.RegisteredUsername = payload.Username;
+                }
+
+                if (payload.Permissions != null && payload.Permissions.Count > 0)
+                {
+                    foreach (var kvp in payload.Permissions)
+                    {
+                        _cachedPermissions[kvp.Key] = kvp.Value;
+                    }
+                }
+
+                if (payload.IsAdmin)
+                {
+                    DeveloperAuthService.Instance.UnlockDeveloperModeDirectly();
+                }
+
+                AppLoggerService.Instance.Info("GÜVENLİ-ÖNBELLEK", $"Yerel güvenli yetki önbelleği yüklendi ({_cachedPermissions.Count} izin, Son Senkron: {payload.LastSyncUtc.ToLocalTime():yyyy-MM-dd HH:mm}).", "AlpTogether");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AppLoggerService.Instance.Warn("GÜVENLİ-ÖNBELLEK", "Yerel yetki önbelleği yüklenirken hata: " + ex.Message, "AlpTogether");
+                return false;
+            }
+        }
+
+        public void SaveSecurePermissionCache(bool isAdmin)
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(SecureCacheFilePath)!;
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                var payload = new SecurePermissionCachePayload
+                {
+                    Hwid = DeviceHwid,
+                    Username = CurrentUsername,
+                    LastSyncUtc = LastSyncUtc ?? DateTime.UtcNow,
+                    Permissions = new Dictionary<string, UserAppPermission>(_cachedPermissions, StringComparer.OrdinalIgnoreCase),
+                    IsAdmin = isAdmin
+                };
+
+                byte[] encrypted = EncryptCachePayload(payload, DeviceHwid);
+                string tmpPath = SecureCacheFilePath + ".tmp";
+                File.WriteAllBytes(tmpPath, encrypted);
+                File.Move(tmpPath, SecureCacheFilePath, overwrite: true);
+            }
+            catch (Exception ex)
+            {
+                AppLoggerService.Instance.Warn("GÜVENLİ-ÖNBELLEK", "Yerel güvenli önbellek diske kaydedilemedi: " + ex.Message, "AlpTogether");
+            }
+        }
+
+        #if DEBUG || true
+        public void SetOfflineModeForTesting(bool isOffline, DateTime? simulatedLastSyncUtc = null)
+        {
+            IsOfflineMode = isOffline;
+            if (simulatedLastSyncUtc.HasValue)
+                LastSyncUtc = simulatedLastSyncUtc.Value;
+            NetworkStatusDescription = isOffline
+                ? (IsOfflineGracePeriodValid ? "Çevrimdışı Mod - Yerel Önbellek Aktif" : "Çevrimdışı - Doğrulama Süresi Doldu")
+                : "Ağ: Hazır";
+            OnNetworkStatusChanged?.Invoke(IsOfflineMode, NetworkStatusDescription);
+        }
+
+        public void SetCachedPermissionForTesting(string appId, UserAppPermission perm)
+        {
+            _cachedPermissions[appId] = perm;
+        }
+
+        public void ClearCachedPermissionsForTesting()
+        {
+            _cachedPermissions.Clear();
+        }
+        #endif
+        #endregion
+
         #region Presence Heartbeat & Whitelist Verification
         public async Task SyncSelfAndHeartbeatAsync()
         {
+            bool networkSuccess = false;
             try
             {
                 LocalAlpNetHwid = DetectLocalAlpNetHwid();
@@ -539,7 +793,6 @@ namespace AlpTogether.Services
                                     _cachedPermissions[kvp.Key] = kvp.Value;
                                 }
                             }
-                            OnPermissionsChanged?.Invoke();
 
                             // Buluttan gelen admin rolüne göre geliştirici modunu senkronize et
                             if (userRec.IsAdmin)
@@ -552,6 +805,10 @@ namespace AlpTogether.Services
                                 SettingsService.Instance.Current.IsAdminModeUnlocked = false;
                                 try { SettingsService.Instance.Save(); } catch { }
                             }
+
+                            LastSyncUtc = DateTime.UtcNow;
+                            SaveSecurePermissionCache(userRec.IsAdmin);
+                            networkSuccess = true;
                         }
                     }
                 }
@@ -563,7 +820,7 @@ namespace AlpTogether.Services
                 }
 
                 // Anlık durum (LastSeen, MachineName, AFK & Aktivite) heartbeat güncellemesi gönder
-                if (IsRegistered)
+                if (IsRegistered && resp.IsSuccessStatusCode)
                 {
                     var (isAfk, afkMinutes) = GetIdleState();
                     var (actText, actApp) = DetectCurrentActivity();
@@ -587,11 +844,50 @@ namespace AlpTogether.Services
                     await _httpClient.PatchAsync(userUrl, patchContent);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                networkSuccess = false;
+                AppLoggerService.Instance.Info("AĞ-BİLGİ", "Firebase senkronizasyonu tamamlanamadı (Çevrimdışı tolerans devrede): " + ex.Message, "AlpTogether");
+            }
+
+            bool wasOffline = IsOfflineMode;
+            if (networkSuccess)
+            {
+                IsOfflineMode = false;
+                NetworkStatusDescription = "Ağ: Hazır";
+                if (wasOffline)
+                {
+                    AppLoggerService.Instance.Success("AĞ-BAĞLANTI", "Firebase bağlantısı yeniden sağlandı. Çevrimdışı moddan çıkıldı.", "AlpTogether");
+                }
+                OnNetworkStatusChanged?.Invoke(false, NetworkStatusDescription);
+                OnPermissionsChanged?.Invoke();
+            }
+            else
+            {
+                IsOfflineMode = true;
+                if (_cachedPermissions.Count == 0)
+                {
+                    LoadSecurePermissionCache();
+                }
+
+                if (IsOfflineGracePeriodValid)
+                {
+                    NetworkStatusDescription = "Çevrimdışı Mod - Yerel Önbellek Aktif";
+                }
+                else
+                {
+                    NetworkStatusDescription = "Çevrimdışı - Doğrulama Süresi Doldu";
+                }
+
+                OnNetworkStatusChanged?.Invoke(true, NetworkStatusDescription);
+                OnPermissionsChanged?.Invoke();
+            }
         }
 
         /// <summary>
         /// İstemcinin ilgili uygulamayı kurma veya başlatma yetkisi olup olmadığını denetler.
+        /// Firebase RTDB bağlantısı koptuğunda veya sunucu yanıt vermediğinde 24 saatlik
+        /// yerel şifreli tolerans (Offline Grace Period) üzerinden kullanıcının kilitlenmesini engeller.
         /// </summary>
         public bool HasAppAccess(string appId, out string reason, out int daysLeft)
         {
@@ -606,7 +902,15 @@ namespace AlpTogether.Services
                 return false;
             }
 
-            // 3. Buluttan çekilen önbellek yetkisini denetle
+            // 2. Birincil geliştirici makinesi veya admin modu denetimi
+            if (DeveloperAuthService.Instance.IsPrimaryDevMachine || DeveloperAuthService.Instance.IsAdminMode)
+            {
+                reason = "Geliştirici / Yönetici tam erişim modu aktif.";
+                daysLeft = 99999;
+                return true;
+            }
+
+            // 3. Buluttan veya yerel güvenli önbellekten çekilen yetkiyi denetle
             if (_cachedPermissions.TryGetValue(appId, out var perm) ||
                 (appId == "alprust-plus" && _cachedPermissions.TryGetValue("alprust", out perm)) ||
                 (appId == "alprust" && _cachedPermissions.TryGetValue("alprust-plus", out perm)))
@@ -618,13 +922,6 @@ namespace AlpTogether.Services
                     return false;
                 }
 
-                if (perm.IsIndefinite)
-                {
-                    reason = "Süresiz kullanım yetkisi aktif.";
-                    daysLeft = 99999;
-                    return true;
-                }
-
                 if (perm.IsExpired)
                 {
                     reason = $"Bu uygulamanın kullanım süresi {perm.ExpiresAt} tarihinde dolmuştur.";
@@ -632,9 +929,43 @@ namespace AlpTogether.Services
                     return false;
                 }
 
-                daysLeft = perm.DaysRemaining;
-                reason = $"Yetkiniz aktif ({daysLeft} gün kaldı).";
+                // Çevrimdışı Mod Tolerans Denetimi (Offline Grace Period)
+                if (IsOfflineMode)
+                {
+                    // Saat manipülasyonu kontrolü (saat geri alınmış mı?)
+                    if (LastSyncUtc.HasValue && DateTime.UtcNow < LastSyncUtc.Value.AddMinutes(-15))
+                    {
+                        reason = "Sistem saati geriye alınmış tespit edildi! Güvenlik nedeniyle çevrimdışı kullanım kilitlendi. Lütfen saat ayarlarınızı doğrulayın ve internete bağlanın.";
+                        daysLeft = 0;
+                        return false;
+                    }
+
+                    if (!IsOfflineGracePeriodValid)
+                    {
+                        double passedHours = LastSyncUtc.HasValue ? (DateTime.UtcNow - LastSyncUtc.Value).TotalHours : 0;
+                        reason = $"Çevrimdışı kullanım süresi ({OfflineGracePeriod.TotalHours:0} saat) doldu ({passedHours:0.0} saat geçti). Yetkileri doğrulamak için lütfen internete bağlanın.";
+                        daysLeft = 0;
+                        return false;
+                    }
+
+                    int hoursLeft = (int)Math.Max(1, Math.Ceiling(RemainingOfflineGraceHours));
+                    daysLeft = perm.IsIndefinite ? 99999 : perm.DaysRemaining;
+                    reason = perm.IsIndefinite
+                        ? $"Çevrimdışı Mod: Süresiz yetki yerel güvenli önbellekte doğrulandı ({hoursLeft} sa çevrimdışı tolerans kaldı)."
+                        : $"Çevrimdışı Mod: {daysLeft} gün yetki aktif ({hoursLeft} sa çevrimdışı tolerans kaldı).";
+                    return true;
+                }
+
+                daysLeft = perm.IsIndefinite ? 99999 : perm.DaysRemaining;
+                reason = perm.IsIndefinite ? "Süresiz kullanım yetkisi aktif." : $"Yetkiniz aktif ({daysLeft} gün kaldı).";
                 return true;
+            }
+
+            if (IsOfflineMode)
+            {
+                reason = "Çevrimdışı Mod: Bu uygulama için yerel doğrulanmış yetki kaydı bulunamadı. Lütfen ilk yetkilendirme için internete bağlanın.";
+                daysLeft = 0;
+                return false;
             }
 
             reason = "Bu uygulama için yönetici (Alphan) tarafından henüz kullanım izni verilmemiş.";
@@ -885,22 +1216,42 @@ namespace AlpTogether.Services
                 using var content = new StringContent(json, Encoding.UTF8, "application/json");
                 await _httpClient.PatchAsync(patchUrl, content);
 
+                var allApps = new List<string> { "alpnet-pulse", "alplingo", "alpfinans", "alphagravity", "alprust-plus", "alprust" };
+                try
+                {
+                    var catalogApps = CatalogAndHybridInstallerService.Instance.Catalog?.Apps;
+                    if (catalogApps != null)
+                    {
+                        foreach (var a in catalogApps)
+                        {
+                            if (!allApps.Contains(a.Id, StringComparer.OrdinalIgnoreCase))
+                                allApps.Add(a.Id);
+                        }
+                    }
+                }
+                catch { }
+
                 if (isAdmin)
                 {
                     string adminKey = DeveloperAuthService.GenerateAdminKey(cleanHwid, new DateTime(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc));
                     await DeveloperAuthService.Instance.PushAdminLicenseToFirebaseAsync(cleanHwid, adminKey);
 
-                    foreach (var appId in new[] { "alpnet-pulse", "alplingo", "alpfinans", "alphagravity", "alprust-plus" })
+                    foreach (var appId in allApps)
                     {
-                        await GrantAppPermissionAsync(cleanHwid, appId, 99999, "Yönetici (Admin) Rolü Tanımlandı");
+                        await GrantAppPermissionAsync(cleanHwid, appId, 99999, "👑 Yönetici (Admin) Süresiz Tam Yetki");
                     }
-                    AppLoggerService.Instance.Success("ADMIN-ATAMA", $"'{cleanHwid}' başarıyla YÖNETİCİ (Admin) yapıldı.", "AlpTogether");
+                    AppLoggerService.Instance.Success("ADMIN-ATAMA", $"'{cleanHwid}' başarıyla YÖNETİCİ (Admin) yapıldı ve tüm uygulamalara süresiz whitelist yetkisi tanımlandı.", "AlpTogether");
                 }
                 else
                 {
                     string delUrl = GetFirebaseUrl($"alptogether/dev_licenses/{cleanHwid}");
                     await _httpClient.DeleteAsync(delUrl);
-                    AppLoggerService.Instance.Warn("ADMIN-KALDIR", $"'{cleanHwid}' yönetici yetkisi kaldırıldı.", "AlpTogether");
+
+                    foreach (var appId in allApps)
+                    {
+                        await RevokeAppPermissionAsync(cleanHwid, appId);
+                    }
+                    AppLoggerService.Instance.Warn("ADMIN-KALDIR", $"'{cleanHwid}' yönetici yetkisi ve süresiz erişimleri geri alındı.", "AlpTogether");
                 }
 
                 return true;
@@ -989,6 +1340,7 @@ namespace AlpTogether.Services
                     if (string.Equals(hwid.Trim(), DeviceHwid, StringComparison.OrdinalIgnoreCase))
                     {
                         _cachedPermissions[appId.Trim()] = perm;
+                        SaveSecurePermissionCache(DeveloperAuthService.Instance.IsAdminMode);
                         OnPermissionsChanged?.Invoke();
                     }
                     AppLoggerService.Instance.Success("YETKİ-TANIM", $"'{hwid}' için {appId} yetkisi verildi ({durationDays} gün).", appId);
@@ -1034,6 +1386,7 @@ namespace AlpTogether.Services
                         {
                             _cachedPermissions[appId.Trim()] = new UserAppPermission { HasAccess = false };
                         }
+                        SaveSecurePermissionCache(DeveloperAuthService.Instance.IsAdminMode);
                         OnPermissionsChanged?.Invoke();
                     }
                     AppLoggerService.Instance.Warn("YETKİ-KALDIR", $"'{hwid}' için {appId} yetkisi kaldırıldı (Kullanıcı korundu).", appId);

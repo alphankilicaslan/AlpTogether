@@ -31,7 +31,6 @@
     <Resource Include="Assets\alptogether_logo_pink.png" />
     <Resource Include="Assets\app_icon.ico" />
     <Resource Include="Assets\AppIcons\*.png" />
-    <Resource Include="Assets\Anime\*.jpg" />
   </ItemGroup>
 
   <ItemGroup>

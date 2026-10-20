@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace AlpTogether.Models
 {
@@ -39,6 +40,10 @@ namespace AlpTogether.Models
         public string Title { get; set; } = string.Empty;
         public string Tag { get; set; } = "GÜNCELLEME";
         public List<string> Changes { get; set; } = new();
+        public string? ImageUrl { get; set; }
+
+        [JsonIgnore]
+        public bool HasImage => !string.IsNullOrWhiteSpace(ImageUrl);
     }
 
     public class AlpAppItem : INotifyPropertyChanged
@@ -253,6 +258,13 @@ namespace AlpTogether.Models
                 bool hasAccess = AlpTogether.Services.UserAuthAndPermissionService.Instance.HasAppAccess(Id, out _, out _);
                 if (!hasAccess) return "⛔ YETKİSİZ (WHITELIST GEREKLİ)";
 
+                if (AlpTogether.Services.UserAuthAndPermissionService.Instance.IsOfflineMode &&
+                    AlpTogether.Services.UserAuthAndPermissionService.Instance.IsOfflineGracePeriodValid)
+                {
+                    if (IsInstalled) return "KURULU (ÇEVRİMDİŞİ MOD)";
+                    return "BULUTTA (ÇEVRİMDİŞİ)";
+                }
+
                 if (UpdateAvailable) return "GÜNCELLEME MEVCUT";
                 if (IsInstalled) return "KURULU & HAZIR";
                 return "BULUTTA MEVCUT";
@@ -374,6 +386,14 @@ namespace AlpTogether.Models
         public string CustomSlotScratchpad { get; set; } =
             "• Bu alan sonradan eklenecek modüller, hızlı komutlar, canlı duyurular veya özel sistem logları için ayrılmış esnek boşluktur.\n" +
             "• Buraya özel notlar, test parametreleri veya hızlı başlatma komutları ekleyebilirsiniz.";
+        // Arabalar 1 (Cars 2006) Hibrit Video Oynatıcı Ayarları
+        public double CarsVideoVolume { get; set; } = 0.50;
+        public bool CarsVideoIsMuted { get; set; } = true;
+        public bool CarsVideoIsLoopEnabled { get; set; } = true;
+        public string CarsVideoCustomPath { get; set; } = string.Empty;
+        public bool CarsVideoBannerCollapsed { get; set; } = false;
+        public double CarsVideoLastPositionSeconds { get; set; } = 0;
+        public bool CarsVideoIsExpandedTheater { get; set; } = false;
         public List<CustomWorkspaceSlotItem> CustomSlotItems { get; set; } = new();
     }
 

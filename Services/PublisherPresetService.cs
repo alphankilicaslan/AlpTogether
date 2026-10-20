@@ -20,6 +20,7 @@ namespace AlpTogether.Services
         public string InstallerUrl { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string PatchNotes { get; set; } = string.Empty;
+        public string? PatchImagePath { get; set; }
         public string LastPublishedAt { get; set; } = string.Empty;
     }
 

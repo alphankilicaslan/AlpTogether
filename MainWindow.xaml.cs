@@ -120,6 +120,17 @@ namespace AlpTogether
                 });
             };
 
+            // Listen to network status & offline mode transitions
+            UserAuthAndPermissionService.Instance.OnNetworkStatusChanged += (isOffline, statusText) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    UpdateNetworkStatusDisplay();
+                    if (_selectedApp != null) UpdateHeroPanel(_selectedApp);
+                    RefreshFilteredAppCards();
+                });
+            };
+
             // Kullanıcı Kayıt Kontrolü (1 HWID = 1 Benzersiz Takma İsim)
             if (!UserAuthAndPermissionService.Instance.IsRegistered)
             {
@@ -130,6 +141,7 @@ namespace AlpTogether
             else
             {
                 await UserAuthAndPermissionService.Instance.SyncSelfAndHeartbeatAsync();
+                UpdateNetworkStatusDisplay();
                 if (_selectedApp != null) UpdateHeroPanel(_selectedApp);
                 RefreshFilteredAppCards();
             }
@@ -153,9 +165,37 @@ namespace AlpTogether
             TxtBottomLiveLog.Text = $"[{entry.TimeText}] [{entry.AppName}] {entry.Message}";
         }
 
+        private void UpdateNetworkStatusDisplay(double mbps = 0)
+        {
+            var auth = UserAuthAndPermissionService.Instance;
+            if (mbps > 0.05)
+            {
+                TxtTopBandwidth.Text = $"İndirme: {mbps:0.0} MB/sn";
+                TxtTopBandwidth.Foreground = new SolidColorBrush(Color.FromRgb(255, 46, 147));
+                TxtTopBandwidth.ToolTip = $"Aktif indirme hızı: {mbps:0.0} MB/sn";
+            }
+            else if (auth.IsOfflineMode)
+            {
+                TxtTopBandwidth.Text = auth.NetworkStatusDescription;
+                TxtTopBandwidth.Foreground = auth.IsOfflineGracePeriodValid
+                    ? new SolidColorBrush(Color.FromRgb(255, 179, 0)) // Amber / Orange
+                    : new SolidColorBrush(Color.FromRgb(255, 23, 68)); // Red
+
+                TxtTopBandwidth.ToolTip = auth.IsOfflineGracePeriodValid
+                    ? $"İnternet veya Firebase erişilemiyor. Yerel güvenli önbellek devrede ({auth.RemainingOfflineGraceHours:0.0} sa tolerans kaldı)."
+                    : "Çevrimdışı tolerans süresi doldu. Lütfen yetkileri doğrulamak için internete bağlanın.";
+            }
+            else
+            {
+                TxtTopBandwidth.Text = "Ağ: Hazır";
+                TxtTopBandwidth.Foreground = new SolidColorBrush(Color.FromRgb(255, 184, 220)); // Soft Pink
+                TxtTopBandwidth.ToolTip = "İnternet ve Firebase bağlantısı aktif. Yetkiler senkronize.";
+            }
+        }
+
         private void Instance_OnGlobalBandwidthTick(double mbps, string status)
         {
-            TxtTopBandwidth.Text = mbps > 0.05 ? $"İndirme: {mbps:0.0} MB/sn" : "Ağ: Hazır";
+            UpdateNetworkStatusDisplay(mbps);
             TxtDownloadCenterSpeed.Text = $"{mbps:0.0} MB/sn";
 
             var busyApp = CatalogAndHybridInstallerService.Instance.Apps.FirstOrDefault(a => a.IsBusy);
@@ -497,32 +537,8 @@ namespace AlpTogether
         }
         #endregion
 
-        #region Anime Mascot Interactive Showcase Handlers
-        private void BtnCloseMascotBanner_Click(object sender, RoutedEventArgs e)
-        {
-            AnimeMascotBanner.Visibility = Visibility.Collapsed;
-        }
-
-        private void BtnMascotApp_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is string appId)
-            {
-                var app = CatalogAndHybridInstallerService.Instance.Apps.FirstOrDefault(a => string.Equals(a.Id, appId, StringComparison.OrdinalIgnoreCase));
-                if (app != null)
-                {
-                    SelectApp(app);
-                    TxtAnimeSpeechBubble.Text = appId switch
-                    {
-                        "alpnet-pulse" => "🌐 AlpNet Pulse seçildi! Akıllı WARP optimizasyonu ve canlı ses çevirisi ile oyunlarda en düşük ping ve anında iletişim seninle.",
-                        "alphagravity" => "🤖 AlphaGravity seçildi! Gemini, Claude ve yerel LLM modellerini bir araya getiren güçlü AI merkezine hoş geldin.",
-                        "alpfinans" => "📈 AlpFinans seçildi! Borsa, portföy ve finansal hareketlerini gerçek zamanlı takip etmeye hemen başlayabilirsin.",
-                        "alplingo" => "🎮 AlpLingo seçildi! Oyun içi ekran üzeri anlık çeviri ve OCR destekli yapay zeka çevirmeni hazır.",
-                        "alprust-plus" => "🛡 AlpRust+ seçildi! Rust akıllı cihazların, elektrik santrallerin ve bildirimlerin tek masaüstü ekranında.",
-                        _ => $"✨ {app.Name} uygulaması seçildi! Hemen sağdaki butondan başlatabilir veya kurabilirsin."
-                    };
-                }
-            }
-        }
+        #region Arabalar 1 (Cars 2006) Video Player Handlers
+        // Eski anime banner'ı kaldırılarak tam teşekküllü CarsVideoPlayerControl bileşeni entegre edildi.
         #endregion
 
         #region Windows AutoStart Toggle
@@ -578,7 +594,9 @@ namespace AlpTogether
 
         private async void BtnSyncCatalog_Click(object sender, RoutedEventArgs e)
         {
+            await UserAuthAndPermissionService.Instance.SyncSelfAndHeartbeatAsync();
             await CatalogAndHybridInstallerService.Instance.SyncRemoteCatalogAsync(silent: false);
+            UpdateNetworkStatusDisplay();
             RefreshFilteredAppCards();
         }
 

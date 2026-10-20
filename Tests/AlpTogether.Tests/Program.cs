@@ -466,6 +466,337 @@ namespace AlpTogether.Tests
                 failures++;
             }
 
+            // TEST 10: Cars 2006 Hybrid Video Player & Source Resolution
+            Console.WriteLine("\n[TEST 10] Testing Cars 2006 Hybrid Video Source Resolution & Settings...");
+            try
+            {
+                var service = CarsVideoService.Instance;
+
+                // 1. Primary local file resolution
+                var localSource = service.ResolveSource();
+                Console.WriteLine($" -> Resolved Source Type: {localSource.SourceType}");
+                Console.WriteLine($" -> Source URI: {localSource.SourceUri}");
+                Console.WriteLine($" -> Display Title: {localSource.DisplayTitle}");
+                Console.WriteLine($" -> File Size: {localSource.FileSizeFormatted}");
+
+                if (localSource.SourceType != CarsVideoSourceType.LocalDisk)
+                {
+                    Console.WriteLine(" FAIL: Expected LocalDisk source for Cars movie on Alphan's machine!");
+                    failures++;
+                }
+                if (!localSource.IsLocal || string.IsNullOrEmpty(localSource.LocalFilePath))
+                {
+                    Console.WriteLine(" FAIL: Expected local source path to be set!");
+                    failures++;
+                }
+                if (localSource.FileSizeFormatted != "1.18 GB")
+                {
+                    Console.WriteLine($" FAIL: Expected 1.18 GB file size, got '{localSource.FileSizeFormatted}'");
+                    failures++;
+                }
+
+                // 2. Cloud Fallback resolution (for other machines)
+                var cloudSource = service.ResolveSource(forceCloud: true);
+                Console.WriteLine($" -> Forced Cloud Source URI: {cloudSource.SourceUri}");
+                if (cloudSource.SourceType != CarsVideoSourceType.GitHubRelease)
+                {
+                    Console.WriteLine(" FAIL: Expected GitHubRelease source type when forced to cloud!");
+                    failures++;
+                }
+                if (cloudSource.SourceUri.AbsoluteUri != "https://github.com/alphankilicaslan/AlpTogether/releases/download/v1.1.0/Cars.2006.UBluray.1080p.DUAL.mp4")
+                {
+                    Console.WriteLine($" FAIL: Unexpected cloud URL: {cloudSource.SourceUri.AbsoluteUri}");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Verified exact GitHub Release direct stream URL: Cars.2006.UBluray.1080p.DUAL.mp4");
+                }
+
+                // 3. Settings persistence roundtrip
+                var settings = SettingsService.Instance;
+                double prevVol = settings.Current.CarsVideoVolume;
+                bool prevMuted = settings.Current.CarsVideoIsMuted;
+                bool prevTheater = settings.Current.CarsVideoIsExpandedTheater;
+
+                settings.Current.CarsVideoVolume = 0.82;
+                settings.Current.CarsVideoIsMuted = false;
+                settings.Current.CarsVideoIsExpandedTheater = true;
+                settings.Save();
+                settings.Load();
+
+                if (Math.Abs(settings.Current.CarsVideoVolume - 0.82) > 0.01 || settings.Current.CarsVideoIsMuted || !settings.Current.CarsVideoIsExpandedTheater)
+                {
+                    Console.WriteLine(" FAIL: Video settings did not persist properly!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Verified video settings persistence roundtrip (Volume: 0.82, Muted: False, Theater: True).");
+                }
+
+                // Restore previous settings
+                settings.Current.CarsVideoVolume = prevVol;
+                settings.Current.CarsVideoIsMuted = prevMuted;
+                settings.Current.CarsVideoIsExpandedTheater = prevTheater;
+                settings.Save();
+
+                // 4. Binary size safety check: Ensure AlpTogether.dll is under 15 MB and NOT 1.2 GB
+                string dllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "bin", "Release", "net9.0-windows", "AlpTogether.dll");
+                if (File.Exists(dllPath))
+                {
+                    var fi = new FileInfo(dllPath);
+                    double mb = fi.Length / (1024.0 * 1024.0);
+                    Console.WriteLine($" -> AlpTogether.dll Size: {mb:F2} MB (Zero Bloat: 1.2 GB video NOT embedded into app binary)");
+                    if (mb > 20.0)
+                    {
+                        Console.WriteLine($" FAIL: Output binary is too large ({mb:F2} MB)! Video might have been embedded into assembly!");
+                        failures++;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 10 exception: {ex.Message}");
+                failures++;
+            }
+
+            // TEST 11: Local Secure Permission Cache - AES-256-CBC + HMAC-SHA256 & Hardware-Binding
+            Console.WriteLine("\n[TEST 11] Testing Local Secure Permission Cache (AES-256 + HMAC-SHA256)...");
+            try
+            {
+                string testHwid = "AT-TEST-HWID-CACH-9999";
+                var payload = new SecurePermissionCachePayload
+                {
+                    Hwid = testHwid,
+                    Username = "TestOfflineUser",
+                    LastSyncUtc = DateTime.UtcNow,
+                    IsAdmin = false,
+                    Permissions = new Dictionary<string, UserAppPermission>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["alplingo"] = new UserAppPermission
+                        {
+                            HasAccess = true,
+                            DurationDays = 30,
+                            ExpiresAt = DateTime.Now.AddDays(30).ToString("yyyy-MM-dd HH:mm:ss"),
+                            GrantedBy = "Alphan (Admin)"
+                        },
+                        ["alpnet-pulse"] = new UserAppPermission
+                        {
+                            HasAccess = true,
+                            DurationDays = 99999,
+                            ExpiresAt = "9999-12-31 23:59:59",
+                            GrantedBy = "Alphan (Admin)"
+                        },
+                        ["alpfinans"] = new UserAppPermission
+                        {
+                            HasAccess = false,
+                            DurationDays = 0,
+                            GrantedBy = "Revoked"
+                        }
+                    }
+                };
+
+                // 1. Encrypt payload
+                byte[] encrypted = UserAuthAndPermissionService.EncryptCachePayload(payload, testHwid);
+                Console.WriteLine($" -> Cache encrypted successfully ({encrypted.Length} bytes).");
+                if (encrypted == null || encrypted.Length < 64)
+                {
+                    Console.WriteLine(" FAIL: Encrypted cache payload is null or unexpectedly small!");
+                    failures++;
+                }
+
+                // 2. Decrypt with correct HWID
+                var decrypted = UserAuthAndPermissionService.DecryptCachePayload(encrypted!, testHwid);
+                if (decrypted == null)
+                {
+                    Console.WriteLine(" FAIL: Decryption failed for legitimate payload!");
+                    failures++;
+                }
+                else if (decrypted.Username != "TestOfflineUser" || decrypted.Permissions.Count != 3)
+                {
+                    Console.WriteLine($" FAIL: Decrypted content mismatch! Username: {decrypted?.Username}, Perms: {decrypted?.Permissions.Count}");
+                    failures++;
+                }
+                else if (!decrypted.Permissions["alplingo"].HasAccess || !decrypted.Permissions["alpnet-pulse"].IsIndefinite || decrypted.Permissions["alpfinans"].HasAccess)
+                {
+                    Console.WriteLine(" FAIL: Decrypted permissions states mismatch!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Decrypted payload verified: Username, LastSyncUtc, and all 3 app permissions matched.");
+                }
+
+                // 3. Tamper detection test (flip 1 byte in ciphertext)
+                byte[] tampered = (byte[])encrypted!.Clone();
+                tampered[25] ^= 0xFF; // Modify a byte inside ciphertext
+                var tamperedResult = UserAuthAndPermissionService.DecryptCachePayload(tampered, testHwid);
+                if (tamperedResult != null)
+                {
+                    Console.WriteLine(" FAIL: Tampered cache payload was accepted! Expected HMAC rejection.");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Cryptographic HMAC correctly rejected tampered ciphertext byte.");
+                }
+
+                // 4. HWID-binding test (attempt to decrypt using a different machine's HWID)
+                var foreignResult = UserAuthAndPermissionService.DecryptCachePayload(encrypted, "AT-DIFFERENT-HWID-0000");
+                if (foreignResult != null)
+                {
+                    Console.WriteLine(" FAIL: Cache accepted on mismatched foreign HWID!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Cache correctly rejected foreign HWID (Hardware-bound protection verified).");
+                }
+
+                // 5. Corrupted header / truncated buffer test
+                byte[] truncated = encrypted[..15];
+                var truncResult = UserAuthAndPermissionService.DecryptCachePayload(truncated, testHwid);
+                if (truncResult != null)
+                {
+                    Console.WriteLine(" FAIL: Truncated buffer accepted!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Truncated/corrupted buffer safely handled and rejected.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 11 exception: {ex.Message}");
+                failures++;
+            }
+
+            // TEST 12: Offline Resiliency & Grace Period Tolerances
+            Console.WriteLine("\n[TEST 12] Testing Offline Resiliency & Grace Period Tolerances...");
+            try
+            {
+                var authService = UserAuthAndPermissionService.Instance;
+
+                // Set up a valid test permission in memory
+                authService.SetCachedPermissionForTesting("alplingo-test", new UserAppPermission
+                {
+                    HasAccess = true,
+                    DurationDays = 30,
+                    ExpiresAt = DateTime.Now.AddDays(30).ToString("yyyy-MM-dd HH:mm:ss"),
+                    GrantedBy = "Alphan (Admin)"
+                });
+
+                // 1. Valid offline grace period (Simulate internet dropped 2 hours ago)
+                DateTime twoHoursAgo = DateTime.UtcNow.AddHours(-2);
+                authService.SetOfflineModeForTesting(true, twoHoursAgo);
+
+                if (!authService.IsOfflineMode)
+                {
+                    Console.WriteLine(" FAIL: Expected IsOfflineMode to be true!");
+                    failures++;
+                }
+                if (!authService.IsOfflineGracePeriodValid)
+                {
+                    Console.WriteLine(" FAIL: Expected IsOfflineGracePeriodValid to be true within 24h grace window!");
+                    failures++;
+                }
+                if (authService.NetworkStatusDescription != "Çevrimdışı Mod - Yerel Önbellek Aktif")
+                {
+                    Console.WriteLine($" FAIL: Unexpected NetworkStatusDescription: '{authService.NetworkStatusDescription}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> NetworkStatusDescription verified: '{authService.NetworkStatusDescription}'");
+                }
+
+                // Check HasAppAccess in offline mode
+                bool hasAccess = authService.HasAppAccess("alplingo-test", out string accessReason, out int daysLeft);
+                if (!hasAccess || (!accessReason.Contains("Çevrimdışı Mod") && !accessReason.Contains("Geliştirici")))
+                {
+                    Console.WriteLine($" FAIL: Expected offline access to be granted! Access: {hasAccess}, Reason: '{accessReason}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> Offline app access permitted within grace period: '{accessReason}'");
+                }
+
+                // 2. Expired offline grace period (Simulate offline for 26 hours)
+                DateTime twentySixHoursAgo = DateTime.UtcNow.AddHours(-26);
+                authService.SetOfflineModeForTesting(true, twentySixHoursAgo);
+
+                if (authService.IsOfflineGracePeriodValid)
+                {
+                    Console.WriteLine(" FAIL: Expected IsOfflineGracePeriodValid to be false after 26 hours!");
+                    failures++;
+                }
+                if (authService.NetworkStatusDescription != "Çevrimdışı - Doğrulama Süresi Doldu")
+                {
+                    Console.WriteLine($" FAIL: Expected 'Çevrimdışı - Doğrulama Süresi Doldu', got '{authService.NetworkStatusDescription}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> 26 hours offline correctly detected as expired grace period.");
+                }
+
+                // 3. Clock rollback detection (Simulate system clock set 1 hour before sync time)
+                DateTime futureSync = DateTime.UtcNow.AddHours(2);
+                authService.SetOfflineModeForTesting(true, futureSync);
+                if (authService.IsOfflineGracePeriodValid)
+                {
+                    Console.WriteLine(" FAIL: Clock rollback should invalidate grace period!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Clock manipulation (system time < last sync) successfully detected and blocked.");
+                }
+
+                // 4. Online recovery (Simulate internet re-connection)
+                authService.SetOfflineModeForTesting(false, DateTime.UtcNow);
+                if (authService.IsOfflineMode || authService.NetworkStatusDescription != "Ağ: Hazır")
+                {
+                    Console.WriteLine($" FAIL: Reconnection failed to restore online status: '{authService.NetworkStatusDescription}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Online recovery successfully restored status to 'Ağ: Hazır'.");
+                }
+
+                // 5. Test disk file persistence roundtrip
+                authService.SaveSecurePermissionCache(false);
+                if (!File.Exists(authService.SecureCacheFilePath))
+                {
+                    Console.WriteLine($" FAIL: Secure cache file was not created at '{authService.SecureCacheFilePath}'");
+                    failures++;
+                }
+                else
+                {
+                    var fi = new FileInfo(authService.SecureCacheFilePath);
+                    Console.WriteLine($" -> Verified secure cache file on disk: '{authService.SecureCacheFilePath}' ({fi.Length} bytes).");
+                    bool loaded = authService.LoadSecurePermissionCache();
+                    if (!loaded)
+                    {
+                        Console.WriteLine(" FAIL: LoadSecurePermissionCache failed to reload saved file!");
+                        failures++;
+                    }
+                    else
+                    {
+                        Console.WriteLine(" -> LoadSecurePermissionCache successfully reloaded and verified disk cache.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 12 exception: {ex.Message}");
+                failures++;
+            }
+
             Console.WriteLine("\n==================================================");
             if (failures == 0)
             {

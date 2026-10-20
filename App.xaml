@@ -470,5 +470,82 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Cyber-Obsidian Pink Media Slider -->
+        <Style x:Key="PinkSliderThumbStyle" TargetType="Thumb">
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Grid>
+                            <Ellipse x:Name="ThumbGlow" Width="18" Height="18" Fill="#44FF2E93" Margin="-2" />
+                            <Ellipse x:Name="ThumbOuter" Width="13" Height="13" Fill="#FFFFFF" Stroke="#FF2E93" StrokeThickness="2.5" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbOuter" Property="Stroke" Value="#FF85C0" />
+                                <Setter TargetName="ThumbOuter" Property="Fill" Value="#FFFFFF" />
+                                <Setter TargetName="ThumbGlow" Property="Fill" Value="#88FF2E93" />
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbOuter" Property="Stroke" Value="#00E676" />
+                                <Setter TargetName="ThumbGlow" Property="Fill" Value="#8800E676" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PinkMediaSliderStyle" TargetType="Slider">
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="IsMoveToPointEnabled" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <Border x:Name="TrackBackground"
+                                    Height="5"
+                                    CornerRadius="2.5"
+                                    Background="#220F33"
+                                    BorderBrush="#4C1E5C"
+                                    BorderThickness="1" />
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="5" CornerRadius="2.5" Background="#FF2E93" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource PinkSliderThumbStyle}" />
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="5" CornerRadius="2.5" Background="Transparent" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TrackBackground" Property="BorderBrush" Value="#FF5CAA" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Application.Resources>
 </Application>

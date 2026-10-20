@@ -281,6 +281,19 @@ namespace AlpTogether.Models
         [JsonIgnore]
         public string AlphaGravitySummary => GetAppSummary("alphagravity", "AlphaGravity");
 
+        [JsonIgnore]
+        public string AlpRustSummary
+        {
+            get
+            {
+                if (AppPermissions.TryGetValue("alprust-plus", out var perm) && perm.HasAccess && !perm.IsExpired)
+                    return $"AlpRust+: {perm.StatusBadge}";
+                if (AppPermissions.TryGetValue("alprust", out var p2) && p2.HasAccess && !p2.IsExpired)
+                    return $"AlpRust+: {p2.StatusBadge}";
+                return "AlpRust+: ⛔ Yok";
+            }
+        }
+
         public string GetAppSummary(string appId, string shortName)
         {
             if (AppPermissions.TryGetValue(appId, out var perm) && perm.HasAccess && !perm.IsExpired)
@@ -454,5 +467,88 @@ namespace AlpTogether.Models
 
         [JsonPropertyName("relayFrameKey")]
         public string RelayFrameKey { get; set; } = string.Empty;
+    }
+
+    public class SecurePermissionCachePayload
+    {
+        [JsonPropertyName("hwid")]
+        public string Hwid { get; set; } = string.Empty;
+
+        [JsonPropertyName("username")]
+        public string Username { get; set; } = string.Empty;
+
+        [JsonPropertyName("lastSyncUtc")]
+        public DateTime LastSyncUtc { get; set; }
+
+        [JsonPropertyName("permissions")]
+        public Dictionary<string, UserAppPermission> Permissions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        [JsonPropertyName("isAdmin")]
+        public bool IsAdmin { get; set; }
+
+        [JsonIgnore]
+        public TimeSpan Age => DateTime.UtcNow - LastSyncUtc;
+    }
+
+    public class UserAppWhitelistItem : INotifyPropertyChanged
+    {
+        public string AppId { get; set; } = string.Empty;
+        public string AppName { get; set; } = string.Empty;
+        public string Subtitle { get; set; } = string.Empty;
+        public string IconPackUri { get; set; } = "pack://application:,,,/Assets/alptogether_logo_pink.png";
+        public string AccentColorHex { get; set; } = "#FF2E93";
+
+        private bool _hasAccess;
+        public bool HasAccess
+        {
+            get => _hasAccess;
+            set { if (_hasAccess != value) { _hasAccess = value; OnPropertyChanged(); } }
+        }
+
+        private string _statusBadge = "⛔ Yetkisiz";
+        public string StatusBadge
+        {
+            get => _statusBadge;
+            set { if (_statusBadge != value) { _statusBadge = value; OnPropertyChanged(); } }
+        }
+
+        private string _statusDescription = "Kullanım yetkisi verilmemiş.";
+        public string StatusDescription
+        {
+            get => _statusDescription;
+            set { if (_statusDescription != value) { _statusDescription = value; OnPropertyChanged(); } }
+        }
+
+        private string _statusColorHex = "#757575";
+        public string StatusColorHex
+        {
+            get => _statusColorHex;
+            set { if (_statusColorHex != value) { _statusColorHex = value; OnPropertyChanged(); } }
+        }
+
+        private int _selectedDurationIndex = 2; // 30 Gün (1 Ay)
+        public int SelectedDurationIndex
+        {
+            get => _selectedDurationIndex;
+            set { if (_selectedDurationIndex != value) { _selectedDurationIndex = value; OnPropertyChanged(); } }
+        }
+
+        public int GetDurationDays()
+        {
+            return SelectedDurationIndex switch
+            {
+                0 => 1,
+                1 => 7,
+                2 => 30,
+                3 => 90,
+                4 => 365,
+                5 => 99999,
+                _ => 30
+            };
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? prop = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
     }
 }
