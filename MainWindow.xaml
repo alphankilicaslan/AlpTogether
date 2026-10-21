@@ -315,7 +315,30 @@
                                            Text="Cihaz ID: ALP-..."
                                            Foreground="#9C7391"
                                            FontSize="10"
-                                           Margin="0,4,0,6" />
+                                           Margin="0,4,0,4" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock x:Name="TxtSidebarClientVersion" Text="AlpTogether v1.1.1" Foreground="#B987AD" FontSize="10.5" FontWeight="Bold" VerticalAlignment="Center" />
+                                    <Button Content="🔄 Denetle"
+                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                            Padding="6,2"
+                                            FontSize="9.5"
+                                            Margin="8,0,0,0"
+                                            Click="BtnCheckUpdatesQuick_Click"
+                                            ToolTip="AlpTogether güncellemelerini GitHub üzerinden denetle" />
+                                </StackPanel>
+                                <Border x:Name="BrdSidebarUpdateBadge"
+                                        Visibility="Collapsed"
+                                        Background="#FF2E93"
+                                        CornerRadius="6"
+                                        Padding="8,5"
+                                        Margin="0,0,0,6"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="BrdSidebarUpdateBadge_MouseLeftButtonDown">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="🚀 " FontSize="11" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="TxtSidebarUpdateBadgeText" Text="Yeni Güncelleme Mevcut!" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
                                 <Button Content="🌐 GitHub İstemci Sayfasını Aç"
                                         Style="{StaticResource PinkSecondaryButtonStyle}"
                                         Padding="8,5"
@@ -417,7 +440,55 @@
                     </Border>
 
                     <!-- 2. ANNOUNCEMENT & ECOSYSTEM STATUS RIBBON -->
-                    <Border x:Name="PnlAnnouncementRibbon"
+                    <StackPanel Grid.Row="1">
+                        <!-- 2.1 CLIENT SELF-UPDATE BANNER -->
+                        <Border x:Name="PnlClientUpdateBanner"
+                                Background="#2A0B2C"
+                                BorderBrush="#FF2E93"
+                                BorderThickness="0,0,0,1.5"
+                                Padding="22,8"
+                                Visibility="Collapsed">
+                            <DockPanel LastChildFill="True">
+                                <Border DockPanel.Dock="Left" Background="#FF2E93" CornerRadius="5" Padding="7,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <TextBlock Text="YENİ SÜRÜM MEVCUT" Foreground="#FFFFFF" FontSize="10" FontWeight="ExtraBold" />
+                                </Border>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button x:Name="BtnBannerUpdateNow"
+                                            Content="🚀 Hemen Güncelle"
+                                            Style="{StaticResource PinkPrimaryButtonStyle}"
+                                            Padding="13,5"
+                                            FontSize="11.5"
+                                            FontWeight="Bold"
+                                            Margin="0,0,8,0"
+                                            Click="BtnClientUpdateOpenModal_Click" />
+                                    <Button x:Name="BtnBannerViewNotes"
+                                            Content="Yama Notları"
+                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                            Padding="10,5"
+                                            FontSize="11"
+                                            Margin="0,0,8,0"
+                                            Click="BtnBannerViewNotes_Click" />
+                                    <Button Content="✕"
+                                            Foreground="#FF85C0"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Cursor="Hand"
+                                            Click="BtnDismissUpdateBanner_Click"
+                                            ToolTip="Güncelleme bildirimini kapat" />
+                                </StackPanel>
+                                <TextBlock x:Name="TxtClientUpdateBannerText"
+                                           Text="AlpTogether'ın yeni bir sürümü yayınlandı! Tek tıkla kendinizi güncelleyin."
+                                           Foreground="#FFE0F1"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                        </Border>
+
+                        <!-- 2.2 ANNOUNCEMENT & ECOSYSTEM STATUS RIBBON -->
+                        <Border x:Name="PnlAnnouncementRibbon"
                             Grid.Row="1"
                             Background="#1B0B28"
                             BorderBrush="#3D1A4C"
@@ -439,6 +510,8 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
+
+                    </StackPanel>
 
                     <!-- 3. MAIN ANIMATED VIEWPORT -->
                     <Grid Grid.Row="2" x:Name="ViewportContainer" Margin="0">
@@ -2518,6 +2591,42 @@
                                                   FontSize="12.5"
                                                   Margin="0,0,0,18" />
 
+                                        <!-- AlpTogether Client Self-Update Section -->
+                                        <Border Background="#160B24" BorderBrush="#3D1D4D" BorderThickness="1" CornerRadius="12" Padding="16,14" Margin="0,0,0,18">
+                                            <StackPanel>
+                                                <DockPanel Margin="0,0,0,8">
+                                                    <TextBlock Text="🚀 AlpTogether Sürüm &amp; Güncelleme Sistemi" Foreground="#FF85C0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
+                                                    <Border Background="#2A1435" CornerRadius="6" Padding="8,3" HorizontalAlignment="Right">
+                                                        <TextBlock x:Name="TxtSettingsClientVersion" Text="v1.1.1" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" />
+                                                    </Border>
+                                                </DockPanel>
+
+                                                <TextBlock Text="AlpTogether GitHub Releases üzerinden kendini otomatik denetler ve tek tıkla in-place (kesintisiz) olarak günceller."
+                                                           Foreground="#BCA4B7" FontSize="11.5" TextWrapping="Wrap" Margin="0,0,0,10" LineHeight="16" />
+
+                                                <DockPanel Margin="0,0,0,10">
+                                                    <Button x:Name="BtnCheckClientUpdatesSettings"
+                                                            Content="🔄 AlpTogether Güncellemelerini Şimdi Denetle"
+                                                            Style="{StaticResource PinkSecondaryButtonStyle}"
+                                                            Padding="14,7"
+                                                            FontSize="11.5"
+                                                            Click="BtnCheckUpdatesQuick_Click" />
+                                                    <TextBlock x:Name="TxtSettingsUpdateStatus"
+                                                               Text="Henüz denetlenmedi"
+                                                               Foreground="#9E7696"
+                                                               FontSize="11"
+                                                               VerticalAlignment="Center"
+                                                               Margin="12,0,0,0" />
+                                                </DockPanel>
+
+                                                <CheckBox x:Name="ChkSettingAutoCheckUpdates"
+                                                          Content="AlpTogether açılışında yeni sürümleri arka planda otomatik denetle"
+                                                          Foreground="#FFEAF5"
+                                                          FontSize="12"
+                                                          IsChecked="True" />
+                                            </StackPanel>
+                                        </Border>
+
                                         <Button Content="💾 Tüm İstemci Ayarlarını Kaydet"
                                                 Style="{StaticResource PinkPrimaryButtonStyle}"
                                                 Padding="18,11"
@@ -2711,6 +2820,117 @@
                                 FontSize="13.5"
                                 FontWeight="Bold"
                                 Click="BtnSaveUsernamePrompt_Click" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ==================== CLIENT SELF-UPDATE MODAL OVERLAY ==================== -->
+            <Grid x:Name="ClientUpdateModalOverlay"
+                  Visibility="Collapsed"
+                  Background="#E608040F"
+                  Panel.ZIndex="2100">
+                <Border Width="560"
+                        Background="#190C28"
+                        BorderBrush="#FF2E93"
+                        BorderThickness="1.5"
+                        CornerRadius="16"
+                        Padding="28,26"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FF2E93" BlurRadius="36" ShadowDepth="0" Opacity="0.55" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <!-- Modal Header -->
+                        <DockPanel Margin="0,0,0,12">
+                            <Border Background="#FF2E93" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left">
+                                <TextBlock Text="ALPTOGETHER SÜRÜM GÜNCELLEMESİ" Foreground="#FFFFFF" FontSize="10" FontWeight="ExtraBold" />
+                            </Border>
+                            <Button Content="✕"
+                                    Foreground="#C8A8C0"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    HorizontalAlignment="Right"
+                                    Cursor="Hand"
+                                    Click="BtnCloseClientUpdateModal_Click" />
+                        </DockPanel>
+
+                        <TextBlock x:Name="TxtClientUpdateModalTitle" Text="🚀 Yeni Sürüm Hazır!" Foreground="#FFFFFF" FontSize="22" FontWeight="ExtraBold" Margin="0,0,0,4" />
+                        <TextBlock x:Name="TxtClientUpdateVersionCompare"
+                                   Text="Kurulu Sürüm: v1.1.1  ➜  Yeni Sürüm: v1.1.1"
+                                   Foreground="#00E5FF"
+                                   FontSize="13"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,12" />
+
+                        <!-- Release notes container -->
+                        <Border Background="#12071C" BorderBrush="#3D1D4D" BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="📋 Yeni Sürümdeki Değişiklikler &amp; Yama Notları:" Foreground="#FF85C0" FontSize="11" FontWeight="Bold" Margin="0,0,0,6" />
+                                <ScrollViewer MaxHeight="160" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="TxtClientUpdateNotes"
+                                               Text="Güncelleme detayları alınıyor..."
+                                               Foreground="#D9B6CD"
+                                               FontSize="11.5"
+                                               TextWrapping="Wrap"
+                                               LineHeight="17" />
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Download Progress Section (Visible during download) -->
+                        <StackPanel x:Name="PnlClientUpdateProgress" Visibility="Collapsed" Margin="0,0,0,14">
+                            <DockPanel Margin="0,0,0,6">
+                                <TextBlock x:Name="TxtClientUpdateProgressStatus"
+                                           Text="İndiriliyor... %0"
+                                           Foreground="#FFE0F1"
+                                           FontSize="11.5"
+                                           FontWeight="SemiBold" />
+                                <TextBlock x:Name="TxtClientUpdateProgressPercent"
+                                           Text="%0"
+                                           Foreground="#FF2E93"
+                                           FontSize="11.5"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Right" />
+                            </DockPanel>
+                            <ProgressBar x:Name="PbClientUpdateDownload"
+                                         Height="8"
+                                         Minimum="0"
+                                         Maximum="100"
+                                         Value="0"
+                                         Foreground="#FF2E93"
+                                         Background="#2A1435"
+                                         BorderThickness="0" />
+                        </StackPanel>
+
+                        <!-- Status / Error text -->
+                        <TextBlock x:Name="TxtClientUpdateModalStatus"
+                                   Text=""
+                                   Foreground="#FF1744"
+                                   FontSize="11.5"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,14"
+                                   TextWrapping="Wrap"
+                                   Visibility="Collapsed" />
+
+                        <!-- Action Buttons -->
+                        <DockPanel LastChildFill="False">
+                            <Button x:Name="BtnClientUpdateCancel"
+                                    Content="Daha Sonra"
+                                    Style="{StaticResource PinkSecondaryButtonStyle}"
+                                    Padding="18,9"
+                                    Click="BtnCloseClientUpdateModal_Click" />
+
+                            <Button x:Name="BtnClientUpdateExecute"
+                                    Content="🚀 İndir, Güncelle ve Yeniden Başlat"
+                                    DockPanel.Dock="Right"
+                                    Style="{StaticResource PinkPrimaryButtonStyle}"
+                                    Padding="20,10"
+                                    FontWeight="Bold"
+                                    Click="BtnClientUpdateExecute_Click" />
+                        </DockPanel>
                     </StackPanel>
                 </Border>
             </Grid>

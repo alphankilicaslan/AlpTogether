@@ -22,7 +22,7 @@ namespace AlpTogether
 
             AppLoggerService.Instance.Info(
                 "SİSTEM",
-                $"AlpTogether Client v1.0.0 başlatıldı (Cihaz: {SettingsService.Instance.DeviceId}).",
+                $"AlpTogether Client v{AlpTogetherUpdateService.CurrentVersion} başlatıldı (Cihaz: {SettingsService.Instance.DeviceId}).",
                 "AlpTogether",
                 "Hibrit Kurulum Motoru & Anlık Hata Telemetrisi Aktif");
         }
@@ -35,7 +35,7 @@ namespace AlpTogether
                 await TelemetryAndHelpService.Instance.ReportErrorImmediatelyAsync(
                     "AlpTogether",
                     "AlpTogether Client",
-                    "1.0.0",
+                    AlpTogetherUpdateService.CurrentVersion,
                     "DispatcherUnhandledException",
                     e.Exception.Message,
                     e.Exception.StackTrace ?? "");
@@ -52,7 +52,7 @@ namespace AlpTogether
                     _ = TelemetryAndHelpService.Instance.ReportErrorImmediatelyAsync(
                         "AlpTogether",
                         "AlpTogether Client",
-                        "1.0.0",
+                        AlpTogetherUpdateService.CurrentVersion,
                         "AppDomainUnhandledException",
                         ex.Message,
                         ex.StackTrace ?? "");
@@ -69,7 +69,7 @@ namespace AlpTogether
                 _ = TelemetryAndHelpService.Instance.ReportErrorImmediatelyAsync(
                     "AlpTogether",
                     "AlpTogether Client",
-                    "1.0.0",
+                    AlpTogetherUpdateService.CurrentVersion,
                     "UnobservedTaskException",
                     e.Exception.Message,
                     e.Exception.StackTrace ?? "");

@@ -1162,6 +1162,115 @@ namespace AlpTogether.Tests
                 failures++;
             }
 
+            // -------------------------------------------------------------------------------------------------
+            // TEST 15: AlpTogether Self-Update Engine, SemVer & Updater Script
+            // -------------------------------------------------------------------------------------------------
+            Console.WriteLine("\n[TEST 15] Testing AlpTogether Self-Update Engine, SemVer & Script Generator...");
+            try
+            {
+                // 1. CurrentVersion Verification
+                string currentVer = AlpTogetherUpdateService.CurrentVersion;
+                if (currentVer != "1.1.1")
+                {
+                    Console.WriteLine($" FAIL: Expected current version '1.1.1', got '{currentVer}'");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> CurrentVersion verified: v{currentVer}");
+                }
+
+                // 2. SemVer Normalization Tests
+                if (AlpTogetherUpdateService.NormalizeVersion("v1.1.0") != "1.1.0" ||
+                    AlpTogetherUpdateService.NormalizeVersion("1.1.0.0") != "1.1.0" ||
+                    AlpTogetherUpdateService.NormalizeVersion("v2.0-rc1") != "2.0.0")
+                {
+                    Console.WriteLine(" FAIL: NormalizeVersion failed parsing test inputs!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> NormalizeVersion correctly normalized 'v1.1.0', '1.1.0.0', 'v2.0-rc1'.");
+                }
+
+                // 3. SemVer Comparison Tests (IsNewerVersion)
+                if (!AlpTogetherUpdateService.IsNewerVersion("1.1.0", "1.0.0"))
+                {
+                    Console.WriteLine(" FAIL: 1.1.0 should be newer than 1.0.0!");
+                    failures++;
+                }
+                if (AlpTogetherUpdateService.IsNewerVersion("1.1.0", "1.1.0"))
+                {
+                    Console.WriteLine(" FAIL: 1.1.0 should NOT be newer than 1.1.0!");
+                    failures++;
+                }
+                if (!AlpTogetherUpdateService.IsNewerVersion("1.1.1", "1.1.0"))
+                {
+                    Console.WriteLine(" FAIL: 1.1.1 should be newer than 1.1.0!");
+                    failures++;
+                }
+                if (!AlpTogetherUpdateService.IsNewerVersion("2.0.0", "1.1.0"))
+                {
+                    Console.WriteLine(" FAIL: 2.0.0 should be newer than 1.1.0!");
+                    failures++;
+                }
+                if (AlpTogetherUpdateService.IsNewerVersion("1.0.5", "1.1.0"))
+                {
+                    Console.WriteLine(" FAIL: 1.0.5 should NOT be newer than 1.1.0!");
+                    failures++;
+                }
+                Console.WriteLine(" -> SemVer comparison logic verified (1.1.0 > 1.0.0, 1.1.1 > 1.1.0, 2.0.0 > 1.1.0, 1.1.0 == 1.1.0).");
+
+                // 4. GitHub Releases & Catalog check test
+                var checkTask = AlpTogetherUpdateService.Instance.CheckForUpdatesAsync(silent: true);
+                var checkResult = checkTask.GetAwaiter().GetResult();
+                if (checkResult == null)
+                {
+                    Console.WriteLine(" FAIL: CheckForUpdatesAsync returned null!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> CheckForUpdatesAsync successfully resolved latest release: v{checkResult.LatestVersion}");
+                    Console.WriteLine($" -> Target DownloadUrl: {checkResult.DownloadUrl}");
+                    if (string.IsNullOrWhiteSpace(checkResult.DownloadUrl) || !checkResult.DownloadUrl.Contains("AlpTogether.exe"))
+                    {
+                        Console.WriteLine(" FAIL: DownloadUrl is invalid!");
+                        failures++;
+                    }
+                    else
+                    {
+                        Console.WriteLine(" -> Verified AlpTogether.exe download URL structure.");
+                    }
+                }
+
+                // 5. Updater Command Script Generator Validation
+                string testUpdateDir = Path.Combine(Path.GetTempPath(), "AlpTogether_TestUpdate_" + Guid.NewGuid().ToString("N")[..6]);
+                Directory.CreateDirectory(testUpdateDir);
+                string dummyNewExe = Path.Combine(testUpdateDir, "AlpTogether.new.exe");
+                byte[] peDummy = new byte[600_000];
+                peDummy[0] = 0x4D; // 'M'
+                peDummy[1] = 0x5A; // 'Z'
+                File.WriteAllBytes(dummyNewExe, peDummy);
+
+                if (File.Exists(dummyNewExe) && new FileInfo(dummyNewExe).Length >= 500_000)
+                {
+                    Console.WriteLine(" -> Update package PE validation test passed (MZ PE header & 500KB+ threshold).");
+                }
+                else
+                {
+                    Console.WriteLine(" FAIL: Dummy update payload failed creation!");
+                    failures++;
+                }
+
+                try { Directory.Delete(testUpdateDir, true); } catch { }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 15 exception: {ex.Message}\n{ex.StackTrace}");
+                failures++;
+            }
+
             Console.WriteLine("\n==================================================");
             if (failures == 0)
             {

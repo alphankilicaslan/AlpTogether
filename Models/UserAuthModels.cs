@@ -183,7 +183,7 @@ namespace AlpTogether.Models
         public string AlpNetHwid { get; set; } = string.Empty;
 
         [JsonPropertyName("clientVersion")]
-        public string ClientVersion { get; set; } = "1.0.0";
+        public string ClientVersion { get; set; } = "1.1.1";
 
         [JsonPropertyName("isAfk")]
         public bool IsAfk { get; set; }

@@ -543,7 +543,7 @@ namespace AlpTogether.Services
                     RegisteredAt = string.IsNullOrWhiteSpace(SettingsService.Instance.Current.UserRegistrationDate) ? nowStr : SettingsService.Instance.Current.UserRegistrationDate,
                     LastSeen = nowStr,
                     AlpNetHwid = LocalAlpNetHwid,
-                    ClientVersion = "1.0.0"
+                    ClientVersion = AlpTogetherUpdateService.CurrentVersion
                 };
 
                 // Eğer Firebase'de önceden kayıtlıysa var olan izinleri koru
@@ -908,7 +908,7 @@ namespace AlpTogether.Services
                         lastSeen = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                         machineName = Environment.MachineName,
                         alpnetHwid = LocalAlpNetHwid,
-                        clientVersion = "1.0.0",
+                        clientVersion = AlpTogetherUpdateService.CurrentVersion,
                         isAfk = isAfk,
                         afkMinutes = afkMinutes,
                         currentActivity = actText,

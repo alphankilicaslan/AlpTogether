@@ -123,12 +123,20 @@ namespace AlpTogether
             DrawSpeedChart();
             _processMonitorTimer.Start();
 
+            // Bind AlpTogether self-update engine
+            AlpTogetherUpdateService.Instance.OnUpdateCheckCompleted += Instance_OnClientUpdateCheckCompleted;
+            AlpTogetherUpdateService.Instance.OnDownloadProgressChanged += Instance_OnClientDownloadProgressChanged;
+            if (SettingsService.Instance.Current.AutoCheckClientUpdates)
+            {
+                _ = AlpTogetherUpdateService.Instance.CheckForUpdatesAsync(silent: true);
+            }
+
             // Send client startup telemetry
             _ = TelemetryAndHelpService.Instance.ReportEventAsync(
                 "CLIENT_STARTED",
                 "AlpTogether",
                 "AlpTogether Client",
-                "1.0.0",
+                AlpTogetherUpdateService.CurrentVersion,
                 $"İstemci başlatıldı ({Environment.OSVersion}, .NET {Environment.Version})");
 
             // Load incoming tickets & error telemetry in background
@@ -597,6 +605,8 @@ namespace AlpTogether
             CatalogAndHybridInstallerService.Instance.OnGlobalBandwidthTick -= Instance_OnGlobalBandwidthTick;
             CatalogAndHybridInstallerService.Instance.OnCatalogUpdated -= Instance_OnCatalogUpdated;
             DeveloperAuthService.Instance.OnAdminModeChanged -= Instance_OnAdminModeChanged;
+            AlpTogetherUpdateService.Instance.OnUpdateCheckCompleted -= Instance_OnClientUpdateCheckCompleted;
+            AlpTogetherUpdateService.Instance.OnDownloadProgressChanged -= Instance_OnClientDownloadProgressChanged;
 
             if (_onPermissionsChangedHandler != null)
             {
@@ -1495,6 +1505,9 @@ namespace AlpTogether
             ChkSettingAutoTelemetry.IsChecked = cfg.AutoSendCrashTelemetry;
             ChkSettingMonitorChildCrashes.IsChecked = cfg.MonitorLaunchedAppsForCrashes;
             ChkSettingDesktopShortcut.IsChecked = cfg.CreateDesktopShortcutOnInstall;
+            ChkSettingAutoCheckUpdates.IsChecked = cfg.AutoCheckClientUpdates;
+            TxtSettingsClientVersion.Text = $"v{AlpTogetherUpdateService.CurrentVersion}";
+            TxtSidebarClientVersion.Text = $"AlpTogether v{AlpTogetherUpdateService.CurrentVersion}";
 
             RefreshCustomSlotUi();
         }
@@ -1508,6 +1521,7 @@ namespace AlpTogether
             cfg.AutoSendCrashTelemetry = ChkSettingAutoTelemetry.IsChecked == true;
             cfg.MonitorLaunchedAppsForCrashes = ChkSettingMonitorChildCrashes.IsChecked == true;
             cfg.CreateDesktopShortcutOnInstall = ChkSettingDesktopShortcut.IsChecked == true;
+            cfg.AutoCheckClientUpdates = ChkSettingAutoCheckUpdates.IsChecked == true;
 
             SettingsService.Instance.Save();
             AppLoggerService.Instance.Success("AYARLAR", "Bulut, GitHub ve Telemetri ayarları kaydedildi.");
@@ -1574,6 +1588,148 @@ namespace AlpTogether
             BtnSaveUsernamePrompt.IsEnabled = true;
             BtnSaveUsernamePrompt.Content = "✓ Kaydet ve AlpTogether'a Başla";
         }
+
+        #region AlpTogether Client Self-Update & Version Handlers
+        private void Instance_OnClientUpdateCheckCompleted(UpdateCheckResult result)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (result.IsUpdateAvailable)
+                {
+                    PnlClientUpdateBanner.Visibility = Visibility.Visible;
+                    TxtClientUpdateBannerText.Text = $"🚀 AlpTogether v{result.LatestVersion} yayınlandı! (Mevcut: v{result.CurrentVersion}) - Tek tıkla güncelleyin.";
+                    BrdSidebarUpdateBadge.Visibility = Visibility.Visible;
+                    TxtSidebarUpdateBadgeText.Text = $"Yeni Güncelleme: v{result.LatestVersion}!";
+                    TxtSettingsUpdateStatus.Text = $"Yeni sürüm mevcut: v{result.LatestVersion}";
+                    TxtSettingsUpdateStatus.Foreground = new SolidColorBrush(Color.FromRgb(255, 46, 147));
+                }
+                else
+                {
+                    PnlClientUpdateBanner.Visibility = Visibility.Collapsed;
+                    BrdSidebarUpdateBadge.Visibility = Visibility.Collapsed;
+                    TxtSettingsUpdateStatus.Text = $"AlpTogether en güncel sürümde (v{result.CurrentVersion}).";
+                    TxtSettingsUpdateStatus.Foreground = new SolidColorBrush(Color.FromRgb(0, 230, 118));
+                }
+            });
+        }
+
+        private void Instance_OnClientDownloadProgressChanged(double pct, string status)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                PbClientUpdateDownload.Value = pct;
+                TxtClientUpdateProgressPercent.Text = $"%{pct:0}";
+                TxtClientUpdateProgressStatus.Text = status;
+            });
+        }
+
+        private void OpenClientUpdateModal()
+        {
+            var upd = AlpTogetherUpdateService.Instance;
+            TxtClientUpdateModalTitle.Text = upd.IsUpdateAvailable ? "🚀 Yeni Sürüm Hazır!" : "🚀 AlpTogether Sürüm Bilgisi";
+            TxtClientUpdateVersionCompare.Text = $"Kurulu Sürüm: v{AlpTogetherUpdateService.CurrentVersion}  ➜  Yeni Sürüm: v{upd.LatestVersion}";
+            TxtClientUpdateNotes.Text = string.IsNullOrWhiteSpace(upd.ReleaseNotes)
+                ? $"AlpTogether v{upd.LatestVersion} sürümü GitHub Releases üzerinde yayınlandı.\n• Yeni özellikler ve performans iyileştirmeleri\n• Otomatik sürüm güncelleme motoru\n• Canlı telemetri ve hata bildirim sistemi"
+                : upd.ReleaseNotes;
+
+            PnlClientUpdateProgress.Visibility = Visibility.Collapsed;
+            PbClientUpdateDownload.Value = 0;
+            TxtClientUpdateProgressPercent.Text = "%0";
+            TxtClientUpdateModalStatus.Visibility = Visibility.Collapsed;
+            TxtClientUpdateModalStatus.Text = "";
+            BtnClientUpdateExecute.IsEnabled = true;
+            BtnClientUpdateCancel.IsEnabled = true;
+
+            ClientUpdateModalOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void BtnClientUpdateOpenModal_Click(object sender, RoutedEventArgs e)
+        {
+            OpenClientUpdateModal();
+        }
+
+        private void BtnBannerViewNotes_Click(object sender, RoutedEventArgs e)
+        {
+            OpenClientUpdateModal();
+        }
+
+        private void BtnDismissUpdateBanner_Click(object sender, RoutedEventArgs e)
+        {
+            PnlClientUpdateBanner.Visibility = Visibility.Collapsed;
+        }
+
+        private void BrdSidebarUpdateBadge_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            OpenClientUpdateModal();
+        }
+
+        private async void BtnCheckUpdatesQuick_Click(object sender, RoutedEventArgs e)
+        {
+            TxtSettingsUpdateStatus.Text = "GitHub Releases denetleniyor...";
+            TxtSettingsUpdateStatus.Foreground = new SolidColorBrush(Color.FromRgb(255, 133, 192));
+
+            var res = await AlpTogetherUpdateService.Instance.CheckForUpdatesAsync(silent: false);
+            if (res.IsUpdateAvailable)
+            {
+                OpenClientUpdateModal();
+            }
+            else
+            {
+                MessageBox.Show(
+                    $"AlpTogether v{AlpTogetherUpdateService.CurrentVersion} şu anda en güncel sürümdür.\nGitHub üzerinde yeni bir sürüm bulunamadı.",
+                    "AlpTogether Güncel",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+        }
+
+        private void BtnCloseClientUpdateModal_Click(object sender, RoutedEventArgs e)
+        {
+            if (AlpTogetherUpdateService.Instance.IsDownloading)
+            {
+                var confirm = MessageBox.Show(
+                    "Güncelleme indirmesi arka planda devam ediyor. Kapatmak istediğinize emin misiniz?",
+                    "İndirme Sürüyor",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+                if (confirm != MessageBoxResult.Yes) return;
+            }
+            ClientUpdateModalOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private async void BtnClientUpdateExecute_Click(object sender, RoutedEventArgs e)
+        {
+            BtnClientUpdateExecute.IsEnabled = false;
+            BtnClientUpdateCancel.IsEnabled = false;
+            PnlClientUpdateProgress.Visibility = Visibility.Visible;
+            TxtClientUpdateModalStatus.Visibility = Visibility.Collapsed;
+            TxtClientUpdateProgressPercent.Text = "%0";
+            PbClientUpdateDownload.Value = 0;
+            TxtClientUpdateProgressStatus.Text = "GitHub CDN üzerinden indiriliyor...";
+
+            var progress = new Progress<double>(pct =>
+            {
+                PbClientUpdateDownload.Value = pct;
+                TxtClientUpdateProgressPercent.Text = $"%{pct:0}";
+            });
+
+            bool ok = await AlpTogetherUpdateService.Instance.PerformFullSelfUpdateAsync(progress, status =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    TxtClientUpdateProgressStatus.Text = status;
+                });
+            });
+
+            if (!ok)
+            {
+                TxtClientUpdateModalStatus.Visibility = Visibility.Visible;
+                TxtClientUpdateModalStatus.Text = "Güncelleme indirilirken veya başlatılırken hata oluştu. Lütfen bağlantınızı kontrol edip tekrar deneyin.";
+                BtnClientUpdateExecute.IsEnabled = true;
+                BtnClientUpdateCancel.IsEnabled = true;
+            }
+        }
+        #endregion
 
         private void TxtPromptUsernameInput_KeyDown(object sender, KeyEventArgs e)
         {
