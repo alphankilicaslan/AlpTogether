@@ -1388,8 +1388,8 @@ namespace AlpTogether.Services
                         Description = "AlpNet Pulse; düşük gecikmeli Cloudflare WARP tünel yönetimi, DNSCrypt/DoH şifreleme, paket analizi ve gerçek zamanlı yapay zeka sesli çeviri motorunu (translator.exe) tek çatı altında sunan amiral gemisi ağ ve iletişim aracıdır.",
                         AccentColorHex = "#1E88E5",
                         IconPackUri = "pack://application:,,,/Assets/AppIcons/alpnet_official.png",
-                        LatestVersion = "2.2.6",
-                        ReleaseDate = "18 Ekim 2026",
+                        LatestVersion = "2.2.7",
+                        ReleaseDate = "21 Ekim 2026",
                         DownloadSizeText = "81.4 MB",
                         SizeBytes = 81400000,
                         PackageType = AppPackageType.HybridSetupAndFiles,
@@ -1419,6 +1419,21 @@ namespace AlpTogether.Services
                         },
                         PatchNotes = new List<PatchNoteEntry>
                         {
+                            new PatchNoteEntry
+                            {
+                                Version = "2.2.7",
+                                ReleaseDate = "21 Ekim 2026",
+                                Title = "Rust & EAC Anti-Cheat Uyumluluğu, WireSock DNS İyileştirmesi ve Gelişmiş Ağ Düzeltmeleri",
+                                Tag = "KRİTİK GÜNCELLEME",
+                                Changes = new List<string>
+                                {
+                                    "Easy Anti-Cheat (EAC) korumalı oyunlar (Rust vb.) için ağ sürücüsü ve paket yönlendirme çakışmaları tamamen giderildi; oyun sunucularına bağlantı engelleri kaldırıldı.",
+                                    "Cloudflare WARP (WireSock) profilinde genel DNS zorlaması ve port çakışmaları temizlendi; ISP bazlı sorgu kilitlenmeleri çözüldü.",
+                                    "Windows 11 DoH (DNS-over-HTTPS) otomatik kural çakışmaları devre dışı bırakılarak kararlı standart sorgu akışı sağlandı.",
+                                    "Ağ arayüzlerindeki gecikmeye yol açan TcpDelAckTicks kayıt defteri anahtarları optimize edildi ve sürücü temizliği uygulandı.",
+                                    "AlpTogether ekosistemi ve bulut yayın motoru v2.2.7 tam senkronize edildi."
+                                }
+                            },
                             new PatchNoteEntry
                             {
                                 Version = "2.2.6",
