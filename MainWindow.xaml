@@ -1,4 +1,4 @@
-<Window x:Class="AlpTogether.MainWindow"
+﻿<Window x:Class="AlpTogether.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
@@ -1904,6 +1904,18 @@
                                                                                    FontSize="8"
                                                                                    FontWeight="ExtraBold" />
                                                                     </Border>
+                                                                    <Border Background="#2000E5FF"
+                                                                            BorderBrush="#6000E5FF"
+                                                                            BorderThickness="0.8"
+                                                                            CornerRadius="4"
+                                                                            Padding="5,1"
+                                                                            Margin="6,0,0,0"
+                                                                            VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding VersionBadge}"
+                                                                                   Foreground="#00E5FF"
+                                                                                   FontSize="8.5"
+                                                                                   FontWeight="Bold" />
+                                                                    </Border>
                                                                 </StackPanel>
                                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0" VerticalAlignment="Center">
                                                                     <TextBlock Text="{Binding PresenceStatusText}"
@@ -1976,6 +1988,12 @@
                                                                     <TextBlock x:Name="TxtDevUserPresenceStatus" Text="(Çevrimiçi)" Foreground="#00E676" FontSize="12" FontWeight="SemiBold" Margin="8,0,0,0" VerticalAlignment="Center" />
                                                                 </StackPanel>
                                                                 <TextBlock x:Name="TxtDevUserActivity" Text="⚡ AlpLingo Açık (42 dk)" Foreground="#00E5FF" FontSize="11" FontWeight="SemiBold" Margin="0,2,0,0" />
+                                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,1" VerticalAlignment="Center">
+                                                                    <Border Background="#26FF2E93" BorderBrush="#FF2E93" BorderThickness="1" CornerRadius="5" Padding="6,2" Margin="0,0,8,0">
+                                                                        <TextBlock x:Name="TxtDevUserVersionBadge" Text="🚀 v1.1.1" Foreground="#FF85C0" FontSize="10.5" FontWeight="ExtraBold" />
+                                                                    </Border>
+                                                                    <TextBlock x:Name="TxtDevUserAllVersions" Text="İstemci: v1.1.1" Foreground="#00E5FF" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                                </StackPanel>
                                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                                     <TextBlock Text="Kayıt: " Foreground="#A97E9C" FontSize="11" />
                                                                     <TextBlock x:Name="TxtDevUserRegDate" Text="18.10.2026 18:27" Foreground="#D9B6CD" FontSize="11" Margin="0,0,12,0" />
@@ -2058,9 +2076,14 @@
                                                                                 <TextBlock Text="{Binding AppName}" Foreground="#FFFFFF" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
                                                                                 <TextBlock Text="{Binding Subtitle, StringFormat=' ({0})'}" Foreground="#C48FB3" FontSize="11.5" VerticalAlignment="Center" Margin="4,0,0,0" />
                                                                             </StackPanel>
-                                                                            <Border Background="#26000000" BorderBrush="{Binding StatusColorHex}" BorderThickness="1" CornerRadius="6" Padding="8,3" HorizontalAlignment="Right">
-                                                                                <TextBlock Text="{Binding StatusBadge}" Foreground="{Binding StatusColorHex}" FontSize="10.5" FontWeight="Bold" />
-                                                                            </Border>
+                                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                                                <Border Background="#1C1028" BorderBrush="{Binding InstalledVersionColorHex}" BorderThickness="1" CornerRadius="6" Padding="8,3" Margin="0,0,6,0">
+                                                                                    <TextBlock Text="{Binding InstalledVersionBadge}" Foreground="{Binding InstalledVersionColorHex}" FontSize="10" FontWeight="Bold" />
+                                                                                </Border>
+                                                                                <Border Background="#26000000" BorderBrush="{Binding StatusColorHex}" BorderThickness="1" CornerRadius="6" Padding="8,3">
+                                                                                    <TextBlock Text="{Binding StatusBadge}" Foreground="{Binding StatusColorHex}" FontSize="10.5" FontWeight="Bold" />
+                                                                                </Border>
+                                                                            </StackPanel>
                                                                         </DockPanel>
 
                                                                         <TextBlock Text="{Binding StatusDescription}" Grid.Row="1" Foreground="#BCA4B7" FontSize="11" Margin="0,6,0,10" />

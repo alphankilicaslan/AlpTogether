@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -1831,6 +1831,8 @@ namespace AlpTogether
             }
             catch { }
             TxtDevUserActivity.Text = user.ActivityDisplayText;
+            TxtDevUserVersionBadge.Text = $"🚀 {user.VersionBadge}";
+            TxtDevUserAllVersions.Text = user.VersionDetailDisplay;
             TxtDevUserRegDate.Text = user.RegisteredAtDisplay;
             TxtDevUserLastSeen.Text = user.LastSeenDisplay;
             TxtDevUserWarpStatus.Text = user.WarpFullDisplayStatus;
@@ -1954,6 +1956,18 @@ namespace AlpTogether
                     user.AppPermissions.TryGetValue("alprust", out perm);
                 }
 
+                string appVer = user.GetAppInstalledVersion(def.Id);
+                if (!string.IsNullOrWhiteSpace(appVer))
+                {
+                    item.InstalledVersionBadge = $"⚡ v{appVer.TrimStart('v', 'V')}";
+                    item.InstalledVersionColorHex = "#00E5FF";
+                }
+                else
+                {
+                    item.InstalledVersionBadge = "⚪ Bilgi Yok";
+                    item.InstalledVersionColorHex = "#7E5676";
+                }
+
                 ApplyUserPermissionToItem(item, perm);
                 _userWhitelistApps.Add(item);
             }
@@ -1978,6 +1992,18 @@ namespace AlpTogether
                             AccentColorHex = "#FF2E93",
                             SelectedDurationIndex = 2
                         };
+
+                        string catAppVer = user.GetAppInstalledVersion(catApp.Id);
+                        if (!string.IsNullOrWhiteSpace(catAppVer))
+                        {
+                            item.InstalledVersionBadge = $"⚡ v{catAppVer.TrimStart('v', 'V')}";
+                            item.InstalledVersionColorHex = "#00E5FF";
+                        }
+                        else
+                        {
+                            item.InstalledVersionBadge = "⚪ Bilgi Yok";
+                            item.InstalledVersionColorHex = "#7E5676";
+                        }
 
                         user.AppPermissions.TryGetValue(catApp.Id, out var perm);
                         ApplyUserPermissionToItem(item, perm);

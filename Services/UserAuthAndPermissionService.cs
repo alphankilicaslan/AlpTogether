@@ -903,12 +903,34 @@ namespace AlpTogether.Services
                     }
 
                     bool localWarpRunning = IsLocalWarpActive();
+                    var installedMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    try
+                    {
+                        foreach (var kvp in SettingsService.Instance.Current.InstalledAppVersions)
+                        {
+                            if (!string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                installedMap[kvp.Key] = kvp.Value;
+                        }
+                        if (!string.IsNullOrWhiteSpace(LocalAlpNetHwid) && !installedMap.ContainsKey("alpnet-pulse"))
+                        {
+                            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                            string alpNetExe = Path.Combine(localAppData, "AlpNet", "AlpNet.Pulse.exe");
+                            if (File.Exists(alpNetExe))
+                            {
+                                var fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(alpNetExe);
+                                installedMap["alpnet-pulse"] = fvi.FileVersion ?? "2.2.7";
+                            }
+                        }
+                    }
+                    catch { }
+
                     var heartbeatData = new
                     {
                         lastSeen = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                         machineName = Environment.MachineName,
                         alpnetHwid = LocalAlpNetHwid,
                         clientVersion = AlpTogetherUpdateService.CurrentVersion,
+                        installedAppVersions = installedMap,
                         isAfk = isAfk,
                         afkMinutes = afkMinutes,
                         currentActivity = actText,
@@ -1201,7 +1223,7 @@ namespace AlpTogether.Services
                                         if (!string.IsNullOrWhiteSpace(meta.User)) user.PcUser = meta.User;
                                     }
 
-                                    // Map AlpNet WARP status & timestamps
+                                    // Map AlpNet WARP status, timestamps & application versions
                                     JsonElement alpElem = default;
                                     bool hasAlp = (!string.IsNullOrWhiteSpace(user.AlpNetHwid) && alpnetUsers.TryGetValue(user.AlpNetHwid, out alpElem)) ||
                                                   (!string.IsNullOrWhiteSpace(user.Hwid) && alpnetUsers.TryGetValue(user.Hwid, out alpElem));
@@ -1216,6 +1238,54 @@ namespace AlpTogether.Services
                                             user.WarpStoppedAt = wstElem.GetString() ?? "";
                                         if (alpElem.TryGetProperty("warp_total_hours_today", out var wtElem) && wtElem.TryGetDouble(out double th))
                                             user.WarpTotalHoursToday = th;
+
+                                        // AlpNet uygulamasının gerçek sürümü
+                                        if (alpElem.TryGetProperty("version", out var verElem))
+                                        {
+                                            string? vStr = verElem.GetString();
+                                            if (!string.IsNullOrWhiteSpace(vStr))
+                                            {
+                                                user.InstalledAppVersions["alpnet-pulse"] = vStr;
+                                                // Eğer kullanıcının istemci sürümü varsayılan veya AlpNet sürümü ise eşleştir
+                                                if (string.IsNullOrWhiteSpace(user.ClientVersion) || user.ClientVersion == "1.1.1" || user.ClientVersion.StartsWith("2."))
+                                                {
+                                                    user.ClientVersion = vStr;
+                                                }
+                                            }
+                                        }
+
+                                        // AlpNet uygulamasından gerçek bilgisayar adı
+                                        if (alpElem.TryGetProperty("machine_name", out var mnElem))
+                                        {
+                                            string? mnStr = mnElem.GetString();
+                                            if (!string.IsNullOrWhiteSpace(mnStr) && (string.IsNullOrWhiteSpace(user.MachineName) || user.MachineName == "AlpNet-PC"))
+                                            {
+                                                user.MachineName = mnStr;
+                                            }
+                                        }
+
+                                        // AlpNet uygulamasından gerçek Windows kullanıcı adı
+                                        if (alpElem.TryGetProperty("pc_user", out var puElem))
+                                        {
+                                            string? puStr = puElem.GetString();
+                                            if (!string.IsNullOrWhiteSpace(puStr) && string.IsNullOrWhiteSpace(user.PcUser))
+                                            {
+                                                user.PcUser = puStr;
+                                            }
+                                        }
+
+                                        // AlpNet uygulamasının son görülme zamanı (AlpTogether'dan daha yeniyse güncelle)
+                                        if (alpElem.TryGetProperty("last_seen", out var lsElem))
+                                        {
+                                            string? lsStr = lsElem.GetString();
+                                            if (!string.IsNullOrWhiteSpace(lsStr) && DateTime.TryParse(lsStr, out var alpLastSeenDt))
+                                            {
+                                                if (!DateTime.TryParse(user.LastSeen, out var atLastSeenDt) || alpLastSeenDt.ToUniversalTime() > atLastSeenDt.ToUniversalTime())
+                                                {
+                                                    user.LastSeen = alpLastSeenDt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+                                                }
+                                            }
+                                        }
                                     }
 
                                     // Live override for current/dev machine if WireSock service is running

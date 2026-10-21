@@ -185,6 +185,15 @@ namespace AlpTogether.Models
         [JsonPropertyName("clientVersion")]
         public string ClientVersion { get; set; } = "1.1.1";
 
+        [JsonPropertyName("installedAppVersions")]
+        public Dictionary<string, string> InstalledAppVersions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        [JsonPropertyName("installed_apps")]
+        public Dictionary<string, string> InstalledAppsSnake { set => InstalledAppVersions = value ?? new(StringComparer.OrdinalIgnoreCase); }
+
+        [JsonPropertyName("installed_app_versions")]
+        public Dictionary<string, string> InstalledAppVersionsSnake { set => InstalledAppVersions = value ?? new(StringComparer.OrdinalIgnoreCase); }
+
         [JsonPropertyName("isAfk")]
         public bool IsAfk { get; set; }
 
@@ -439,6 +448,74 @@ namespace AlpTogether.Models
             }
         }
 
+        [JsonIgnore]
+        public string VersionBadge
+        {
+            get
+            {
+                if (InstalledAppVersions.TryGetValue("alpnet-pulse", out var anVer) && !string.IsNullOrWhiteSpace(anVer))
+                {
+                    if (!string.IsNullOrWhiteSpace(ClientVersion) && ClientVersion.StartsWith("1."))
+                        return $"v{ClientVersion.TrimStart('v', 'V')} (AlpNet v{anVer.TrimStart('v', 'V')})";
+                    return $"AlpNet v{anVer.TrimStart('v', 'V')}";
+                }
+                if (!string.IsNullOrWhiteSpace(ClientVersion) && ClientVersion != "-")
+                {
+                    return ClientVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? ClientVersion : $"v{ClientVersion}";
+                }
+                return "v1.1.1";
+            }
+        }
+
+        [JsonIgnore]
+        public string VersionDetailDisplay
+        {
+            get
+            {
+                var parts = new List<string>();
+                if (!string.IsNullOrWhiteSpace(ClientVersion))
+                {
+                    string label = ClientVersion.StartsWith("2.") ? "AlpNet" : "İstemci";
+                    parts.Add($"{label}: v{ClientVersion.TrimStart('v', 'V')}");
+                }
+                if (InstalledAppVersions != null && InstalledAppVersions.Count > 0)
+                {
+                    foreach (var kvp in InstalledAppVersions)
+                    {
+                        string appShortName = kvp.Key switch
+                        {
+                            "alpnet-pulse" => "AlpNet",
+                            "alplingo" => "AlpLingo",
+                            "alphagravity" => "AlphaGravity",
+                            "alpfinans" => "AlpFinans",
+                            "alprust-plus" or "alprust" => "AlpRust+",
+                            _ => kvp.Key
+                        };
+                        string itemStr = $"{appShortName}: v{kvp.Value.TrimStart('v', 'V')}";
+                        if (!parts.Contains(itemStr))
+                            parts.Add(itemStr);
+                    }
+                }
+                return parts.Count > 0 ? string.Join(" • ", parts) : $"Sürüm: v{ClientVersion}";
+            }
+        }
+
+        public string GetAppInstalledVersion(string appId)
+        {
+            if (InstalledAppVersions.TryGetValue(appId, out var v) && !string.IsNullOrWhiteSpace(v))
+                return v;
+            if (appId == "alprust-plus" && InstalledAppVersions.TryGetValue("alprust", out var vr))
+                return vr;
+            if (appId == "alpnet-pulse")
+            {
+                if (InstalledAppVersions.TryGetValue("alpnet-pulse", out var pulseV) && !string.IsNullOrWhiteSpace(pulseV))
+                    return pulseV;
+                if (!string.IsNullOrWhiteSpace(ClientVersion) && ClientVersion.StartsWith("2."))
+                    return ClientVersion;
+            }
+            return string.Empty;
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? prop = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
@@ -548,6 +625,20 @@ namespace AlpTogether.Models
         {
             get => _statusColorHex;
             set { if (_statusColorHex != value) { _statusColorHex = value; OnPropertyChanged(); } }
+        }
+
+        private string _installedVersionBadge = "⚪ Bilgi Yok";
+        public string InstalledVersionBadge
+        {
+            get => _installedVersionBadge;
+            set { if (_installedVersionBadge != value) { _installedVersionBadge = value; OnPropertyChanged(); } }
+        }
+
+        private string _installedVersionColorHex = "#7E5676";
+        public string InstalledVersionColorHex
+        {
+            get => _installedVersionColorHex;
+            set { if (_installedVersionColorHex != value) { _installedVersionColorHex = value; OnPropertyChanged(); } }
         }
 
         private int _selectedDurationIndex = 2; // 30 Gün (1 Ay)

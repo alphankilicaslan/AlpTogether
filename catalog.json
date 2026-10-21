@@ -1,4 +1,4 @@
-{
+﻿{
   "CatalogVersion": "2026.10.21.2",
   "ClientLatestVersion": "1.1.1",
   "ClientDownloadUrl": "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
@@ -14,7 +14,7 @@
       "HighlightText": "HİBRİT KURULUM DESTEKLİ (AlpNet.Setup.exe + Doğrudan Paket Senkronizasyonu)",
       "AccentColorHex": "#1E88E5",
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alpnet_official.png",
-      "LatestVersion": "2.2.7",
+      "LatestVersion": "2.2.8",
       "ReleaseDate": "21 Ekim 2026",
       "DownloadSizeText": "81.4 MB",
       "SizeBytes": 81400000,
@@ -51,6 +51,22 @@
       "HasCustomInstaller": true,
       "HybridBadgeText": "HİBRİT KURULUM (Setup + Doğrudan)",
       "PatchNotes": [
+        {
+          "AppName": "",
+          "AppId": "",
+          "AppIconUri": "",
+          "Version": "2.2.8",
+          "ReleaseDate": "21 Ekim 2026",
+          "Title": "AlpTogether Uyumlu Canlı Telemetri & Lisans/Hesap Teşhis Log Sistemi",
+          "Tag": "YENİLİK & TELEMETRİ",
+          "Changes": [
+            "AlpTogether ile %100 uyumlu AlpNetTelemetryService entegre edildi; anlık arıza ve telemetri olayları AlpTogether paneline bağlandı.",
+            "Lisans ve Hesap sekmesine 'Teşhis ve Sistem Loglarını Gönder' butonu ve kullanıcı sorun bildirim alanı eklendi.",
+            "Uygulama çökmelerini ve bağlantı kopmalarını otomatik yakalayan global hata işleyicisi (UnhandledException) eklendi.",
+            "WireSock ve tünel durumunu denetleyen kapsamlı ağ & port bağlantı testi altyapısı dahil edildi."
+          ],
+          "ImageUrl": null
+        },
         {
           "AppName": "",
           "AppId": "",
