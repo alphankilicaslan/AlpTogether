@@ -205,7 +205,7 @@ namespace AlpTogether.Services
                 var payload = new RemoteCatalogPayload
                 {
                     CatalogVersion = DateTime.Now.ToString("yyyy.MM.dd.HHmm"),
-                    ClientLatestVersion = "1.0.0",
+                    ClientLatestVersion = "1.1.0",
                     GlobalAnnouncement = $"Yeni Güncelleme: {newOrUpdatedApp.Name} v{newOrUpdatedApp.LatestVersion} AlpTogether kataloğunda yayınlandı!",
                     Apps = Apps.ToList()
                 };
@@ -1372,7 +1372,7 @@ namespace AlpTogether.Services
             return new RemoteCatalogPayload
             {
                 CatalogVersion = "2026.10.18.1",
-                ClientLatestVersion = "1.0.0",
+                ClientLatestVersion = "1.1.0",
                 ClientDownloadUrl = "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
                 GlobalAnnouncement = "AlpTogether Ekosistem İstemcisi Aktif! AlpLingo v1.1.0 (Oyun İçi F8 Kısayol & AI OCR Kararlılık Güncellemesi) yayında.",
                 Apps = new List<AlpAppItem>

@@ -295,7 +295,7 @@ namespace AlpTogether.Models
     public class RemoteCatalogPayload
     {
         public string CatalogVersion { get; set; } = "2026.10.16";
-        public string ClientLatestVersion { get; set; } = "1.0.0";
+        public string ClientLatestVersion { get; set; } = "1.1.0";
         public string ClientDownloadUrl { get; set; } = "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.Setup.exe";
         public string GlobalAnnouncement { get; set; } = "AlpTogether v1.0 Yayında! Tüm Alp uygulamalarını tek merkezden indirin, hibrit güncelleyin ve tek tıkla onarın.";
         public List<AlpAppItem> Apps { get; set; } = new();

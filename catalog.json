@@ -1,17 +1,17 @@
-﻿{
-  "CatalogVersion": "2026.10.18.1",
-  "ClientLatestVersion": "1.0.0",
+{
+  "CatalogVersion": "2026.10.21.2",
+  "ClientLatestVersion": "1.1.0",
   "ClientDownloadUrl": "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
-  "GlobalAnnouncement": "AlpTogether Ekosistem \u0130stemcisi Aktif! AlpLingo v1.1.0 (Oyun \u0130\u00E7i F8 K\u0131sayol \u0026 AI OCR Kararl\u0131l\u0131k G\u00FCncellemesi) yay\u0131nda.",
+  "GlobalAnnouncement": "AlpTogether Ekosistem İstemcisi Aktif! AlpLingo v1.1.0 (Oyun İçi F8 Kısayol & AI OCR Kararlılık Güncellemesi) yayında.",
   "Apps": [
     {
       "Id": "alpnet-pulse",
       "Name": "AlpNet Pulse",
-      "Subtitle": "A\u011F H\u0131zland\u0131rma, Cloudflare WARP T\u00FCneli \u0026 Canl\u0131 Ses \u00C7eviri Motoru",
-      "Category": "A\u011F \u0026 Sistem",
-      "Developer": "Alphan K\u0131l\u0131\u00E7aslan",
-      "Description": "AlpNet Pulse; d\u00FC\u015F\u00FCk gecikmeli Cloudflare WARP t\u00FCnel y\u00F6netimi, DNSCrypt/DoH \u015Fifreleme, paket analizi ve ger\u00E7ek zamanl\u0131 yapay zeka sesli \u00E7eviri motorunu (translator.exe) tek \u00E7at\u0131 alt\u0131nda sunan amiral gemisi a\u011F ve ileti\u015Fim arac\u0131d\u0131r.",
-      "HighlightText": "H\u0130BR\u0130T KURULUM DESTEKL\u0130 (AlpNet.Setup.exe \u002B Do\u011Frudan Paket Senkronizasyonu)",
+      "Subtitle": "Ağ Hızlandırma, Cloudflare WARP Tüneli & Canlı Ses Çeviri Motoru",
+      "Category": "Ağ & Sistem",
+      "Developer": "Alphan Kılıçaslan",
+      "Description": "AlpNet Pulse; düşük gecikmeli Cloudflare WARP tünel yönetimi, DNSCrypt/DoH şifreleme, paket analizi ve gerçek zamanlı yapay zeka sesli çeviri motorunu (translator.exe) tek çatı altında sunan amiral gemisi ağ ve iletişim aracıdır.",
+      "HighlightText": "HİBRİT KURULUM DESTEKLİ (AlpNet.Setup.exe + Doğrudan Paket Senkronizasyonu)",
       "AccentColorHex": "#1E88E5",
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alpnet_official.png",
       "LatestVersion": "2.2.7",
@@ -49,7 +49,7 @@
       ],
       "RequiresDotNet9": true,
       "HasCustomInstaller": true,
-      "HybridBadgeText": "H\u0130BR\u0130T KURULUM (Setup \u002B Do\u011Frudan)",
+      "HybridBadgeText": "HİBRİT KURULUM (Setup + Doğrudan)",
       "PatchNotes": [
         {
           "AppName": "",
@@ -57,14 +57,14 @@
           "AppIconUri": "",
           "Version": "2.2.7",
           "ReleaseDate": "21 Ekim 2026",
-          "Title": "Rust \u0026 EAC Anti-Cheat Uyumlulu\u011Fu, WireSock DNS \u0130yile\u015Ftirmesi ve Geli\u015Fmi\u015F A\u011F D\u00FCzeltmeleri",
-          "Tag": "KR\u0130T\u0130K G\u00DCNCELLEME",
+          "Title": "Rust & EAC Anti-Cheat Uyumluluğu, WireSock DNS İyileştirmesi ve Gelişmiş Ağ Düzeltmeleri",
+          "Tag": "KRİTİK GÜNCELLEME",
           "Changes": [
-            "Easy Anti-Cheat (EAC) korumal\u0131 oyunlar (Rust vb.) i\u00E7in a\u011F s\u00FCr\u00FCc\u00FCs\u00FC ve paket y\u00F6nlendirme \u00E7ak\u0131\u015Fmalar\u0131 tamamen giderildi; oyun sunucular\u0131na ba\u011Flant\u0131 engelleri kald\u0131r\u0131ld\u0131.",
-            "Cloudflare WARP (WireSock) profilinde genel DNS zorlamas\u0131 ve port \u00E7ak\u0131\u015Fmalar\u0131 temizlendi; ISP bazl\u0131 sorgu kilitlenmeleri \u00E7\u00F6z\u00FCld\u00FC.",
-            "Windows 11 DoH (DNS-over-HTTPS) otomatik kural \u00E7ak\u0131\u015Fmalar\u0131 devre d\u0131\u015F\u0131 b\u0131rak\u0131larak kararl\u0131 standart sorgu ak\u0131\u015F\u0131 sa\u011Fland\u0131.",
-            "A\u011F aray\u00FCzlerindeki gecikmeye yol a\u00E7an TcpDelAckTicks kay\u0131t defteri anahtarlar\u0131 optimize edildi ve s\u00FCr\u00FCc\u00FC temizli\u011Fi uyguland\u0131.",
-            "AlpTogether ekosistemi ve bulut yay\u0131n motoru v2.2.7 tam senkronize edildi."
+            "Easy Anti-Cheat (EAC) korumalı oyunlar (Rust vb.) için ağ sürücüsü ve paket yönlendirme çakışmaları tamamen giderildi; oyun sunucularına bağlantı engelleri kaldırıldı.",
+            "Cloudflare WARP (WireSock) profilinde genel DNS zorlaması ve port çakışmaları temizlendi; ISP bazlı sorgu kilitlenmeleri çözüldü.",
+            "Windows 11 DoH (DNS-over-HTTPS) otomatik kural çakışmaları devre dışı bırakılarak kararlı standart sorgu akışı sağlandı.",
+            "Ağ arayüzlerindeki gecikmeye yol açan TcpDelAckTicks kayıt defteri anahtarları optimize edildi ve sürücü temizliği uygulandı.",
+            "AlpTogether ekosistemi ve bulut yayın motoru v2.2.7 tam senkronize edildi."
           ],
           "ImageUrl": null
         },
@@ -74,13 +74,13 @@
           "AppIconUri": "",
           "Version": "2.2.6",
           "ReleaseDate": "18 Ekim 2026",
-          "Title": "AlpTogether Bulut Whitelist \u0026 Merkezi Yetkilendirme Entegrasyonu",
-          "Tag": "YEN\u0130L\u0130K \u0026 EKOS\u0130STEM",
+          "Title": "AlpTogether Bulut Whitelist & Merkezi Yetkilendirme Entegrasyonu",
+          "Tag": "YENİLİK & EKOSİSTEM",
           "Changes": [
-            "AlpTogether Merkezi Bulut Whitelist do\u011Frulamas\u0131 eklendi; lisans anahtar\u0131 girmeden do\u011Frudan bulut yetkisiyle a\u00E7\u0131l\u0131\u015F deste\u011Fi sa\u011Fland\u0131.",
-            "Geriye d\u00F6n\u00FCk %100 \u00E7evrimd\u0131\u015F\u0131 lisans uyumlulu\u011Fu korundu; mevcut anahtara sahip kullan\u0131c\u0131lar kesintisiz \u00E7al\u0131\u015Fmaya devam eder.",
-            "Aktivasyon ekran\u0131na \u0027\u2726 AlpTogether Yetkisini Do\u011Frula \uD83D\uDD04\u0027 tek-t\u0131k h\u0131zl\u0131 sorgulama butonu entegre edildi.",
-            "Bulut kullan\u0131c\u0131 kalp at\u0131\u015F\u0131 (heartbeat) ve ekosistem senkronizasyonu g\u00FCncellendi."
+            "AlpTogether Merkezi Bulut Whitelist doğrulaması eklendi; lisans anahtarı girmeden doğrudan bulut yetkisiyle açılış desteği sağlandı.",
+            "Geriye dönük %100 çevrimdışı lisans uyumluluğu korundu; mevcut anahtara sahip kullanıcılar kesintisiz çalışmaya devam eder.",
+            "Aktivasyon ekranına '✦ AlpTogether Yetkisini Doğrula 🔄' tek-tık hızlı sorgulama butonu entegre edildi.",
+            "Bulut kullanıcı kalp atışı (heartbeat) ve ekosistem senkronizasyonu güncellendi."
           ],
           "ImageUrl": null
         },
@@ -90,12 +90,12 @@
           "AppIconUri": "",
           "Version": "2.2.4",
           "ReleaseDate": "16 Ekim 2026",
-          "Title": "Hibrit Kurulum, QUIC/HTTP3 Politikas\u0131 ve Ses \u00C7eviri \u0130yile\u015Ftirmesi",
-          "Tag": "KARARLI S\u00DCR\u00DCM",
+          "Title": "Hibrit Kurulum, QUIC/HTTP3 Politikası ve Ses Çeviri İyileştirmesi",
+          "Tag": "KARARLI SÜRÜM",
           "Changes": [
-            "AlpTogether Hibrit Kurulum Motoru ile hem AlpNet.Setup.exe (/auto) hem de do\u011Frudan dosya senkronizasyonu eklendi.",
-            "Cloudflare WARP profil anahtar\u0131 \u00E7ak\u0131\u015Fma tespiti ve otomatik onar\u0131m (wgcf-profile.conf) entegre edildi.",
-            "Canl\u0131 ses \u00E7eviri motoru (translator.exe) gecikmesi %35 d\u00FC\u015F\u00FCr\u00FCld\u00FC."
+            "AlpTogether Hibrit Kurulum Motoru ile hem AlpNet.Setup.exe (/auto) hem de doğrudan dosya senkronizasyonu eklendi.",
+            "Cloudflare WARP profil anahtarı çakışma tespiti ve otomatik onarım (wgcf-profile.conf) entegre edildi.",
+            "Canlı ses çeviri motoru (translator.exe) gecikmesi %35 düşürüldü."
           ],
           "ImageUrl": null
         }
@@ -107,23 +107,23 @@
       "IsRunning": false,
       "IsBusy": false,
       "ProgressPercent": 0,
-      "StatusText": "Haz\u0131r",
+      "StatusText": "Hazır",
       "SpeedText": "",
-      "HealthStatus": "Do\u011Frulanmad\u0131",
+      "HealthStatus": "Doğrulanmadı",
       "SelectedHybridMode": 0,
-      "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "SelectedHybridModeDescription": "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+      "PrimaryButtonText": "HEMEN YÜKLE",
       "StateBadgeText": "BULUTTA MEVCUT",
-      "VersionDisplay": "Son S\u00FCr\u00FCm: v2.2.7  \u2022  81.4 MB"
+      "VersionDisplay": "Son Sürüm: v2.2.7  •  81.4 MB"
     },
     {
       "Id": "alpfinans",
       "Name": "AlpFinans",
-      "Subtitle": "Ki\u015Fisel Finans, Vergi Hesaplama, Fatura \u0026 Birikim Sim\u00FClat\u00F6r\u00FC",
-      "Category": "Finans \u0026 \u00DCretkenlik",
-      "Developer": "Alphan K\u0131l\u0131\u00E7aslan",
-      "Description": "Gelir-gider takibi, vergi dilimi analizi, fatura ar\u015Fivleme ve gelece\u011Fe y\u00F6nelik finansal senaryo sim\u00FClasyonlar\u0131n\u0131 y\u00FCksek h\u0131zl\u0131 yerel SQLite motoruyla sunan masa\u00FCst\u00FC finans y\u00F6netim merkezi.",
-      "HighlightText": "DO\u011ERUDAN PAKET \u002B SQLITE VER\u0130TABANI B\u00DCT\u00DCNL\u00DCK KORUMASI",
+      "Subtitle": "Kişisel Finans, Vergi Hesaplama, Fatura & Birikim Simülatörü",
+      "Category": "Finans & Üretkenlik",
+      "Developer": "Alphan Kılıçaslan",
+      "Description": "Gelir-gider takibi, vergi dilimi analizi, fatura arşivleme ve geleceğe yönelik finansal senaryo simülasyonlarını yüksek hızlı yerel SQLite motoruyla sunan masaüstü finans yönetim merkezi.",
+      "HighlightText": "DOĞRUDAN PAKET + SQLITE VERİTABANI BÜTÜNLÜK KORUMASI",
       "AccentColorHex": "#00C853",
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alpfinans_official.png",
       "LatestVersion": "1.1.0",
@@ -158,7 +158,7 @@
       ],
       "RequiresDotNet9": true,
       "HasCustomInstaller": false,
-      "HybridBadgeText": "DO\u011ERUDAN PAKET",
+      "HybridBadgeText": "DOĞRUDAN PAKET",
       "PatchNotes": [
         {
           "AppName": "",
@@ -166,11 +166,11 @@
           "AppIconUri": "",
           "Version": "1.1.0",
           "ReleaseDate": "19 Ekim 2026",
-          "Title": "AlpTogether Bulut Whitelist \u0026 Merkezi Yetkilendirme Entegrasyonu",
-          "Tag": "G\u00DCNCELLEME",
+          "Title": "AlpTogether Bulut Whitelist & Merkezi Yetkilendirme Entegrasyonu",
+          "Tag": "GÜNCELLEME",
           "Changes": [
-            "AlpTogether merkezi bulut whitelist do\u011Frulamas\u0131 entegre edildi.",
-            "Geli\u015Ftirici ana makinesi (MONSTERALPHAN) i\u00E7in an\u0131nda eri\u015Fim tan\u0131mland\u0131."
+            "AlpTogether merkezi bulut whitelist doğrulaması entegre edildi.",
+            "Geliştirici ana makinesi (MONSTERALPHAN) için anında erişim tanımlandı."
           ],
           "ImageUrl": null
         },
@@ -180,11 +180,11 @@
           "AppIconUri": "",
           "Version": "1.0.0",
           "ReleaseDate": "16 Ekim 2026",
-          "Title": "Finansal Sim\u00FClat\u00F6r, Gelir/Gider Y\u00F6netimi ve Vergi Analizi",
-          "Tag": "KARARLI S\u00DCR\u00DCM",
+          "Title": "Finansal Simülatör, Gelir/Gider Yönetimi ve Vergi Analizi",
+          "Tag": "KARARLI SÜRÜM",
           "Changes": [
-            "SimulatorWindow ile 12 ayl\u0131k enflasyon ve yat\u0131r\u0131m getirisi projeksiyonu eklendi.",
-            "SQLite yerel veritaban\u0131 otomatik yedekleme ve onar\u0131m kontrol\u00FC eklendi."
+            "SimulatorWindow ile 12 aylık enflasyon ve yatırım getirisi projeksiyonu eklendi.",
+            "SQLite yerel veritabanı otomatik yedekleme ve onarım kontrolü eklendi."
           ],
           "ImageUrl": null
         }
@@ -196,23 +196,23 @@
       "IsRunning": false,
       "IsBusy": false,
       "ProgressPercent": 0,
-      "StatusText": "Haz\u0131r",
+      "StatusText": "Hazır",
       "SpeedText": "",
-      "HealthStatus": "Do\u011Frulanmad\u0131",
+      "HealthStatus": "Doğrulanmadı",
       "SelectedHybridMode": 0,
-      "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "SelectedHybridModeDescription": "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+      "PrimaryButtonText": "HEMEN YÜKLE",
       "StateBadgeText": "BULUTTA MEVCUT",
-      "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  34.2 MB"
+      "VersionDisplay": "Son Sürüm: v1.1.0  •  34.2 MB"
     },
     {
       "Id": "alphagravity",
       "Name": "AlphaGravity",
-      "Subtitle": "Kurumsal Yapay Zeka, Bilgi Bankas\u0131 (RAG), 3B Grafik \u0026 Ses K\u00F6pr\u00FCs\u00FC",
-      "Category": "Yapay Zeka \u0026 Kurumsal",
-      "Developer": "Alphan K\u0131l\u0131\u00E7aslan",
-      "Description": "\u015Eirket dok\u00FCmanlar\u0131n\u0131 ve teknik mimarileri analiz eden, 3 boyutlu bilgi grafi\u011Fi (3D Knowledge Graph) olu\u015Fturan, yerel ve bulut LLM modelleriyle sesli/yaz\u0131l\u0131 etkile\u015Fim kuran geli\u015Fmi\u015F yapay zeka istemcisi.",
-      "HighlightText": "KURUMSAL LLM \u002B 3D B\u0130LG\u0130 A\u011EI G\u00D6RSELLE\u015ET\u0130RME",
+      "Subtitle": "Kurumsal Yapay Zeka, Bilgi Bankası (RAG), 3B Grafik & Ses Köprüsü",
+      "Category": "Yapay Zeka & Kurumsal",
+      "Developer": "Alphan Kılıçaslan",
+      "Description": "Şirket dokümanlarını ve teknik mimarileri analiz eden, 3 boyutlu bilgi grafiği (3D Knowledge Graph) oluşturan, yerel ve bulut LLM modelleriyle sesli/yazılı etkileşim kuran gelişmiş yapay zeka istemcisi.",
+      "HighlightText": "KURUMSAL LLM + 3D BİLGİ AĞI GÖRSELLEŞTİRME",
       "AccentColorHex": "#FF6D00",
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alphagravity_official.png",
       "LatestVersion": "1.1.0",
@@ -249,7 +249,7 @@
       ],
       "RequiresDotNet9": true,
       "HasCustomInstaller": false,
-      "HybridBadgeText": "DO\u011ERUDAN PAKET",
+      "HybridBadgeText": "DOĞRUDAN PAKET",
       "PatchNotes": [
         {
           "AppName": "",
@@ -257,12 +257,12 @@
           "AppIconUri": "",
           "Version": "1.1.0",
           "ReleaseDate": "19 Ekim 2026",
-          "Title": "Bulut Whitelist, API Key Kal\u0131c\u0131l\u0131\u011F\u0131 \u0026 Kararl\u0131 Tek Dosya \u00C7al\u0131\u015Fma",
-          "Tag": "G\u00DCNCELLEME",
+          "Title": "Bulut Whitelist, API Key Kalıcılığı & Kararlı Tek Dosya Çalışma",
+          "Tag": "GÜNCELLEME",
           "Changes": [
-            "AlpTogether merkezi bulut whitelist do\u011Frulamas\u0131 entegre edildi.",
-            "Kullan\u0131c\u0131 API anahtarlar\u0131 kal\u0131c\u0131 kullan\u0131c\u0131 profiline (AppData) kaydedilerek oturumlar aras\u0131 korundu.",
-            "Tam ba\u011F\u0131ms\u0131z (self-contained) tek dosya \u00E7al\u0131\u015Ft\u0131r\u0131labilir mimariyle ba\u015Flatma kararl\u0131l\u0131\u011F\u0131 sa\u011Fland\u0131."
+            "AlpTogether merkezi bulut whitelist doğrulaması entegre edildi.",
+            "Kullanıcı API anahtarları kalıcı kullanıcı profiline (AppData) kaydedilerek oturumlar arası korundu.",
+            "Tam bağımsız (self-contained) tek dosya çalıştırılabilir mimariyle başlatma kararlılığı sağlandı."
           ],
           "ImageUrl": null
         },
@@ -272,11 +272,11 @@
           "AppIconUri": "",
           "Version": "1.0.0",
           "ReleaseDate": "16 Ekim 2026",
-          "Title": "3B Bilgi Grafi\u011Fi, RAG Dok\u00FCman Y\u00F6netimi ve VoiceBridge",
-          "Tag": "KARARLI S\u00DCR\u00DCM",
+          "Title": "3B Bilgi Grafiği, RAG Doküman Yönetimi ve VoiceBridge",
+          "Tag": "KARARLI SÜRÜM",
           "Changes": [
-            "WebView2 tabanl\u0131 interaktif 3B d\u00FC\u011F\u00FCm grafi\u011Fi ve kurumsal haf\u0131za entegrasyonu.",
-            "VoiceBridge ger\u00E7ek zamanl\u0131 sesli etkile\u015Fim ve \u00F6\u011Frenme raporu mod\u00FCl\u00FC."
+            "WebView2 tabanlı interaktif 3B düğüm grafiği ve kurumsal hafıza entegrasyonu.",
+            "VoiceBridge gerçek zamanlı sesli etkileşim ve öğrenme raporu modülü."
           ],
           "ImageUrl": null
         }
@@ -288,23 +288,23 @@
       "IsRunning": false,
       "IsBusy": false,
       "ProgressPercent": 0,
-      "StatusText": "Haz\u0131r",
+      "StatusText": "Hazır",
       "SpeedText": "",
-      "HealthStatus": "Do\u011Frulanmad\u0131",
+      "HealthStatus": "Doğrulanmadı",
       "SelectedHybridMode": 0,
-      "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "SelectedHybridModeDescription": "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+      "PrimaryButtonText": "HEMEN YÜKLE",
       "StateBadgeText": "BULUTTA MEVCUT",
-      "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  208 MB"
+      "VersionDisplay": "Son Sürüm: v1.1.0  •  208 MB"
     },
     {
       "Id": "alprust-plus",
-      "Name": "AlpRust\u002B",
-      "Subtitle": "Rust\u002B Ak\u0131ll\u0131 Cihaz, Kamera, Harita ve Anl\u0131k Raid Alarm \u0130stemcisi",
-      "Category": "Oyun \u0026 Yard\u0131mc\u0131 Ara\u00E7",
-      "Developer": "Alphan K\u0131l\u0131\u00E7aslan",
-      "Description": "Rust oyuncular\u0131 i\u00E7in geli\u015Ftirilmi\u015F masa\u00FCst\u00FC Rust\u002B komuta merkezi. Oyun d\u0131\u015F\u0131ndayken ak\u0131ll\u0131 \u015Falterleri kontrol edin, g\u00FCvenlik kameralar\u0131n\u0131 izleyin, tak\u0131m sohbetini y\u00F6netin ve anl\u0131k raid bildirimleri al\u0131n.",
-      "HighlightText": "GER\u00C7EK ZAMANLI SUNUCU TAK\u0130B\u0130 VE AKILLI ANAHTAR Y\u00D6NET\u0130M\u0130",
+      "Name": "AlpRust+",
+      "Subtitle": "Rust+ Akıllı Cihaz, Kamera, Harita ve Anlık Raid Alarm İstemcisi",
+      "Category": "Oyun & Yardımcı Araç",
+      "Developer": "Alphan Kılıçaslan",
+      "Description": "Rust oyuncuları için geliştirilmiş masaüstü Rust+ komuta merkezi. Oyun dışındayken akıllı şalterleri kontrol edin, güvenlik kameralarını izleyin, takım sohbetini yönetin ve anlık raid bildirimleri alın.",
+      "HighlightText": "GERÇEK ZAMANLI SUNUCU TAKİBİ VE AKILLI ANAHTAR YÖNETİMİ",
       "AccentColorHex": "#D84315",
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alprust_official.png",
       "LatestVersion": "1.1.0",
@@ -323,10 +323,10 @@
       "DefaultInstallSubFolder": "AlpRustPlus",
       "CandidateExistingPaths": [
         "C:\\Users\\Alphan.MonsterAlphan\\AppData\\Local\\RustPlusDesk\\current",
-        "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpRust\u002B\\RustPlusDesktop\\bin\\Release\\net8.0-windows10.0.17763.0",
-        "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpRust\u002B\\RustPlusDesktop\\bin\\Release\\net8.0-windows10.0.17763.0\\win-x64",
-        "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpRust\u002B\\RustPlusDesktop\\bin\\Installer\\publish",
-        "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpRust\u002B"
+        "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpRust+\\RustPlusDesktop\\bin\\Release\\net8.0-windows10.0.17763.0",
+        "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpRust+\\RustPlusDesktop\\bin\\Release\\net8.0-windows10.0.17763.0\\win-x64",
+        "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpRust+\\RustPlusDesktop\\bin\\Installer\\publish",
+        "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpRust+"
       ],
       "ProcessNamesToKill": [
         "RustPlusDesk",
@@ -336,7 +336,7 @@
       "CompanionFiles": [],
       "RequiresDotNet9": true,
       "HasCustomInstaller": false,
-      "HybridBadgeText": "DO\u011ERUDAN PAKET",
+      "HybridBadgeText": "DOĞRUDAN PAKET",
       "PatchNotes": [
         {
           "AppName": "",
@@ -344,11 +344,11 @@
           "AppIconUri": "",
           "Version": "1.1.0",
           "ReleaseDate": "16 Ekim 2026",
-          "Title": "D\u00FC\u015F\u00FCk Gecikmeli Kamera Ak\u0131\u015F\u0131 ve Otomatik E\u015Fle\u015Ftirme",
-          "Tag": "KARARLI S\u00DCR\u00DCM",
+          "Title": "Düşük Gecikmeli Kamera Akışı ve Otomatik Eşleştirme",
+          "Tag": "KARARLI SÜRÜM",
           "Changes": [
-            "Sunucu FCM bildirim dinleyicisi yeniden ba\u011Flanma h\u0131z\u0131 iyile\u015Ftirildi.",
-            "Harita \u00FCzerindeki kargo gemisi, helikopter rotas\u0131 ve ak\u0131ll\u0131 cihaz kontrolleri g\u00FCncellendi."
+            "Sunucu FCM bildirim dinleyicisi yeniden bağlanma hızı iyileştirildi.",
+            "Harita üzerindeki kargo gemisi, helikopter rotası ve akıllı cihaz kontrolleri güncellendi."
           ],
           "ImageUrl": null
         }
@@ -360,23 +360,23 @@
       "IsRunning": false,
       "IsBusy": false,
       "ProgressPercent": 0,
-      "StatusText": "Haz\u0131r",
+      "StatusText": "Hazır",
       "SpeedText": "",
-      "HealthStatus": "Do\u011Frulanmad\u0131",
+      "HealthStatus": "Doğrulanmadı",
       "SelectedHybridMode": 0,
-      "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "SelectedHybridModeDescription": "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+      "PrimaryButtonText": "HEMEN YÜKLE",
       "StateBadgeText": "BULUTTA MEVCUT",
-      "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  92.0 MB"
+      "VersionDisplay": "Son Sürüm: v1.1.0  •  92.0 MB"
     },
     {
       "Id": "alplingo",
       "Name": "AlpLingo",
-      "Subtitle": "Ger\u00E7ek Zamanl\u0131 Yapay Zeka Ekran \u0026 Oyun \u00C7evirici (AI OCR Overlay)",
-      "Category": "Yapay Zeka \u0026 \u00C7eviri",
-      "Developer": "Alphan K\u0131l\u0131\u00E7aslan",
-      "Description": "Oyunlar, videolar ve masa\u00FCst\u00FC uygulamalar\u0131 i\u00E7in ekran \u00FCzerindeki diyalog alan\u0131n\u0131 (ROI) ger\u00E7ek zamanl\u0131 yakalay\u0131p Meta NLLB-200 (CUDA/CPU) motoruyla \u015Feffaf bir katman (Overlay) \u00FCzerinde an\u0131nda ak\u0131c\u0131 T\u00FCrk\u00E7eye \u00E7eviren uygulama.",
-      "HighlightText": "\u00C7EVR\u0130MDI\u015EI NLLB-200 \u002B \u015EEFFAF OVERLAY \u002B SIFIR FPS KAYBI",
+      "Subtitle": "Gerçek Zamanlı Yapay Zeka Ekran & Oyun Çevirici (AI OCR Overlay)",
+      "Category": "Yapay Zeka & Çeviri",
+      "Developer": "Alphan Kılıçaslan",
+      "Description": "Oyunlar, videolar ve masaüstü uygulamaları için ekran üzerindeki diyalog alanını (ROI) gerçek zamanlı yakalayıp Meta NLLB-200 (CUDA/CPU) motoruyla şeffaf bir katman (Overlay) üzerinde anında akıcı Türkçeye çeviren uygulama.",
+      "HighlightText": "ÇEVRİMDIŞI NLLB-200 + ŞEFFAF OVERLAY + SIFIR FPS KAYBI",
       "AccentColorHex": "#00E5FF",
       "IconPackUri": "pack://application:,,,/Assets/AppIcons/alplingo_official.png",
       "LatestVersion": "1.1.0",
@@ -402,7 +402,7 @@
       "CompanionFiles": [],
       "RequiresDotNet9": true,
       "HasCustomInstaller": true,
-      "HybridBadgeText": "H\u0130BR\u0130T KURULUM (Setup \u002B Do\u011Frudan)",
+      "HybridBadgeText": "HİBRİT KURULUM (Setup + Doğrudan)",
       "PatchNotes": [
         {
           "AppName": "AlpLingo",
@@ -410,13 +410,13 @@
           "AppIconUri": "",
           "Version": "1.1.0",
           "ReleaseDate": "18 Ekim 2026",
-          "Title": "AlpLingo v1.1.0 \u2014 Oyun \u0130\u00E7i F8 K\u0131sayol, Y\u00F6netici \u0130zni \u0026 AI OCR Kararl\u0131l\u0131k G\u00FCncellemesi",
-          "Tag": "\u00D6NEML\u0130 G\u00DCNCELLEME",
+          "Title": "AlpLingo v1.1.0 — Oyun İçi F8 Kısayol, Yönetici İzni & AI OCR Kararlılık Güncellemesi",
+          "Tag": "ÖNEMLİ GÜNCELLEME",
           "Changes": [
-            "Oyunlarda F8 k\u0131sayolunun alg\u0131lanmama sorunu \u00E7\u00F6z\u00FCld\u00FC (Win32 RegisterHotKey ve otomatik Y\u00F6netici \u0130zni y\u00FCkseltmesi).",
-            "Ak\u0131ll\u0131 kontrast kontrol\u00FC ile sar\u0131, alt\u0131n, mavi ve t\u00FCm renklerdeki oyun altyaz\u0131lar\u0131n\u0131n okunmas\u0131 sa\u011Fland\u0131.",
-            "F8 ile diyalog alan\u0131 se\u00E7ildi\u011Fi anda \u00E7evirinin otomatik ba\u015Flat\u0131lmas\u0131 ve ekranda anl\u0131k durum bildirimi eklendi.",
-            "Windows masa\u00FCst\u00FC yakalama (BitBlt/OpenInputDesktop) ba\u011Flant\u0131s\u0131 ve \u00E7ift monit\u00F6r deste\u011Fi g\u00FC\u00E7lendirildi."
+            "Oyunlarda F8 kısayolunun algılanmama sorunu çözüldü (Win32 RegisterHotKey ve otomatik Yönetici İzni yükseltmesi).",
+            "Akıllı kontrast kontrolü ile sarı, altın, mavi ve tüm renklerdeki oyun altyazılarının okunması sağlandı.",
+            "F8 ile diyalog alanı seçildiği anda çevirinin otomatik başlatılması ve ekranda anlık durum bildirimi eklendi.",
+            "Windows masaüstü yakalama (BitBlt/OpenInputDesktop) bağlantısı ve çift monitör desteği güçlendirildi."
           ],
           "ImageUrl": null
         },
@@ -426,12 +426,12 @@
           "AppIconUri": "",
           "Version": "1.0.0",
           "ReleaseDate": "16 Ekim 2026",
-          "Title": "AlpLingo v1.0 \u2014 Ger\u00E7ek Zamanl\u0131 AI OCR \u0026 \u015Eeffaf T\u00FCrk\u00E7e Altyaz\u0131",
-          "Tag": "YEN\u0130 UYGULAMA",
+          "Title": "AlpLingo v1.0 — Gerçek Zamanlı AI OCR & Şeffaf Türkçe Altyazı",
+          "Tag": "YENİ UYGULAMA",
           "Changes": [
-            "Meta NLLB-200 \u00E7evrimd\u0131\u015F\u0131 \u00E7eviri motoru ile NVIDIA RTX CUDA ve CPU hibrit h\u0131zland\u0131rma.",
-            "F8 ile anl\u0131k ekran diyalog b\u00F6lgesi (ROI) se\u00E7imi ve F9 ile \u015Feffaf altyaz\u0131 katman\u0131 kontrol\u00FC.",
-            "Ak\u0131ll\u0131 parlakl\u0131k de\u011Fi\u015Fim filtresi ile diyalog sabitken %0 CPU/GPU kullan\u0131m\u0131 ve s\u0131f\u0131r FPS kayb\u0131."
+            "Meta NLLB-200 çevrimdışı çeviri motoru ile NVIDIA RTX CUDA ve CPU hibrit hızlandırma.",
+            "F8 ile anlık ekran diyalog bölgesi (ROI) seçimi ve F9 ile şeffaf altyazı katmanı kontrolü.",
+            "Akıllı parlaklık değişim filtresi ile diyalog sabitken %0 CPU/GPU kullanımı ve sıfır FPS kaybı."
           ],
           "ImageUrl": null
         }
@@ -443,14 +443,14 @@
       "IsRunning": false,
       "IsBusy": false,
       "ProgressPercent": 0,
-      "StatusText": "Haz\u0131r",
+      "StatusText": "Hazır",
       "SpeedText": "",
-      "HealthStatus": "Do\u011Frulanmad\u0131",
+      "HealthStatus": "Doğrulanmadı",
       "SelectedHybridMode": 0,
-      "SelectedHybridModeDescription": "Birle\u015Fik Hibrit Mod: Setup ve uygulama dosyalar\u0131n\u0131 AlpTogether i\u00E7inde otomatik kurar ve do\u011Frular.",
-      "PrimaryButtonText": "HEMEN Y\u00DCKLE",
+      "SelectedHybridModeDescription": "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+      "PrimaryButtonText": "HEMEN YÜKLE",
       "StateBadgeText": "BULUTTA MEVCUT",
-      "VersionDisplay": "Son S\u00FCr\u00FCm: v1.1.0  \u2022  1.45 GB"
+      "VersionDisplay": "Son Sürüm: v1.1.0  •  1.45 GB"
     }
   ]
 }
