@@ -400,13 +400,17 @@ namespace AlpTogether.Models
         {
             get
             {
+                if (!IsOnline)
+                {
+                    return WarpActive ? "WARP: ⚪ KAPALI (Çevrimdışı)" : "WARP: ⚪ KAPALI";
+                }
                 if (WarpActive) return "WARP: 🟢 AÇIK";
                 return "WARP: ⚪ KAPALI";
             }
         }
 
         [JsonIgnore]
-        public string WarpStatusBadgeColorHex => WarpActive ? "#00E5FF" : "#7E5676";
+        public string WarpStatusBadgeColorHex => (IsOnline && WarpActive) ? "#00E5FF" : "#757575";
 
         [JsonIgnore]
         public string WarpDetailText
@@ -437,6 +441,17 @@ namespace AlpTogether.Models
             get
             {
                 string detail = WarpDetailText;
+                if (!IsOnline)
+                {
+                    if (WarpActive)
+                    {
+                        return string.IsNullOrEmpty(detail)
+                            ? "WARP: ⚪ KAPALI (Çevrimdışı)"
+                            : $"WARP: ⚪ KAPALI (Çevrimdışı • Son Oturum: {detail})";
+                    }
+                    return string.IsNullOrEmpty(detail) ? "WARP: ⚪ KAPALI" : $"WARP: ⚪ KAPALI ({detail})";
+                }
+
                 if (WarpActive)
                 {
                     return string.IsNullOrEmpty(detail) ? "WARP: 🟢 AÇIK" : $"WARP: 🟢 AÇIK ({detail})";
