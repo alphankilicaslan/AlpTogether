@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -53,19 +53,64 @@ namespace AlpTogether.Services
 
         public async Task InitializeCatalogAsync()
         {
-            var seed = CreateDefaultCatalog();
+            RemoteCatalogPayload? initialPayload = null;
 
-            // Always keep workspace catalog.json up to date with official seed
+            // 1. Once calisma dizinindeki catalog.json dosyasini oku (varsa ve gecerliyse)
+            string repoRootCatalog = Path.Combine(Environment.CurrentDirectory, "catalog.json");
             try
             {
-                string repoRootCatalog = Path.Combine(Environment.CurrentDirectory, "catalog.json");
-                string seedJson = JsonSerializer.Serialize(seed, new JsonSerializerOptions { WriteIndented = true });
-                await File.WriteAllTextAsync(repoRootCatalog, seedJson, Encoding.UTF8);
+                if (File.Exists(repoRootCatalog))
+                {
+                    string json = await File.ReadAllTextAsync(repoRootCatalog, Encoding.UTF8);
+                    if (!string.IsNullOrWhiteSpace(json))
+                    {
+                        var candidate = JsonSerializer.Deserialize<RemoteCatalogPayload>(json,
+                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (candidate?.Apps != null && candidate.Apps.Count > 0)
+                        {
+                            initialPayload = candidate;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // 2. Eger repoRootCatalog yoksa veya gecersizse _localCatalogPath (cache) dene
+            if (initialPayload == null)
+            {
+                try
+                {
+                    if (File.Exists(_localCatalogPath))
+                    {
+                        string json = await File.ReadAllTextAsync(_localCatalogPath, Encoding.UTF8);
+                        if (!string.IsNullOrWhiteSpace(json))
+                        {
+                            var candidate = JsonSerializer.Deserialize<RemoteCatalogPayload>(json,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                            if (candidate?.Apps != null && candidate.Apps.Count > 0)
+                            {
+                                initialPayload = candidate;
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            // 3. Hicbiri yoksa varsayilan seed olustur
+            if (initialPayload == null)
+            {
+                initialPayload = CreateDefaultCatalog();
+            }
+
+            try
+            {
+                string seedJson = JsonSerializer.Serialize(initialPayload, new JsonSerializerOptions { WriteIndented = true });
                 await File.WriteAllTextAsync(_localCatalogPath, seedJson, Encoding.UTF8);
             }
             catch { }
 
-            ApplyCatalogPayload(seed);
+            ApplyCatalogPayload(initialPayload);
 
             // Sync with remote catalog if newer
             await SyncRemoteCatalogAsync(silent: true);
@@ -186,7 +231,50 @@ namespace AlpTogether.Services
 
                 RefreshAllAppsState();
                 OnCatalogUpdated?.Invoke();
+                _ = CheckDynamicFirebaseStateVersionsAsync();
             });
+        }
+
+        private async Task CheckDynamicFirebaseStateVersionsAsync()
+        {
+            try
+            {
+                bool anyUpdated = false;
+                foreach (var app in Apps.ToList())
+                {
+                    if (string.IsNullOrWhiteSpace(app.FirebaseStateUrl)) continue;
+                    try
+                    {
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                        var resp = await _httpClient.GetAsync(app.FirebaseStateUrl, cts.Token);
+                        if (resp.IsSuccessStatusCode)
+                        {
+                            string stateJson = await resp.Content.ReadAsStringAsync();
+                            using var doc = JsonDocument.Parse(stateJson);
+                            if (doc.RootElement.TryGetProperty("version", out var vProp))
+                            {
+                                string? dynamicVer = vProp.GetString();
+                                if (!string.IsNullOrWhiteSpace(dynamicVer) && IsNewerVersion(dynamicVer, app.LatestVersion))
+                                {
+                                    app.LatestVersion = dynamicVer;
+                                    RefreshSingleAppState(app);
+                                    anyUpdated = true;
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                if (anyUpdated)
+                {
+                    Application.Current?.Dispatcher?.Invoke(() =>
+                    {
+                        OnCatalogUpdated?.Invoke();
+                    });
+                }
+            }
+            catch { }
         }
 
         public async Task<(bool Success, string Message)> PublishOrUpdateAppInCatalogAsync(AlpAppItem newOrUpdatedApp)
@@ -376,6 +464,10 @@ namespace AlpTogether.Services
                     }
 
                     app.InstalledVersion = detectedVer;
+                    if (IsNewerVersion(detectedVer, app.LatestVersion))
+                    {
+                        app.LatestVersion = detectedVer;
+                    }
                     app.UpdateAvailable = IsNewerVersion(app.LatestVersion, app.InstalledVersion);
 
                     bool missingCompanion = false;
@@ -1394,8 +1486,8 @@ namespace AlpTogether.Services
                         Description = "AlpNet Pulse; düşük gecikmeli Cloudflare WARP tünel yönetimi, DNSCrypt/DoH şifreleme, paket analizi ve gerçek zamanlı yapay zeka sesli çeviri motorunu (translator.exe) tek çatı altında sunan amiral gemisi ağ ve iletişim aracıdır.",
                         AccentColorHex = "#1E88E5",
                         IconPackUri = "pack://application:,,,/Assets/AppIcons/alpnet_official.png",
-                        LatestVersion = "2.2.7",
-                        ReleaseDate = "21 Ekim 2026",
+                        LatestVersion = "2.2.9",
+                        ReleaseDate = "22 Ekim 2026",
                         DownloadSizeText = "81.4 MB",
                         SizeBytes = 81400000,
                         PackageType = AppPackageType.HybridSetupAndFiles,
