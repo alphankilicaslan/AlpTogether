@@ -678,6 +678,7 @@ namespace AlpTogether.Services
 
             AppLoggerService.Instance.Success("HİBRİT-KURULUM", $"{app.Name} v{app.LatestVersion} kurulumu ve doğrulaması tamamlandı!", app.Name, app.InstallPath);
             _ = TelemetryAndHelpService.Instance.ReportEventAsync("INSTALL_SUCCESS", app.Id, app.Name, app.LatestVersion, $"Kurulum başarıyla tamamlandı. Konum: {app.InstallPath}");
+            _ = UserAuthAndPermissionService.Instance.SyncSelfAndHeartbeatAsync();
         }
 
         private async Task<bool> RunStandaloneInstallerFlowAsync(AlpAppItem app)

@@ -1959,13 +1959,13 @@ namespace AlpTogether
                 string appVer = user.GetAppInstalledVersion(def.Id);
                 if (!string.IsNullOrWhiteSpace(appVer))
                 {
-                    item.InstalledVersionBadge = $"⚡ v{appVer.TrimStart('v', 'V')}";
-                    item.InstalledVersionColorHex = "#00E5FF";
+                    item.InstalledVersionBadge = $"[Kurulu: v{appVer.TrimStart('v', 'V')}]";
+                    item.InstalledVersionColorHex = "#00FF87";
                 }
                 else
                 {
-                    item.InstalledVersionBadge = "⚪ Bilgi Yok";
-                    item.InstalledVersionColorHex = "#7E5676";
+                    item.InstalledVersionBadge = "[Indirilmedi]";
+                    item.InstalledVersionColorHex = "#757575";
                 }
 
                 ApplyUserPermissionToItem(item, perm);
@@ -1996,13 +1996,13 @@ namespace AlpTogether
                         string catAppVer = user.GetAppInstalledVersion(catApp.Id);
                         if (!string.IsNullOrWhiteSpace(catAppVer))
                         {
-                            item.InstalledVersionBadge = $"⚡ v{catAppVer.TrimStart('v', 'V')}";
-                            item.InstalledVersionColorHex = "#00E5FF";
+                            item.InstalledVersionBadge = $"[Kurulu: v{catAppVer.TrimStart('v', 'V')}]";
+                            item.InstalledVersionColorHex = "#00FF87";
                         }
                         else
                         {
-                            item.InstalledVersionBadge = "⚪ Bilgi Yok";
-                            item.InstalledVersionColorHex = "#7E5676";
+                            item.InstalledVersionBadge = "[Indirilmedi]";
+                            item.InstalledVersionColorHex = "#757575";
                         }
 
                         user.AppPermissions.TryGetValue(catApp.Id, out var perm);
