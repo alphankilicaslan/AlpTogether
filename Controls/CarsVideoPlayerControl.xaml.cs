@@ -58,7 +58,7 @@ namespace AlpTogether.Controls
                 _isLoopEnabled = settings.CarsVideoIsLoopEnabled;
                 VolumeSlider.Value = settings.CarsVideoVolume > 0 ? settings.CarsVideoVolume : 0.50;
                 CarsMedia.Volume = VolumeSlider.Value;
-                CarsMedia.IsMuted = settings.CarsVideoIsMuted;
+                CarsMedia.IsMuted = true; // Arka plan ses patlamalarını önlemek için varsayılan olarak sessiz başlatılır
 
                 if (settings.CarsVideoBannerCollapsed)
                 {

@@ -1,4 +1,4 @@
-﻿<Window x:Class="AlpTogether.MainWindow"
+<Window x:Class="AlpTogether.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
@@ -317,7 +317,7 @@
                                            FontSize="10"
                                            Margin="0,4,0,4" />
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                    <TextBlock x:Name="TxtSidebarClientVersion" Text="AlpTogether v1.1.1" Foreground="#B987AD" FontSize="10.5" FontWeight="Bold" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="TxtSidebarClientVersion" Text="AlpTogether v1.1.2" Foreground="#B987AD" FontSize="10.5" FontWeight="Bold" VerticalAlignment="Center" />
                                     <Button Content="🔄 Denetle"
                                             Style="{StaticResource PinkSecondaryButtonStyle}"
                                             Padding="6,2"
@@ -1990,9 +1990,9 @@
                                                                 <TextBlock x:Name="TxtDevUserActivity" Text="⚡ AlpLingo Açık (42 dk)" Foreground="#00E5FF" FontSize="11" FontWeight="SemiBold" Margin="0,2,0,0" />
                                                                 <StackPanel Orientation="Horizontal" Margin="0,3,0,1" VerticalAlignment="Center">
                                                                     <Border Background="#26FF2E93" BorderBrush="#FF2E93" BorderThickness="1" CornerRadius="5" Padding="6,2" Margin="0,0,8,0">
-                                                                        <TextBlock x:Name="TxtDevUserVersionBadge" Text="🚀 v1.1.1" Foreground="#FF85C0" FontSize="10.5" FontWeight="ExtraBold" />
+                                                                        <TextBlock x:Name="TxtDevUserVersionBadge" Text="🚀 v1.1.2" Foreground="#FF85C0" FontSize="10.5" FontWeight="ExtraBold" />
                                                                     </Border>
-                                                                    <TextBlock x:Name="TxtDevUserAllVersions" Text="İstemci: v1.1.1" Foreground="#00E5FF" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                                    <TextBlock x:Name="TxtDevUserAllVersions" Text="İstemci: v1.1.2" Foreground="#00E5FF" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
                                                                 </StackPanel>
                                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                                     <TextBlock Text="Kayıt: " Foreground="#A97E9C" FontSize="11" />
@@ -2620,7 +2620,7 @@
                                                 <DockPanel Margin="0,0,0,8">
                                                     <TextBlock Text="🚀 AlpTogether Sürüm &amp; Güncelleme Sistemi" Foreground="#FF85C0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
                                                     <Border Background="#2A1435" CornerRadius="6" Padding="8,3" HorizontalAlignment="Right">
-                                                        <TextBlock x:Name="TxtSettingsClientVersion" Text="v1.1.1" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" />
+                                                        <TextBlock x:Name="TxtSettingsClientVersion" Text="v1.1.2" Foreground="#00E5FF" FontSize="11" FontWeight="Bold" />
                                                     </Border>
                                                 </DockPanel>
 
@@ -2882,7 +2882,7 @@
 
                         <TextBlock x:Name="TxtClientUpdateModalTitle" Text="🚀 Yeni Sürüm Hazır!" Foreground="#FFFFFF" FontSize="22" FontWeight="ExtraBold" Margin="0,0,0,4" />
                         <TextBlock x:Name="TxtClientUpdateVersionCompare"
-                                   Text="Kurulu Sürüm: v1.1.1  ➜  Yeni Sürüm: v1.1.1"
+                                   Text="Kurulu Sürüm: v1.1.2  ➜  Yeni Sürüm: v1.1.2"
                                    Foreground="#00E5FF"
                                    FontSize="13"
                                    FontWeight="Bold"

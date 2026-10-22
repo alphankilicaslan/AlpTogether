@@ -295,7 +295,7 @@ namespace AlpTogether.Models
     public class RemoteCatalogPayload
     {
         public string CatalogVersion { get; set; } = "2026.10.16";
-        public string ClientLatestVersion { get; set; } = "1.1.1";
+        public string ClientLatestVersion { get; set; } = "1.1.2";
         public string ClientDownloadUrl { get; set; } = "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.Setup.exe";
         public string GlobalAnnouncement { get; set; } = "AlpTogether v1.0 Yayında! Tüm Alp uygulamalarını tek merkezden indirin, hibrit güncelleyin ve tek tıkla onarın.";
         public List<AlpAppItem> Apps { get; set; } = new();
@@ -310,7 +310,7 @@ namespace AlpTogether.Models
         public string OsVersion { get; set; } = Environment.OSVersion.ToString();
         public string AppId { get; set; } = "AlpTogether";
         public string AppName { get; set; } = "AlpTogether Client";
-        public string AppVersion { get; set; } = "1.1.1";
+        public string AppVersion { get; set; } = "1.1.2";
         public string ErrorSource { get; set; } = "Runtime"; // Runtime, Install, Update, Repair, ChildProcessCrash
         public string ErrorMessage { get; set; } = string.Empty;
         public string StackTrace { get; set; } = string.Empty;

@@ -10,9 +10,9 @@
     <ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
     <AssemblyName>AlpTogether</AssemblyName>
     <RootNamespace>AlpTogether</RootNamespace>
-    <Version>1.1.1</Version>
-    <AssemblyVersion>1.1.1.0</AssemblyVersion>
-    <FileVersion>1.1.1.0</FileVersion>
+    <Version>1.1.2</Version>
+    <AssemblyVersion>1.1.2.0</AssemblyVersion>
+    <FileVersion>1.1.2.0</FileVersion>
     <Authors>Alphan Kılıçaslan</Authors>
     <Product>AlpTogether Client</Product>
     <Description>Alp Ekosistemi Birleşik Uygulama İstemcisi, Hibrit Kurulum ve Onarım Merkezi</Description>

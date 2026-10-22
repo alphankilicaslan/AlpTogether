@@ -1247,7 +1247,7 @@ namespace AlpTogether.Services
                                             {
                                                 user.InstalledAppVersions["alpnet-pulse"] = vStr;
                                                 // Eğer kullanıcının istemci sürümü varsayılan veya AlpNet sürümü ise eşleştir
-                                                if (string.IsNullOrWhiteSpace(user.ClientVersion) || user.ClientVersion == "1.1.1" || user.ClientVersion.StartsWith("2."))
+                                                if (string.IsNullOrWhiteSpace(user.ClientVersion) || user.ClientVersion.StartsWith("1.1.") || user.ClientVersion.StartsWith("2."))
                                                 {
                                                     user.ClientVersion = vStr;
                                                 }

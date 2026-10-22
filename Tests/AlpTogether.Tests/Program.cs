@@ -1170,9 +1170,9 @@ namespace AlpTogether.Tests
             {
                 // 1. CurrentVersion Verification
                 string currentVer = AlpTogetherUpdateService.CurrentVersion;
-                if (currentVer != "1.1.1")
+                if (currentVer != "1.1.2")
                 {
-                    Console.WriteLine($" FAIL: Expected current version '1.1.1', got '{currentVer}'");
+                    Console.WriteLine($" FAIL: Expected current version '1.1.2', got '{currentVer}'");
                     failures++;
                 }
                 else

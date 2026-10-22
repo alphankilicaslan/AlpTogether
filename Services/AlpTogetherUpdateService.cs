@@ -57,7 +57,7 @@ namespace AlpTogether.Services
                         return $"{ver.Major}.{ver.Minor}.{ver.Build}";
                 }
                 catch { }
-                return "1.1.1";
+                return "1.1.2";
             }
         }
 

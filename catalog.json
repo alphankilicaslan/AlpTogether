@@ -1,6 +1,6 @@
-﻿{
-    "CatalogVersion":  "2026.10.22.1",
-    "ClientLatestVersion":  "1.1.1",
+{
+    "CatalogVersion":  "2026.10.22.2",
+    "ClientLatestVersion":  "1.1.2",
     "ClientDownloadUrl":  "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
     "GlobalAnnouncement":  "AlpTogether Ekosistem Ä°stemcisi Aktif! AlpNet Pulse v2.2.9 (TÃ¼rk Telekom DNS OnarÄ±mÄ± \u0026 Åifreli WARP TÃ¼neli) yayÄ±nda.",
     "Apps":  [
