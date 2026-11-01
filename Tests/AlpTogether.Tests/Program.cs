@@ -1,6 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using AlpTogether.Models;
 using AlpTogether.Services;
 
@@ -11,6 +15,12 @@ namespace AlpTogether.Tests
         [STAThread]
         static int Main(string[] args)
         {
+            if (args.Length > 0 && args[0] == "--capture")
+            {
+                string targetDir = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
+                return RunUiCapture(targetDir);
+            }
+
             if (System.Windows.Application.Current == null)
             {
                 try
@@ -1320,6 +1330,89 @@ namespace AlpTogether.Tests
                 Console.WriteLine("==================================================");
                 return 1;
             }
+        }
+
+        private static int RunUiCapture(string outputDir)
+        {
+            int exitCode = 0;
+            var thread = new System.Threading.Thread(() =>
+            {
+                var app = new AlpTogether.App();
+                app.InitializeComponent();
+                app.Startup += async (s, e) =>
+                {
+                    try
+                    {
+                        Console.WriteLine("[UI CAPTURE] Running in WPF Dispatcher message loop...");
+                        Directory.CreateDirectory(outputDir);
+
+                        await CatalogAndHybridInstallerService.Instance.InitializeCatalogAsync();
+                        var updateResult = await AlpTogetherUpdateService.Instance.CheckForUpdatesAsync(silent: true);
+
+                        Console.WriteLine($" -> Announcement: {CatalogAndHybridInstallerService.Instance.GlobalAnnouncement}");
+                        Console.WriteLine($" -> CurrentVersion: {AlpTogetherUpdateService.CurrentVersion}");
+                        Console.WriteLine($" -> LatestVersion: {updateResult?.LatestVersion}");
+                        Console.WriteLine($" -> IsUpdateAvailable: {updateResult?.IsUpdateAvailable}");
+
+                        var window = new MainWindow();
+                        window.Width = 1340;
+                        window.Height = 860;
+                        window.Show();
+
+                        await System.Threading.Tasks.Task.Delay(2000);
+
+                        int width = (int)window.ActualWidth > 0 ? (int)window.ActualWidth : 1340;
+                        int height = (int)window.ActualHeight > 0 ? (int)window.ActualHeight : 860;
+
+                        var rtbFull = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+                        rtbFull.Render(window);
+
+                        string fullPath = Path.Combine(outputDir, "alptogether_v113_window.png");
+                        using (var fs = File.Open(fullPath, FileMode.Create, FileAccess.Write))
+                        {
+                            var enc = new PngBitmapEncoder();
+                            enc.Frames.Add(BitmapFrame.Create(rtbFull));
+                            enc.Save(fs);
+                        }
+                        Console.WriteLine($"[UI CAPTURE] Full screenshot saved: {fullPath}");
+
+                        var ribbon = (FrameworkElement)window.FindName("PnlAnnouncementRibbon");
+                        if (ribbon != null)
+                        {
+                            int rW = (int)ribbon.ActualWidth > 0 ? (int)ribbon.ActualWidth : width;
+                            int rH = (int)ribbon.ActualHeight > 0 ? (int)ribbon.ActualHeight : 36;
+                            var rtbRibbon = new RenderTargetBitmap(rW, rH, 96, 96, PixelFormats.Pbgra32);
+                            rtbRibbon.Render(ribbon);
+
+                            string ribbonPath = Path.Combine(outputDir, "alptogether_v113_ribbon.png");
+                            using (var fs = File.Open(ribbonPath, FileMode.Create, FileAccess.Write))
+                            {
+                                var enc = new PngBitmapEncoder();
+                                enc.Frames.Add(BitmapFrame.Create(rtbRibbon));
+                                enc.Save(fs);
+                            }
+                            Console.WriteLine($"[UI CAPTURE] Ribbon screenshot saved: {ribbonPath}");
+                        }
+
+                        window.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[UI CAPTURE FAIL] {ex}");
+                        exitCode = 1;
+                    }
+                    finally
+                    {
+                        app.Shutdown(exitCode);
+                    }
+                };
+                app.Run();
+            });
+
+            thread.SetApartmentState(System.Threading.ApartmentState.STA);
+            thread.Start();
+            thread.Join();
+            return exitCode;
         }
     }
 }
