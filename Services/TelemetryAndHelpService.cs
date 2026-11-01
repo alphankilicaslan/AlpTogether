@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -40,7 +40,7 @@ namespace AlpTogether.Services
             catch { }
         }
 
-        private static string BuildFirebaseUrl(string relativePath)
+        private static string BuildFirebaseUrl(string relativePath, string? queryParams = null)
         {
             var cfg = SettingsService.Instance.Current;
             string baseUrl = (cfg.FirebaseBaseUrl ?? "").TrimEnd('/');
@@ -48,9 +48,18 @@ namespace AlpTogether.Services
                 return string.Empty;
 
             string auth = cfg.FirebaseAuthSecret;
-            return string.IsNullOrWhiteSpace(auth)
-                ? $"{baseUrl}/{relativePath.TrimStart('/')}"
-                : $"{baseUrl}/{relativePath.TrimStart('/')}?auth={Uri.EscapeDataString(auth)}";
+            string url = $"{baseUrl}/{relativePath.TrimStart('/')}";
+
+            var queryItems = new List<string>();
+            if (!string.IsNullOrWhiteSpace(auth))
+                queryItems.Add($"auth={Uri.EscapeDataString(auth)}");
+            if (!string.IsNullOrWhiteSpace(queryParams))
+                queryItems.Add(queryParams.TrimStart('?').TrimStart('&'));
+
+            if (queryItems.Count > 0)
+                url += "?" + string.Join("&", queryItems);
+
+            return url;
         }
 
         /// <summary>
@@ -301,10 +310,10 @@ namespace AlpTogether.Services
 
             try
             {
-                string fbUrl = BuildFirebaseUrl("alptogether/telemetry/errors.json");
+                string fbUrl = BuildFirebaseUrl("alptogether/telemetry/errors.json", "orderBy=\"\"&limitToLast=50");
                 if (!string.IsNullOrWhiteSpace(fbUrl))
                 {
-                    var resp = await _httpClient.GetAsync(fbUrl);
+                    using var resp = await _httpClient.GetAsync(fbUrl);
                     if (resp.IsSuccessStatusCode)
                     {
                         string json = await resp.Content.ReadAsStringAsync();
@@ -412,10 +421,10 @@ namespace AlpTogether.Services
             // 1. Try Firebase RTDB
             try
             {
-                string fbUrl = BuildFirebaseUrl("alptogether/telemetry/events.json");
+                string fbUrl = BuildFirebaseUrl("alptogether/telemetry/events.json", $"orderBy=\"\"&limitToLast={Math.Max(10, limit)}");
                 if (!string.IsNullOrWhiteSpace(fbUrl))
                 {
-                    var resp = await _httpClient.GetAsync(fbUrl);
+                    using var resp = await _httpClient.GetAsync(fbUrl);
                     if (resp.IsSuccessStatusCode)
                     {
                         string json = await resp.Content.ReadAsStringAsync();

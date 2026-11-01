@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
@@ -115,23 +115,28 @@ namespace AlpTogether.Controls
 
         private void ProgressTimer_Tick(object? sender, EventArgs e)
         {
+            // Mouse release safeguard when dragging
+            if (_isUserSeeking && Mouse.LeftButton == MouseButtonState.Released)
+            {
+                _isUserSeeking = false;
+                TimelineSlider.ReleaseMouseCapture();
+                TheaterMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
+                _savedPosition = TheaterMedia.Position;
+                _seekThrottleStopwatch.Reset();
+            }
+
             if (!_isPlaying)
             {
-                _progressTimer.Stop();
-                return;
+                if (!_isUserSeeking)
+                {
+                    _progressTimer.Stop();
+                    return;
+                }
             }
 
             if (!_isUserSeeking && _duration.TotalSeconds > 0)
             {
                 TimelineSlider.Value = TheaterMedia.Position.TotalSeconds;
-            }
-            // Mouse release safeguard when dragging
-            if (_isUserSeeking && Mouse.LeftButton == MouseButtonState.Released)
-            {
-                _isUserSeeking = false;
-                TheaterMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
-                _savedPosition = TheaterMedia.Position;
-                _seekThrottleStopwatch.Reset();
             }
             if (!_isUserSeeking)
             {
@@ -283,13 +288,16 @@ namespace AlpTogether.Controls
         private void TimelineSlider_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             _isUserSeeking = true;
+            TimelineSlider.CaptureMouse();
             _seekThrottleStopwatch.Restart();
             ResetAutoHideTimer();
+            if (!_progressTimer.IsEnabled) _progressTimer.Start();
         }
 
         private void TimelineSlider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             _isUserSeeking = false;
+            TimelineSlider.ReleaseMouseCapture();
             TheaterMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
             _savedPosition = TheaterMedia.Position;
             _seekThrottleStopwatch.Reset();

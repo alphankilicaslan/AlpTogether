@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 using System.Windows;
@@ -186,21 +186,26 @@ namespace AlpTogether.Controls
 
         private void ProgressTimer_Tick(object? sender, EventArgs e)
         {
+            if (_isUserSeeking && Mouse.LeftButton == MouseButtonState.Released)
+            {
+                _isUserSeeking = false;
+                TimelineSlider.ReleaseMouseCapture();
+                CarsMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
+                _seekThrottleStopwatch.Reset();
+            }
+
             if (!_isPlaying || !IsVisible)
             {
-                _progressTimer.Stop();
-                return;
+                if (!_isUserSeeking)
+                {
+                    _progressTimer.Stop();
+                    return;
+                }
             }
 
             if (!_isUserSeeking && _duration.TotalSeconds > 0)
             {
                 TimelineSlider.Value = CarsMedia.Position.TotalSeconds;
-            }
-
-            if (_isUserSeeking && Mouse.LeftButton == MouseButtonState.Released)
-            {
-                _isUserSeeking = false;
-                CarsMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
             }
 
             string currentTimeStr = FormatTime(CarsMedia.Position);
@@ -363,12 +368,15 @@ namespace AlpTogether.Controls
         private void TimelineSlider_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             _isUserSeeking = true;
+            TimelineSlider.CaptureMouse();
             _seekThrottleStopwatch.Restart();
+            if (!_progressTimer.IsEnabled) _progressTimer.Start();
         }
 
         private void TimelineSlider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             _isUserSeeking = false;
+            TimelineSlider.ReleaseMouseCapture();
             CarsMedia.Position = TimeSpan.FromSeconds(TimelineSlider.Value);
             _seekThrottleStopwatch.Reset();
         }

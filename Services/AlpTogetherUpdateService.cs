@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -57,7 +57,7 @@ namespace AlpTogether.Services
                         return $"{ver.Major}.{ver.Minor}.{ver.Build}";
                 }
                 catch { }
-                return "1.1.2";
+                return "1.1.3";
             }
         }
 
@@ -82,7 +82,7 @@ namespace AlpTogether.Services
         {
             _httpClient = new HttpClient
             {
-                Timeout = TimeSpan.FromSeconds(15)
+                Timeout = TimeSpan.FromMinutes(10)
             };
             _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("AlpTogether-Client", CurrentVersion));
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
@@ -331,7 +331,11 @@ namespace AlpTogether.Services
                     }
                     else
                     {
-                        OnDownloadProgressChanged?.Invoke(50, $"İndiriliyor: {(totalRead / 1048576.0):0.0} MB...");
+                        // Content-Length yoksa (chunked aktarım), ilerleme çubuğunu canlandırmak için periyodik sahte döngü ve net bayt sayacı
+                        double fakePct = Math.Min(95.0, (totalRead / (35.0 * 1048576.0)) * 95.0);
+                        DownloadProgress = fakePct;
+                        progress?.Report(fakePct);
+                        OnDownloadProgressChanged?.Invoke(fakePct, $"İndiriliyor: {(totalRead / 1048576.0):0.1} MB...");
                     }
                 }
 
@@ -396,24 +400,36 @@ namespace AlpTogether.Services
             string workDir = Path.GetDirectoryName(currentExe) ?? updateDir;
 
             // CMD tabanlı atomik yer değiştirme ve yeniden başlatma betiği
-            // 1. Mevcut PID'nin kapanmasını bekler (15 saniyeye kadar).
-            // 2. Yeni dosyayı ana .exe üzerine kopyalar.
-            // 3. Güncellenen AlpTogether'ı başlatır.
-            // 4. Geçici betik ve indirme dosyasını temizler.
+            // 1. Mevcut PID'nin kapanmasını bekler (en fazla 8 saniye). Kapanmazsa zorla sonlandırır (taskkill).
+            // 2. Kopyalama öncesi mevcut dosyanın .bak yedeğini alır.
+            // 3. Yeni dosyayı ana .exe üzerine kopyalar. Başarısız olursa yedeği geri yükler (Rollback).
+            // 4. Güncellenen AlpTogether'ı başlatır ve geçici betiği temizler.
             string cmdContent = $@"@echo off
 chcp 65001 >nul
 set PID={currentPid}
 set SRC=""{downloadedExePath}""
 set DST=""{currentExe}""
+set BAK=""{currentExe}.bak""
 set WORKDIR=""{workDir}""
 
+set WAIT_COUNT=0
 :wait_loop
 tasklist /fi ""PID eq %PID%"" 2>nul | find ""%PID%"" >nul
 if not errorlevel 1 (
+    set /a WAIT_COUNT+=1
+    if %WAIT_COUNT% geq 8 (
+        taskkill /f /pid %PID% >nul 2>&1
+        timeout /t 1 /nobreak >nul
+        goto do_backup
+    )
     timeout /t 1 /nobreak >nul
     goto wait_loop
 )
-timeout /t 1 /nobreak >nul
+
+:do_backup
+if exist %DST% (
+    copy /y %DST% %BAK% >nul 2>&1
+)
 
 set RETRIES=0
 :copy_loop
@@ -424,8 +440,16 @@ if errorlevel 1 (
         timeout /t 1 /nobreak >nul
         goto copy_loop
     )
+    rem Kopyalama başarısız, yedeği geri yükle (Rollback)
+    if exist %BAK% copy /y %BAK% %DST% >nul 2>&1
+    cd /d %WORKDIR%
+    start """" %DST%
+    (goto) 2>nul & del ""%~f0""
+    exit /b 1
 )
 
+rem Başarılı kopyalama sonrası yedeği ve kaynak indirmeyi temizle
+if exist %BAK% del /f /q %BAK% >nul 2>&1
 del /f /q %SRC% >nul 2>&1
 cd /d %WORKDIR%
 start """" %DST%
@@ -450,6 +474,13 @@ start """" %DST%
             Application.Current?.Dispatcher?.Invoke(() =>
             {
                 Application.Current.Shutdown();
+            });
+
+            // Sürecin arka plan timer veya thread'ler yüzünden asılı kalmasını kesin engelle
+            Task.Run(async () =>
+            {
+                await Task.Delay(1500);
+                Environment.Exit(0);
             });
 
             return true;
@@ -494,7 +525,21 @@ start """" %DST%
                     return vLatest > vCurr;
                 }
 
-                return string.Compare(cleanLatest, cleanCurrent, StringComparison.OrdinalIgnoreCase) > 0;
+                // SemVer sayısal karşılaştırma fallback'i (string.Compare "1.10.0" < "1.9.0" hatasını önler)
+                var pLatest = cleanLatest.Split('.');
+                var pCurrent = cleanCurrent.Split('.');
+                int len = Math.Max(pLatest.Length, pCurrent.Length);
+
+                for (int i = 0; i < len; i++)
+                {
+                    int numL = i < pLatest.Length && int.TryParse(pLatest[i], out var l) ? l : 0;
+                    int numC = i < pCurrent.Length && int.TryParse(pCurrent[i], out var c) ? c : 0;
+
+                    if (numL > numC) return true;
+                    if (numL < numC) return false;
+                }
+
+                return false;
             }
             catch
             {

@@ -7,4 +7,5 @@ AlpTogetherWebSetup/obj/
 *.tmp
 *.old
 *.exe
+*.db
 frame_*.png

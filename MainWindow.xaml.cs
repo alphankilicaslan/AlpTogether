@@ -28,6 +28,7 @@ namespace AlpTogether
         private string _activeFilter = "ALL"; // ALL, INSTALLED, UPDATES
         private bool _suppressRadioEvent;
         private readonly DispatcherTimer _processMonitorTimer;
+        private readonly DispatcherTimer _windowSizeDebounceTimer;
         private int _logoClickCount = 0;
         private DateTime _lastLogoClickTime = DateTime.MinValue;
         private List<TelemetryEventRecord> _allDevEvents = new();
@@ -50,6 +51,16 @@ namespace AlpTogether
             };
             _processMonitorTimer.Tick += ProcessMonitorTimer_Tick;
 
+            _windowSizeDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(400)
+            };
+            _windowSizeDebounceTimer.Tick += (s, e) =>
+            {
+                _windowSizeDebounceTimer.Stop();
+                SettingsService.Instance.Save();
+            };
+
             Loaded += MainWindow_Loaded;
             SourceInitialized += MainWindow_SourceInitialized;
             StateChanged += Window_StateChanged;
@@ -64,7 +75,8 @@ namespace AlpTogether
                 {
                     SettingsService.Instance.Current.WindowWidth = ActualWidth;
                     SettingsService.Instance.Current.WindowHeight = ActualHeight;
-                    SettingsService.Instance.Save();
+                    _windowSizeDebounceTimer.Stop();
+                    _windowSizeDebounceTimer.Start();
                 }
                 catch { }
             }
@@ -257,7 +269,7 @@ namespace AlpTogether
 
         private void Instance_OnCatalogUpdated()
         {
-            TxtGlobalAnnouncement.Text = CatalogAndHybridInstallerService.Instance.GlobalAnnouncement;
+            TxtGlobalAnnouncement.Text = CatalogAndHybridInstallerService.FixMojibake(CatalogAndHybridInstallerService.Instance.GlobalAnnouncement);
             TxtSidebarAppCount.Text = CatalogAndHybridInstallerService.Instance.Apps.Count.ToString();
             RefreshFilteredAppCards();
             PopulateFeedbackAppCombo();
@@ -1015,12 +1027,15 @@ namespace AlpTogether
 
         private async void BtnUpdateAllApps_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var app in CatalogAndHybridInstallerService.Instance.Apps.ToList())
+            var updateCandidates = CatalogAndHybridInstallerService.Instance.Apps.Where(x => x.UpdateAvailable).ToList();
+            if (updateCandidates.Count == 0)
             {
-                if (app.IsInstalled || app.UpdateAvailable)
-                {
-                    await CatalogAndHybridInstallerService.Instance.InstallOrUpdateAppAsync(app);
-                }
+                MessageBox.Show("Tüm uygulamalarınız zaten en son sürümde güncel!", "Güncelleme Kontrolü", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            foreach (var app in updateCandidates)
+            {
+                await CatalogAndHybridInstallerService.Instance.InstallOrUpdateAppAsync(app);
             }
         }
 

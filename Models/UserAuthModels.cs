@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -183,7 +183,7 @@ namespace AlpTogether.Models
         public string AlpNetHwid { get; set; } = string.Empty;
 
         [JsonPropertyName("clientVersion")]
-        public string ClientVersion { get; set; } = "1.1.2";
+        public string ClientVersion { get; set; } = "1.1.3";
 
         [JsonPropertyName("installedAppVersions")]
         public Dictionary<string, string> InstalledAppVersions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -478,7 +478,7 @@ namespace AlpTogether.Models
                 {
                     return ClientVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? ClientVersion : $"v{ClientVersion}";
                 }
-                return "v1.1.2";
+                return "v1.1.3";
             }
         }
 

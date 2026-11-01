@@ -1,4 +1,4 @@
-<Window x:Class="AlpTogether.RemoteDesktopViewerWindow"
+﻿<Window x:Class="AlpTogether.RemoteDesktopViewerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="AlpDestek • Canlı Destek &amp; Uzak Masaüstü"

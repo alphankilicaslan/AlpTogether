@@ -82,7 +82,7 @@ namespace AlpTogether.Tests
             }
             catch (Exception ex)
             {
-                Console.WriteLine($" FAIL: Test 1 exception: {ex.Message}");
+                Console.WriteLine($" FAIL: Test 1 exception: {ex}");
                 failures++;
             }
 
@@ -1170,9 +1170,9 @@ namespace AlpTogether.Tests
             {
                 // 1. CurrentVersion Verification
                 string currentVer = AlpTogetherUpdateService.CurrentVersion;
-                if (currentVer != "1.1.2")
+                if (currentVer != "1.1.3")
                 {
-                    Console.WriteLine($" FAIL: Expected current version '1.1.2', got '{currentVer}'");
+                    Console.WriteLine($" FAIL: Expected current version '1.1.3', got '{currentVer}'");
                     failures++;
                 }
                 else
@@ -1268,6 +1268,42 @@ namespace AlpTogether.Tests
             catch (Exception ex)
             {
                 Console.WriteLine($" FAIL: Test 15 exception: {ex.Message}\n{ex.StackTrace}");
+                failures++;
+            }
+
+            // TEST 16: Turkish Mojibake Auto-Repair & Encoding Sanitizer
+            Console.WriteLine("\n[TEST 16] Testing Turkish Mojibake Auto-Repair & Encoding Sanitizer...");
+            try
+            {
+                string corruptedSample = "AlpTogether Ekosistem Ä°stemcisi Aktif! AlpNet Pulse v2.2.9 (TÃ¼rk Telekom DNS OnarÄ±mÄ± & Åžifreli WARP TÃ¼neli) yayÄ±nda.";
+                string expectedClean = "AlpTogether Ekosistem İstemcisi Aktif! AlpNet Pulse v2.2.9 (Türk Telekom DNS Onarımı & Şifreli WARP Tüneli) yayında.";
+
+                string repaired = CatalogAndHybridInstallerService.FixMojibake(corruptedSample);
+                if (repaired != expectedClean)
+                {
+                    Console.WriteLine($" FAIL: FixMojibake did not produce expected output!\n   Expected: {expectedClean}\n   Got:      {repaired}");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine($" -> FixMojibake correctly restored Turkish characters:\n    \"{repaired}\"");
+                }
+
+                string alreadyClean = "Türk Telekom ISS DNS Zehirlenmesi & Discord Açılmama Sorunu Çözüldü";
+                string untouched = CatalogAndHybridInstallerService.FixMojibake(alreadyClean);
+                if (untouched != alreadyClean)
+                {
+                    Console.WriteLine(" FAIL: FixMojibake altered an already clean string!");
+                    failures++;
+                }
+                else
+                {
+                    Console.WriteLine(" -> Clean text passed through completely unaltered.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAIL: Test 16 exception: {ex.Message}");
                 failures++;
             }
 

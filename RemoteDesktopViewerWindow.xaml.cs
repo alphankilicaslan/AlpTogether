@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading;
@@ -292,7 +292,7 @@ namespace AlpTogether
         {
             if (ChkControlEnabled.IsChecked != true) return;
 
-            int vk = KeyInterop.VirtualKeyFromKey(e.Key);
+            Key realKey = e.Key == Key.System ? e.SystemKey : e.Key; int vk = KeyInterop.VirtualKeyFromKey(realKey);
             _ = AlpDestekService.Instance.SendAdminInputEventAsync(_targetHwid, new
             {
                 id = DateTime.UtcNow.Ticks,
@@ -307,7 +307,7 @@ namespace AlpTogether
         {
             if (ChkControlEnabled.IsChecked != true) return;
 
-            int vk = KeyInterop.VirtualKeyFromKey(e.Key);
+            Key realKey = e.Key == Key.System ? e.SystemKey : e.Key; int vk = KeyInterop.VirtualKeyFromKey(realKey);
             _ = AlpDestekService.Instance.SendAdminInputEventAsync(_targetHwid, new
             {
                 id = DateTime.UtcNow.Ticks,
@@ -326,16 +326,31 @@ namespace AlpTogether
             await TerminateAndCloseAsync();
         }
 
+        private bool _isClosingInProgress = false;
+
         private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             if (_isTerminated) return;
-            _isTerminated = true;
-            _sessionCts?.Cancel();
-            try
+
+            if (!_isClosingInProgress)
             {
-                await AlpDestekService.Instance.TerminateActiveSessionAsync(_targetHwid);
+                _isClosingInProgress = true;
+                e.Cancel = true;
+                _sessionCts?.Cancel();
+
+                try
+                {
+                    await AlpDestekService.Instance.TerminateActiveSessionAsync(_targetHwid);
+                }
+                catch { }
+                finally
+                {
+                    _isTerminated = true;
+                    try { _sessionCts?.Dispose(); } catch { }
+                    try { _httpClient?.Dispose(); } catch { }
+                    Close();
+                }
             }
-            catch { }
         }
 
         private async Task TerminateAndCloseAsync()

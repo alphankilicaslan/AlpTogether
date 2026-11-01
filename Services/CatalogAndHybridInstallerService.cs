@@ -667,7 +667,7 @@ namespace AlpTogether.Services
                         }
                         else
                         {
-                            ReplaceFileSafely(tempDownloadFile, targetExePath);
+                            await ReplaceFileSafelyAsync(tempDownloadFile, targetExePath);
                             mainFileReady = File.Exists(targetExePath);
                         }
                     }
@@ -707,7 +707,7 @@ namespace AlpTogether.Services
                             bool compOk = await DownloadFileWithSpeedAsync(comp.DownloadUrl, tempComp, app, startPct, endPct);
                             if (compOk && File.Exists(tempComp))
                             {
-                                ReplaceFileSafely(tempComp, targetComp);
+                                await ReplaceFileSafelyAsync(tempComp, targetComp);
                             }
                         }
 
@@ -1170,7 +1170,8 @@ namespace AlpTogether.Services
                                 app.StatusText = "Hazır";
                             });
 
-                            if (exitCode != 0 && exitCode != -1)
+                            // 0: Basarili, -1: Normal, 1: Tekil ornek/mutex yonlendirmesi, 1223: UAC iptal
+                            if (exitCode != 0 && exitCode != -1 && exitCode != 1 && exitCode != 1223)
                             {
                                 string crashMsg = $"{app.Name} beklenmeyen bir hata kodu ile kapandı (ExitCode: {exitCode}, Süre: {(DateTime.UtcNow - startTime).TotalSeconds:0.0} sn).";
                                 AppLoggerService.Instance.Error("ÇÖKME-ALGILANDI", crashMsg, app.Name);
@@ -1401,7 +1402,7 @@ namespace AlpTogether.Services
             return removed;
         }
 
-        private static void ReplaceFileSafely(string sourceFile, string destinationFile)
+        private static async Task ReplaceFileSafelyAsync(string sourceFile, string destinationFile)
         {
             if (!File.Exists(sourceFile)) return;
             for (int retry = 0; retry < 5; retry++)
@@ -1431,9 +1432,14 @@ namespace AlpTogether.Services
                 }
                 catch
                 {
-                    Thread.Sleep(250);
+                    await Task.Delay(250);
                 }
             }
+        }
+
+        private static void ReplaceFileSafely(string sourceFile, string destinationFile)
+        {
+            ReplaceFileSafelyAsync(sourceFile, destinationFile).GetAwaiter().GetResult();
         }
 
         public static void CreateDesktopShortcut(string targetPath, string workingDir, string shortcutName)
@@ -1854,6 +1860,38 @@ namespace AlpTogether.Services
 
             return false;
         }
+        public static string FixMojibake(string? text)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+            if (!text.Contains('Ã') && !text.Contains('Ä') && !text.Contains('Å') && !text.Contains('Â'))
+                return text;
+
+            try
+            {
+                byte[] bytes = Encoding.Latin1.GetBytes(text);
+                string candidate = Encoding.UTF8.GetString(bytes);
+                if (!candidate.Contains('\uFFFD') && !string.IsNullOrWhiteSpace(candidate))
+                    return candidate;
+            }
+            catch { }
+
+            return text
+                .Replace("Ä°", "İ")
+                .Replace("Ä±", "ı")
+                .Replace("Ã§", "ç")
+                .Replace("Ã‡", "Ç")
+                .Replace("Ã¶", "ö")
+                .Replace("Ã–", "Ö")
+                .Replace("Ã¼", "ü")
+                .Replace("Ãœ", "Ü")
+                .Replace("ÅŸ", "ş")
+                .Replace("Åž", "Ş")
+                .Replace("Åifreli", "Şifreli")
+                .Replace("ÄŸ", "ğ")
+                .Replace("Äž", "Ğ")
+                .Replace("Â ", " ");
+        }
+
         #endregion
     }
 }

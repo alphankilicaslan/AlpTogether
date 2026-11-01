@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1358,8 +1358,39 @@ namespace AlpTogether.Services
                 AppLoggerService.Instance.Error("ADMİN-USER", "Kullanıcı listesi alınamadı.", "AlpTogether", ex.Message);
             }
 
+            // DEDUPLICATION: Aynı donanıma veya makineye ait mükerrer kayıtları (Legacy MD5 HWID vs AT-HWID) akıllıca tekilleştir
+            var deduplicated = new List<AlpTogetherUserRecord>();
+            var seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var u in list.OrderByDescending(x => x.IsAdmin)
+                                  .ThenByDescending(x => x.SortTime))
+            {
+                string dedupKey;
+                if (!string.IsNullOrWhiteSpace(u.AlpNetHwid))
+                {
+                    dedupKey = "alpnet:" + u.AlpNetHwid;
+                }
+                else if (!string.IsNullOrWhiteSpace(u.Hwid) && u.Hwid.Length == 32 && !u.Hwid.StartsWith("AT-", StringComparison.OrdinalIgnoreCase))
+                {
+                    dedupKey = "alpnet:" + u.Hwid;
+                }
+                else if (!string.IsNullOrWhiteSpace(u.MachineName) && !string.IsNullOrWhiteSpace(u.PcUser) && u.MachineName != "AlpNet-PC")
+                {
+                    dedupKey = $"pc:{u.MachineName}:{u.PcUser}";
+                }
+                else
+                {
+                    dedupKey = "hwid:" + u.Hwid;
+                }
+
+                if (seenKeys.Add(dedupKey))
+                {
+                    deduplicated.Add(u);
+                }
+            }
+
             // Son görülme / kayıt tarihine göre yeniden eskiye sırala (Alphan en son giren kişiyi en üstte görsün)
-            return list.OrderByDescending(u => u.SortTime).ToList();
+            return deduplicated.OrderByDescending(u => u.SortTime).ToList();
         }
 
         /// <summary>

@@ -66,11 +66,13 @@ namespace AlpTogether.Services
                 string machine = Environment.MachineName;
                 string user = Environment.UserName;
 
-                if (machine.Contains("MONSTER", StringComparison.OrdinalIgnoreCase) ||
-                    machine.Contains("ALPHAN", StringComparison.OrdinalIgnoreCase))
+                // Yalnızca Alphan'ın gerçek geliştirici makinesi (MONSTERALPHAN ve Alphan kullanıcısı) kurucu sayılır
+                if (machine.Equals("MONSTERALPHAN", StringComparison.OrdinalIgnoreCase) &&
+                    user.Contains("Alphan", StringComparison.OrdinalIgnoreCase))
                     return true;
 
-                if (user.Contains("Alphan", StringComparison.OrdinalIgnoreCase))
+                if (machine.Contains("ALPHAN", StringComparison.OrdinalIgnoreCase) &&
+                    machine.Contains("MONSTER", StringComparison.OrdinalIgnoreCase))
                     return true;
             }
             catch { }

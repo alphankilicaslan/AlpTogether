@@ -1,8 +1,8 @@
-{
-    "CatalogVersion":  "2026.10.22.2",
-    "ClientLatestVersion":  "1.1.2",
+﻿{
+    "CatalogVersion":  "2026.11.01.1",
+    "ClientLatestVersion":  "1.1.3",
     "ClientDownloadUrl":  "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
-    "GlobalAnnouncement":  "AlpTogether Ekosistem Ä°stemcisi Aktif! AlpNet Pulse v2.2.9 (TÃ¼rk Telekom DNS OnarÄ±mÄ± \u0026 Åifreli WARP TÃ¼neli) yayÄ±nda.",
+    "GlobalAnnouncement":  "AlpTogether Ekosistem İstemcisi Aktif! AlpNet Pulse v2.2.9 (Türk Telekom DNS Onarımı & Şifreli WARP Tüneli) yayında.",
     "Apps":  [
                  {
                      "Id":  "alpnet-pulse",
@@ -57,13 +57,13 @@
                                             "AppIconUri":  "",
                                             "Version":  "2.2.9",
                                             "ReleaseDate":  "22 Ekim 2026",
-                                            "Title":  "TÃ¼rk Telekom ISS DNS Zehirlenmesi (195.175.254.2) \u0026 Discord AÃ§Ä±lmama Sorunu Ã‡Ã¶zÃ¼ldÃ¼",
-                                            "Tag":  "KRÄ°TÄ°K ONARIM",
+                                            "Title":  "Türk Telekom ISS DNS Zehirlenmesi (195.175.254.2) & Discord Açılmama Sorunu Çözüldü",
+                                            "Tag":  "KRİTİK ONARIM",
                                             "Changes":  [
-                                                            "Emin ve TÃ¼rk Telekom kullanÄ±cÄ±larÄ±nda Discord ve Roblox\u0027un 195.175.254.2 adresine yÃ¶nlendirilerek aÃ§Ä±lmamasÄ± sorunu tamamen Ã§Ã¶zÃ¼ldÃ¼.",
-                                                            "WireSock VPN tÃ¼neline ÅŸifreli Cloudflare DNS (1.1.1.1, 1.0.0.1) entegre edildi; DNS sorgularÄ± ISS sansÃ¼rÃ¼ne takÄ±lmadan tÃ¼nel iÃ§inden ÅŸifreli akar.",
-                                                            "Windows 11 DoH (DNS-over-HTTPS) otomatik yÃ¼kseltmesi ve anÄ±nda Ã¶nbellek temizleme (ipconfig /flushdns) entegre edildi.",
-                                                            "TÃ¼nel profili gÃ¼ncellendiÄŸinde arka planda Ã§alÄ±ÅŸan servis kesintisiz ve 150ms iÃ§inde yeni ayarlarla otomatik tazelenir."
+                                                            "Emin ve Türk Telekom kullanıcılarında Discord ve Roblox'un 195.175.254.2 adresine yönlendirilerek açılmaması sorunu tamamen çözüldü.",
+                                                            "WireSock VPN tüneline şifreli Cloudflare DNS (1.1.1.1, 1.0.0.1) entegre edildi; DNS sorguları ISS sansürüne takılmadan tünel içinden şifreli akar.",
+                                                            "Windows 11 DoH (DNS-over-HTTPS) otomatik yükseltmesi ve anında önbellek temizleme (ipconfig /flushdns) entegre edildi.",
+                                                            "Tünel profili güncellendiğinde arka planda çalışan servis kesintisiz ve 150ms içinde yeni ayarlarla otomatik tazelenir."
                                                         ],
                                             "ImageUrl":  null
                                         },
