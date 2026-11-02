@@ -1,8 +1,8 @@
-﻿{
-    "CatalogVersion":  "2026.11.01.1",
-    "ClientLatestVersion":  "1.1.3",
+{
+    "CatalogVersion":  "2026.11.02.1",
+    "ClientLatestVersion":  "2.3.3",
     "ClientDownloadUrl":  "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
-    "GlobalAnnouncement":  "AlpTogether Ekosistem İstemcisi Aktif! AlpNet Pulse v2.2.9 (Türk Telekom DNS Onarımı & Şifreli WARP Tüneli) yayında.",
+    "GlobalAnnouncement":  "AlpTogether ve AlpNet Pulse v2.3.3 Kararlı Sürümü Yayında! Kişi bazlı donanım telemetrisi ve hızlı sürücü denetleyicisi aktif.",
     "Apps":  [
                  {
                      "Id":  "alpnet-pulse",
@@ -14,8 +14,8 @@
                      "HighlightText":  "HİBRİT KURULUM DESTEKLİ (AlpNet.Setup.exe + Doğrudan Paket Senkronizasyonu)",
                      "AccentColorHex":  "#1E88E5",
                      "IconPackUri":  "pack://application:,,,/Assets/AppIcons/alpnet_official.png",
-                     "LatestVersion":  "2.2.9",
-                     "ReleaseDate":  "22 Ekim 2026",
+                     "LatestVersion":  "2.3.3",
+                     "ReleaseDate":  "2 Kasım 2026",
                      "DownloadSizeText":  "81.4 MB",
                      "SizeBytes":  81400000,
                      "PackageType":  0,
@@ -56,7 +56,7 @@
                                             "AppId":  "",
                                             "AppIconUri":  "",
                                             "Version":  "2.2.9",
-                                            "ReleaseDate":  "22 Ekim 2026",
+                                            "ReleaseDate":  "2 Kasım 2026",
                                             "Title":  "Türk Telekom ISS DNS Zehirlenmesi (195.175.254.2) & Discord Açılmama Sorunu Çözüldü",
                                             "Tag":  "KRİTİK ONARIM",
                                             "Changes":  [

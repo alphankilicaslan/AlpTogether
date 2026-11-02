@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -468,11 +468,20 @@ namespace AlpTogether.Models
         {
             get
             {
-                if (InstalledAppVersions.TryGetValue("alpnet-pulse", out var anVer) && !string.IsNullOrWhiteSpace(anVer))
+                string? bestAlpNetVer = null;
+                if (InstalledAppVersions.TryGetValue("alpnet-pulse", out var anpVer) && !string.IsNullOrWhiteSpace(anpVer))
+                    bestAlpNetVer = anpVer;
+                if (InstalledAppVersions.TryGetValue("alpnet", out var anVer) && !string.IsNullOrWhiteSpace(anVer))
+                {
+                    if (bestAlpNetVer == null || Services.AlpTogetherUpdateService.IsNewerVersion(anVer, bestAlpNetVer))
+                        bestAlpNetVer = anVer;
+                }
+
+                if (!string.IsNullOrWhiteSpace(bestAlpNetVer))
                 {
                     if (!string.IsNullOrWhiteSpace(ClientVersion) && ClientVersion.StartsWith("1."))
-                        return $"v{ClientVersion.TrimStart('v', 'V')} (AlpNet v{anVer.TrimStart('v', 'V')})";
-                    return $"AlpNet v{anVer.TrimStart('v', 'V')}";
+                        return $"v{ClientVersion.TrimStart('v', 'V')} (AlpNet v{bestAlpNetVer.TrimStart('v', 'V')})";
+                    return $"AlpNet v{bestAlpNetVer.TrimStart('v', 'V')}";
                 }
                 if (!string.IsNullOrWhiteSpace(ClientVersion) && ClientVersion != "-")
                 {
@@ -487,30 +496,52 @@ namespace AlpTogether.Models
         {
             get
             {
-                var parts = new List<string>();
+                var appVersions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                // 1. ClientVersion (AlpNet / İstemci)
                 if (!string.IsNullOrWhiteSpace(ClientVersion))
                 {
                     string label = ClientVersion.StartsWith("2.") ? "AlpNet" : "İstemci";
-                    parts.Add($"{label}: v{ClientVersion.TrimStart('v', 'V')}");
+                    appVersions[label] = ClientVersion.TrimStart('v', 'V');
                 }
+
+                // 2. InstalledAppVersions (Uygulama bazlı yüklü sürümler)
                 if (InstalledAppVersions != null && InstalledAppVersions.Count > 0)
                 {
                     foreach (var kvp in InstalledAppVersions)
                     {
-                        string appShortName = kvp.Key switch
+                        if (string.IsNullOrWhiteSpace(kvp.Key) || string.IsNullOrWhiteSpace(kvp.Value))
+                            continue;
+
+                        // "alpnet-pulse" ve "alpnet" aynı uygulamadır, tek bir "AlpNet" çatısı altında birleştir
+                        string appShortName = kvp.Key.ToLowerInvariant() switch
                         {
-                            "alpnet-pulse" => "AlpNet",
+                            "alpnet-pulse" or "alpnet" => "AlpNet",
                             "alplingo" => "AlpLingo",
                             "alphagravity" => "AlphaGravity",
                             "alpfinans" => "AlpFinans",
                             "alprust-plus" or "alprust" => "AlpRust+",
                             _ => kvp.Key
                         };
-                        string itemStr = $"{appShortName}: v{kvp.Value.TrimStart('v', 'V')}";
-                        if (!parts.Contains(itemStr))
-                            parts.Add(itemStr);
+
+                        string cleanVer = kvp.Value.TrimStart('v', 'V');
+
+                        // Eğer bu uygulama zaten listede varsa sadece daha yeni sürüm varsa güncelle (mükerrer veya eski sürüm yazımını engelle)
+                        if (appVersions.TryGetValue(appShortName, out var existingVer))
+                        {
+                            if (Services.AlpTogetherUpdateService.IsNewerVersion(cleanVer, existingVer))
+                            {
+                                appVersions[appShortName] = cleanVer;
+                            }
+                        }
+                        else
+                        {
+                            appVersions[appShortName] = cleanVer;
+                        }
                     }
                 }
+
+                var parts = appVersions.Select(kv => $"{kv.Key}: v{kv.Value}").ToList();
                 return parts.Count > 0 ? string.Join(" • ", parts) : $"Sürüm: v{ClientVersion}";
             }
         }
