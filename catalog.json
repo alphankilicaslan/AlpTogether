@@ -1,0 +1,474 @@
+{
+    "CatalogVersion":  "2026.11.02.1",
+    "ClientLatestVersion":  "2.3.3",
+    "ClientDownloadUrl":  "https://github.com/alphankilicaslan/AlpTogether/releases/latest/download/AlpTogether.exe",
+    "GlobalAnnouncement":  "AlpTogether ve AlpNet Pulse v2.3.3 Kararlı Sürümü Yayında! Kişi bazlı donanım telemetrisi ve hızlı sürücü denetleyicisi aktif.",
+    "Apps":  [
+                 {
+                     "Id":  "alpnet-pulse",
+                     "Name":  "AlpNet Pulse",
+                     "Subtitle":  "Ağ Hızlandırma, Cloudflare WARP Tüneli \u0026 Canlı Ses Çeviri Motoru",
+                     "Category":  "Ağ \u0026 Sistem",
+                     "Developer":  "Alphan Kılıçaslan",
+                     "Description":  "AlpNet Pulse; düşük gecikmeli Cloudflare WARP tünel yönetimi, DNSCrypt/DoH şifreleme, paket analizi ve gerçek zamanlı yapay zeka sesli çeviri motorunu (translator.exe) tek çatı altında sunan amiral gemisi ağ ve iletişim aracıdır.",
+                     "HighlightText":  "HİBRİT KURULUM DESTEKLİ (AlpNet.Setup.exe + Doğrudan Paket Senkronizasyonu)",
+                     "AccentColorHex":  "#1E88E5",
+                     "IconPackUri":  "pack://application:,,,/Assets/AppIcons/alpnet_official.png",
+                     "LatestVersion":  "2.3.3",
+                     "ReleaseDate":  "2 Kasım 2026",
+                     "DownloadSizeText":  "81.4 MB",
+                     "SizeBytes":  81400000,
+                     "PackageType":  0,
+                     "PreferredHybridMode":  0,
+                     "DirectDownloadUrl":  "https://github.com/alphankilicaslan/AlpNet/releases/download/Update/AlpNet.Pulse.exe",
+                     "InstallerDownloadUrl":  "https://github.com/alphankilicaslan/AlpNet/releases/download/Update/AlpNet.Setup.exe",
+                     "InstallerSilentArgs":  "/auto",
+                     "FirebaseStateUrl":  "https://alpnet-d0bc4-default-rtdb.europe-west1.firebasedatabase.app/appstate.json?auth=ExNWZwF2CkByKFILhfQ2BbTpuxYFlFAUO8quWwfc",
+                     "GitHubRepoUrl":  "https://github.com/alphankilicaslan/AlpNet",
+                     "ExecutableName":  "AlpNet.Pulse.exe",
+                     "InstallerFileName":  "AlpNet.Setup.exe",
+                     "DefaultInstallSubFolder":  "AlpNet",
+                     "CandidateExistingPaths":  [
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\AppData\\Local\\AlpNet",
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpNet"
+                                                ],
+                     "ProcessNamesToKill":  [
+                                                "AlpNet.Pulse",
+                                                "AlpNetPulse",
+                                                "translator",
+                                                "AlpNet"
+                                            ],
+                     "CompanionFiles":  [
+                                            {
+                                                "FileName":  "translator.exe",
+                                                "DownloadUrl":  "https://github.com/alphankilicaslan/AlpNet/releases/download/Update/translator.exe",
+                                                "RelativeSubDir":  "",
+                                                "ExpectedSha256":  "",
+                                                "ApproximateSizeBytes":  57225902
+                                            }
+                                        ],
+                     "RequiresDotNet9":  true,
+                     "HasCustomInstaller":  true,
+                     "HybridBadgeText":  "HİBRİT KURULUM (Setup + Doğrudan)",
+                     "PatchNotes":  [
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "2.2.9",
+                                            "ReleaseDate":  "2 Kasım 2026",
+                                            "Title":  "Türk Telekom ISS DNS Zehirlenmesi (195.175.254.2) & Discord Açılmama Sorunu Çözüldü",
+                                            "Tag":  "KRİTİK ONARIM",
+                                            "Changes":  [
+                                                            "Emin ve Türk Telekom kullanıcılarında Discord ve Roblox'un 195.175.254.2 adresine yönlendirilerek açılmaması sorunu tamamen çözüldü.",
+                                                            "WireSock VPN tüneline şifreli Cloudflare DNS (1.1.1.1, 1.0.0.1) entegre edildi; DNS sorguları ISS sansürüne takılmadan tünel içinden şifreli akar.",
+                                                            "Windows 11 DoH (DNS-over-HTTPS) otomatik yükseltmesi ve anında önbellek temizleme (ipconfig /flushdns) entegre edildi.",
+                                                            "Tünel profili güncellendiğinde arka planda çalışan servis kesintisiz ve 150ms içinde yeni ayarlarla otomatik tazelenir."
+                                                        ],
+                                            "ImageUrl":  null
+                                        },
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "2.2.7",
+                                            "ReleaseDate":  "21 Ekim 2026",
+                                            "Title":  "Rust \u0026 EAC Anti-Cheat Uyumluluğu, WireSock DNS İyileştirmesi ve Gelişmiş Ağ Düzeltmeleri",
+                                            "Tag":  "KRİTİK GÜNCELLEME",
+                                            "Changes":  [
+                                                            "Easy Anti-Cheat (EAC) korumalı oyunlar (Rust vb.) için ağ sürücüsü ve paket yönlendirme çakışmaları tamamen giderildi; oyun sunucularına bağlantı engelleri kaldırıldı.",
+                                                            "Cloudflare WARP (WireSock) profilinde genel DNS zorlaması ve port çakışmaları temizlendi; ISP bazlı sorgu kilitlenmeleri çözüldü.",
+                                                            "Windows 11 DoH (DNS-over-HTTPS) otomatik kural çakışmaları devre dışı bırakılarak kararlı standart sorgu akışı sağlandı.",
+                                                            "Ağ arayüzlerindeki gecikmeye yol açan TcpDelAckTicks kayıt defteri anahtarları optimize edildi ve sürücü temizliği uygulandı.",
+                                                            "AlpTogether ekosistemi ve bulut yayın motoru v2.2.7 tam senkronize edildi."
+                                                        ],
+                                            "ImageUrl":  null
+                                        },
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "2.2.6",
+                                            "ReleaseDate":  "18 Ekim 2026",
+                                            "Title":  "AlpTogether Bulut Whitelist \u0026 Merkezi Yetkilendirme Entegrasyonu",
+                                            "Tag":  "YENİLİK \u0026 EKOSİSTEM",
+                                            "Changes":  [
+                                                            "AlpTogether Merkezi Bulut Whitelist doğrulaması eklendi; lisans anahtarı girmeden doğrudan bulut yetkisiyle açılış desteği sağlandı.",
+                                                            "Geriye dönük %100 çevrimdışı lisans uyumluluğu korundu; mevcut anahtara sahip kullanıcılar kesintisiz çalışmaya devam eder.",
+                                                            "Aktivasyon ekranına \u0027✦ AlpTogether Yetkisini Doğrula 🔄\u0027 tek-tık hızlı sorgulama butonu entegre edildi.",
+                                                            "Bulut kullanıcı kalp atışı (heartbeat) ve ekosistem senkronizasyonu güncellendi."
+                                                        ],
+                                            "ImageUrl":  null
+                                        },
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "2.2.4",
+                                            "ReleaseDate":  "16 Ekim 2026",
+                                            "Title":  "Hibrit Kurulum, QUIC/HTTP3 Politikası ve Ses Çeviri İyileştirmesi",
+                                            "Tag":  "KARARLI SÜRÜM",
+                                            "Changes":  [
+                                                            "AlpTogether Hibrit Kurulum Motoru ile hem AlpNet.Setup.exe (/auto) hem de doğrudan dosya senkronizasyonu eklendi.",
+                                                            "Cloudflare WARP profil anahtarı çakışma tespiti ve otomatik onarım (wgcf-profile.conf) entegre edildi.",
+                                                            "Canlı ses çeviri motoru (translator.exe) gecikmesi %35 düşürüldü."
+                                                        ],
+                                            "ImageUrl":  null
+                                        }
+                                    ],
+                     "IsInstalled":  false,
+                     "InstalledVersion":  "-",
+                     "InstallPath":  "",
+                     "UpdateAvailable":  false,
+                     "IsRunning":  false,
+                     "IsBusy":  false,
+                     "ProgressPercent":  0,
+                     "StatusText":  "Hazır",
+                     "SpeedText":  "",
+                     "HealthStatus":  "Doğrulanmadı",
+                     "SelectedHybridMode":  0,
+                     "SelectedHybridModeDescription":  "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+                     "PrimaryButtonText":  "HEMEN YÜKLE",
+                     "StateBadgeText":  "BULUTTA MEVCUT",
+                     "VersionDisplay":  "Son Sürüm: v2.2.7  •  81.4 MB"
+                 },
+                 {
+                     "Id":  "alpfinans",
+                     "Name":  "AlpFinans",
+                     "Subtitle":  "Kişisel Finans, Vergi Hesaplama, Fatura \u0026 Birikim Simülatörü",
+                     "Category":  "Finans \u0026 Üretkenlik",
+                     "Developer":  "Alphan Kılıçaslan",
+                     "Description":  "Gelir-gider takibi, vergi dilimi analizi, fatura arşivleme ve geleceğe yönelik finansal senaryo simülasyonlarını yüksek hızlı yerel SQLite motoruyla sunan masaüstü finans yönetim merkezi.",
+                     "HighlightText":  "DOĞRUDAN PAKET + SQLITE VERİTABANI BÜTÜNLÜK KORUMASI",
+                     "AccentColorHex":  "#00C853",
+                     "IconPackUri":  "pack://application:,,,/Assets/AppIcons/alpfinans_official.png",
+                     "LatestVersion":  "1.1.0",
+                     "ReleaseDate":  "19 Ekim 2026",
+                     "DownloadSizeText":  "34.2 MB",
+                     "SizeBytes":  34200000,
+                     "PackageType":  1,
+                     "PreferredHybridMode":  2,
+                     "DirectDownloadUrl":  "https://github.com/alphankilicaslan/AlpFinans/releases/latest/download/AlpFinans.exe",
+                     "InstallerDownloadUrl":  "",
+                     "InstallerSilentArgs":  "/auto",
+                     "FirebaseStateUrl":  "",
+                     "GitHubRepoUrl":  "https://github.com/alphankilicaslan/AlpFinans",
+                     "ExecutableName":  "AlpFinans.exe",
+                     "InstallerFileName":  "",
+                     "DefaultInstallSubFolder":  "AlpFinans",
+                     "CandidateExistingPaths":  [
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpFinans",
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpFinans\\bin_release"
+                                                ],
+                     "ProcessNamesToKill":  [
+                                                "AlpFinans"
+                                            ],
+                     "CompanionFiles":  [
+                                            {
+                                                "FileName":  "e_sqlite3.dll",
+                                                "DownloadUrl":  "https://github.com/alphankilicaslan/AlpFinans/releases/latest/download/e_sqlite3.dll",
+                                                "RelativeSubDir":  "",
+                                                "ExpectedSha256":  "",
+                                                "ApproximateSizeBytes":  1800000
+                                            }
+                                        ],
+                     "RequiresDotNet9":  true,
+                     "HasCustomInstaller":  false,
+                     "HybridBadgeText":  "DOĞRUDAN PAKET",
+                     "PatchNotes":  [
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "1.1.0",
+                                            "ReleaseDate":  "19 Ekim 2026",
+                                            "Title":  "AlpTogether Bulut Whitelist \u0026 Merkezi Yetkilendirme Entegrasyonu",
+                                            "Tag":  "GÜNCELLEME",
+                                            "Changes":  [
+                                                            "AlpTogether merkezi bulut whitelist doğrulaması entegre edildi.",
+                                                            "Geliştirici ana makinesi (MONSTERALPHAN) için anında erişim tanımlandı."
+                                                        ],
+                                            "ImageUrl":  null
+                                        },
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "1.0.0",
+                                            "ReleaseDate":  "16 Ekim 2026",
+                                            "Title":  "Finansal Simülatör, Gelir/Gider Yönetimi ve Vergi Analizi",
+                                            "Tag":  "KARARLI SÜRÜM",
+                                            "Changes":  [
+                                                            "SimulatorWindow ile 12 aylık enflasyon ve yatırım getirisi projeksiyonu eklendi.",
+                                                            "SQLite yerel veritabanı otomatik yedekleme ve onarım kontrolü eklendi."
+                                                        ],
+                                            "ImageUrl":  null
+                                        }
+                                    ],
+                     "IsInstalled":  false,
+                     "InstalledVersion":  "-",
+                     "InstallPath":  "",
+                     "UpdateAvailable":  false,
+                     "IsRunning":  false,
+                     "IsBusy":  false,
+                     "ProgressPercent":  0,
+                     "StatusText":  "Hazır",
+                     "SpeedText":  "",
+                     "HealthStatus":  "Doğrulanmadı",
+                     "SelectedHybridMode":  0,
+                     "SelectedHybridModeDescription":  "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+                     "PrimaryButtonText":  "HEMEN YÜKLE",
+                     "StateBadgeText":  "BULUTTA MEVCUT",
+                     "VersionDisplay":  "Son Sürüm: v1.1.0  •  34.2 MB"
+                 },
+                 {
+                     "Id":  "alphagravity",
+                     "Name":  "AlphaGravity",
+                     "Subtitle":  "Kurumsal Yapay Zeka, Bilgi Bankası (RAG), 3B Grafik \u0026 Ses Köprüsü",
+                     "Category":  "Yapay Zeka \u0026 Kurumsal",
+                     "Developer":  "Alphan Kılıçaslan",
+                     "Description":  "Şirket dokümanlarını ve teknik mimarileri analiz eden, 3 boyutlu bilgi grafiği (3D Knowledge Graph) oluşturan, yerel ve bulut LLM modelleriyle sesli/yazılı etkileşim kuran gelişmiş yapay zeka istemcisi.",
+                     "HighlightText":  "KURUMSAL LLM + 3D BİLGİ AĞI GÖRSELLEŞTİRME",
+                     "AccentColorHex":  "#FF6D00",
+                     "IconPackUri":  "pack://application:,,,/Assets/AppIcons/alphagravity_official.png",
+                     "LatestVersion":  "1.1.0",
+                     "ReleaseDate":  "19 Ekim 2026",
+                     "DownloadSizeText":  "208 MB",
+                     "SizeBytes":  208500000,
+                     "PackageType":  1,
+                     "PreferredHybridMode":  2,
+                     "DirectDownloadUrl":  "https://github.com/alphankilicaslan/AlphaGravity/releases/latest/download/AlphaGravity.exe",
+                     "InstallerDownloadUrl":  "",
+                     "InstallerSilentArgs":  "/auto",
+                     "FirebaseStateUrl":  "",
+                     "GitHubRepoUrl":  "https://github.com/alphankilicaslan/AlphaGravity",
+                     "ExecutableName":  "AlphaGravity.exe",
+                     "InstallerFileName":  "",
+                     "DefaultInstallSubFolder":  "AlphaGravity",
+                     "CandidateExistingPaths":  [
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlphaGravity",
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlphaGravity\\publish_single",
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlphaGravity\\publish"
+                                                ],
+                     "ProcessNamesToKill":  [
+                                                "AlphaGravity",
+                                                "EnterpriseAIApp"
+                                            ],
+                     "CompanionFiles":  [
+                                            {
+                                                "FileName":  "WebView2Loader.dll",
+                                                "DownloadUrl":  "https://github.com/alphankilicaslan/AlphaGravity/releases/latest/download/WebView2Loader.dll",
+                                                "RelativeSubDir":  "",
+                                                "ExpectedSha256":  "",
+                                                "ApproximateSizeBytes":  165000
+                                            }
+                                        ],
+                     "RequiresDotNet9":  true,
+                     "HasCustomInstaller":  false,
+                     "HybridBadgeText":  "DOĞRUDAN PAKET",
+                     "PatchNotes":  [
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "1.1.0",
+                                            "ReleaseDate":  "19 Ekim 2026",
+                                            "Title":  "Bulut Whitelist, API Key Kalıcılığı \u0026 Kararlı Tek Dosya Çalışma",
+                                            "Tag":  "GÜNCELLEME",
+                                            "Changes":  [
+                                                            "AlpTogether merkezi bulut whitelist doğrulaması entegre edildi.",
+                                                            "Kullanıcı API anahtarları kalıcı kullanıcı profiline (AppData) kaydedilerek oturumlar arası korundu.",
+                                                            "Tam bağımsız (self-contained) tek dosya çalıştırılabilir mimariyle başlatma kararlılığı sağlandı."
+                                                        ],
+                                            "ImageUrl":  null
+                                        },
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "1.0.0",
+                                            "ReleaseDate":  "16 Ekim 2026",
+                                            "Title":  "3B Bilgi Grafiği, RAG Doküman Yönetimi ve VoiceBridge",
+                                            "Tag":  "KARARLI SÜRÜM",
+                                            "Changes":  [
+                                                            "WebView2 tabanlı interaktif 3B düğüm grafiği ve kurumsal hafıza entegrasyonu.",
+                                                            "VoiceBridge gerçek zamanlı sesli etkileşim ve öğrenme raporu modülü."
+                                                        ],
+                                            "ImageUrl":  null
+                                        }
+                                    ],
+                     "IsInstalled":  false,
+                     "InstalledVersion":  "-",
+                     "InstallPath":  "",
+                     "UpdateAvailable":  false,
+                     "IsRunning":  false,
+                     "IsBusy":  false,
+                     "ProgressPercent":  0,
+                     "StatusText":  "Hazır",
+                     "SpeedText":  "",
+                     "HealthStatus":  "Doğrulanmadı",
+                     "SelectedHybridMode":  0,
+                     "SelectedHybridModeDescription":  "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+                     "PrimaryButtonText":  "HEMEN YÜKLE",
+                     "StateBadgeText":  "BULUTTA MEVCUT",
+                     "VersionDisplay":  "Son Sürüm: v1.1.0  •  208 MB"
+                 },
+                 {
+                     "Id":  "alprust-plus",
+                     "Name":  "AlpRust+",
+                     "Subtitle":  "Rust+ Akıllı Cihaz, Kamera, Harita ve Anlık Raid Alarm İstemcisi",
+                     "Category":  "Oyun \u0026 Yardımcı Araç",
+                     "Developer":  "Alphan Kılıçaslan",
+                     "Description":  "Rust oyuncuları için geliştirilmiş masaüstü Rust+ komuta merkezi. Oyun dışındayken akıllı şalterleri kontrol edin, güvenlik kameralarını izleyin, takım sohbetini yönetin ve anlık raid bildirimleri alın.",
+                     "HighlightText":  "GERÇEK ZAMANLI SUNUCU TAKİBİ VE AKILLI ANAHTAR YÖNETİMİ",
+                     "AccentColorHex":  "#D84315",
+                     "IconPackUri":  "pack://application:,,,/Assets/AppIcons/alprust_official.png",
+                     "LatestVersion":  "1.2.0",
+                     "ReleaseDate":  "14 Kasım 2026",
+                     "DownloadSizeText":  "9.4 MB",
+                     "SizeBytes":  9350144,
+                     "PackageType":  1,
+                     "PreferredHybridMode":  2,
+                     "DirectDownloadUrl":  "https://github.com/alphankilicaslan/AlpRustPlus/releases/latest/download/AlpRust+.exe",
+                     "InstallerDownloadUrl":  "",
+                     "InstallerSilentArgs":  "/auto",
+                     "FirebaseStateUrl":  "",
+                     "GitHubRepoUrl":  "https://github.com/alphankilicaslan/AlpRustPlus",
+                     "ExecutableName":  "AlpRust+.exe",
+                     "InstallerFileName":  "",
+                     "DefaultInstallSubFolder":  "AlpRustPlus",
+                     "CandidateExistingPaths":  [
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpRust+",
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\AppData\\Local\\AlpRust+"
+                                                ],
+                     "ProcessNamesToKill":  [
+                                                "AlpRust+",
+                                                "alprust-tauri",
+                                                "RustPlusDesk"
+                                            ],
+                     "CompanionFiles":  [
+
+                                        ],
+                     "RequiresDotNet9":  false,
+                     "HasCustomInstaller":  false,
+                     "HybridBadgeText":  "DOĞRUDAN PAKET",
+                     "PatchNotes":  [
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "1.2.0",
+                                            "ReleaseDate":  "14 Kasım 2026",
+                                            "Title":  "Yeni Rust + Tauri Motoru, RustLite Oyuncu Analizi & NumPad Şalter Kontrolü",
+                                            "Tag":  "BÜYÜK GÜNCELLEME",
+                                            "Changes":  [
+                                                            "Tamamen yenilenen Rust + Tauri v2 masaüstü istemcisi (AlpRust+.exe) ile ultra düşük RAM ve gecikme.",
+                                                            "RustLite tarzı oyuncu istihbaratı, hile olasılık skoru, Steam Web API otomatik alma ve takip listesi canlı durumu eklendi.",
+                                                            "Akıllı şalterlere NumPad 0–9 tuş ataması, otomatik sunucu hatırlama ve Facepunch FCM eşleştirme geçmişi eklendi."
+                                                        ],
+                                            "ImageUrl":  null
+                                        }
+                                    ],
+                     "IsInstalled":  false,
+                     "InstalledVersion":  "-",
+                     "InstallPath":  "",
+                     "UpdateAvailable":  false,
+                     "IsRunning":  false,
+                     "IsBusy":  false,
+                     "ProgressPercent":  0,
+                     "StatusText":  "Hazır",
+                     "SpeedText":  "",
+                     "HealthStatus":  "Doğrulanmadı",
+                     "SelectedHybridMode":  0,
+                     "SelectedHybridModeDescription":  "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+                     "PrimaryButtonText":  "HEMEN YÜKLE",
+                     "StateBadgeText":  "BULUTTA MEVCUT",
+                     "VersionDisplay":  "Son Sürüm: v1.2.0  •  9.4 MB"
+                 },
+                 {
+                     "Id":  "alplingo",
+                     "Name":  "AlpLingo",
+                     "Subtitle":  "Gerçek Zamanlı Yapay Zeka Ekran \u0026 Oyun Çevirici (AI OCR Overlay)",
+                     "Category":  "Yapay Zeka \u0026 Çeviri",
+                     "Developer":  "Alphan Kılıçaslan",
+                     "Description":  "Oyunlar, videolar ve masaüstü uygulamaları için ekran üzerindeki diyalog alanını (ROI) gerçek zamanlı yakalayıp Meta NLLB-200 (CUDA/CPU) motoruyla şeffaf bir katman (Overlay) üzerinde anında akıcı Türkçeye çeviren uygulama.",
+                     "HighlightText":  "ÇEVRİMDIŞI NLLB-200 + ŞEFFAF OVERLAY + SIFIR FPS KAYBI",
+                     "AccentColorHex":  "#00E5FF",
+                     "IconPackUri":  "pack://application:,,,/Assets/AppIcons/alplingo_official.png",
+                     "LatestVersion":  "1.1.0",
+                     "ReleaseDate":  "18 Ekim 2026",
+                     "DownloadSizeText":  "1.45 GB",
+                     "SizeBytes":  1530302447,
+                     "PackageType":  2,
+                     "PreferredHybridMode":  0,
+                     "DirectDownloadUrl":  "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo-win-x64.zip",
+                     "InstallerDownloadUrl":  "https://github.com/alphankilicaslan/AlpLingo/releases/latest/download/AlpLingo.Setup.exe",
+                     "InstallerSilentArgs":  "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART",
+                     "FirebaseStateUrl":  "",
+                     "GitHubRepoUrl":  "https://github.com/alphankilicaslan/AlpLingo",
+                     "ExecutableName":  "AlpLingo.exe",
+                     "InstallerFileName":  "AlpLingo.Setup.exe",
+                     "DefaultInstallSubFolder":  "AlpLingo",
+                     "CandidateExistingPaths":  [
+                                                    "C:\\Users\\Alphan.MonsterAlphan\\Desktop\\AlpLingo"
+                                                ],
+                     "ProcessNamesToKill":  [
+                                                "AlpLingo"
+                                            ],
+                     "CompanionFiles":  [
+
+                                        ],
+                     "RequiresDotNet9":  true,
+                     "HasCustomInstaller":  true,
+                     "HybridBadgeText":  "HİBRİT KURULUM (Setup + Doğrudan)",
+                     "PatchNotes":  [
+                                        {
+                                            "AppName":  "AlpLingo",
+                                            "AppId":  "alplingo",
+                                            "AppIconUri":  "",
+                                            "Version":  "1.1.0",
+                                            "ReleaseDate":  "18 Ekim 2026",
+                                            "Title":  "AlpLingo v1.1.0 — Oyun İçi F8 Kısayol, Yönetici İzni \u0026 AI OCR Kararlılık Güncellemesi",
+                                            "Tag":  "ÖNEMLİ GÜNCELLEME",
+                                            "Changes":  [
+                                                            "Oyunlarda F8 kısayolunun algılanmama sorunu çözüldü (Win32 RegisterHotKey ve otomatik Yönetici İzni yükseltmesi).",
+                                                            "Akıllı kontrast kontrolü ile sarı, altın, mavi ve tüm renklerdeki oyun altyazılarının okunması sağlandı.",
+                                                            "F8 ile diyalog alanı seçildiği anda çevirinin otomatik başlatılması ve ekranda anlık durum bildirimi eklendi.",
+                                                            "Windows masaüstü yakalama (BitBlt/OpenInputDesktop) bağlantısı ve çift monitör desteği güçlendirildi."
+                                                        ],
+                                            "ImageUrl":  null
+                                        },
+                                        {
+                                            "AppName":  "",
+                                            "AppId":  "",
+                                            "AppIconUri":  "",
+                                            "Version":  "1.0.0",
+                                            "ReleaseDate":  "16 Ekim 2026",
+                                            "Title":  "AlpLingo v1.0 — Gerçek Zamanlı AI OCR \u0026 Şeffaf Türkçe Altyazı",
+                                            "Tag":  "YENİ UYGULAMA",
+                                            "Changes":  [
+                                                            "Meta NLLB-200 çevrimdışı çeviri motoru ile NVIDIA RTX CUDA ve CPU hibrit hızlandırma.",
+                                                            "F8 ile anlık ekran diyalog bölgesi (ROI) seçimi ve F9 ile şeffaf altyazı katmanı kontrolü.",
+                                                            "Akıllı parlaklık değişim filtresi ile diyalog sabitken %0 CPU/GPU kullanımı ve sıfır FPS kaybı."
+                                                        ],
+                                            "ImageUrl":  null
+                                        }
+                                    ],
+                     "IsInstalled":  false,
+                     "InstalledVersion":  "-",
+                     "InstallPath":  "",
+                     "UpdateAvailable":  false,
+                     "IsRunning":  false,
+                     "IsBusy":  false,
+                     "ProgressPercent":  0,
+                     "StatusText":  "Hazır",
+                     "SpeedText":  "",
+                     "HealthStatus":  "Doğrulanmadı",
+                     "SelectedHybridMode":  0,
+                     "SelectedHybridModeDescription":  "Birleşik Hibrit Mod: Setup ve uygulama dosyalarını AlpTogether içinde otomatik kurar ve doğrular.",
+                     "PrimaryButtonText":  "HEMEN YÜKLE",
+                     "StateBadgeText":  "BULUTTA MEVCUT",
+                     "VersionDisplay":  "Son Sürüm: v1.1.0  •  1.45 GB"
+                 }
+             ]
+}
